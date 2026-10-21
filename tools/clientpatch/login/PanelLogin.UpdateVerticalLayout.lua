@@ -12,27 +12,32 @@ function PanelLogin:UpdateVerticalLayout()
   if not self.passwordInputField then
     return
   end
-  local scale = math.min(1, trans.rect.height / 900, trans.rect.width / 800)
+  local root = self:UObj().transform
+  local area = root:GetComponent(typeof(u3d.RectTransform)).rect
+  local scale = math.min(1, area.height / 1000, area.width / 900)
   if scale <= 0 then
     return
+  end
+  local function place(target, offset)
+    target.anchorMin = CS.UnityEngine.Vector2(0.5, 0.5)
+    target.anchorMax = CS.UnityEngine.Vector2(0.5, 0.5)
+    target.pivot = CS.UnityEngine.Vector2(0.5, 0.5)
+    target.localScale = CS.UnityEngine.Vector3(scale, scale, 1)
+    target.position = root:TransformPoint(CS.UnityEngine.Vector3(area.center.x, area.center.y + offset * scale, 0))
   end
   local fields = {self.userNameInputField, self.passwordInputField}
   for index = 1, 2 do
     local field = fields[index]
     local rect = field.gameObject:GetComponent(typeof(u3d.RectTransform))
-    rect.anchorMin = CS.UnityEngine.Vector2(0.5, 0.5)
-    rect.anchorMax = CS.UnityEngine.Vector2(0.5, 0.5)
-    rect.pivot = CS.UnityEngine.Vector2(0.5, 0.5)
     rect.sizeDelta = CS.UnityEngine.Vector2(560, 84)
-    rect.localScale = CS.UnityEngine.Vector3(scale, scale, 1)
-    rect.anchoredPosition = CS.UnityEngine.Vector2(0, (-50 - (index - 1) * 105) * scale)
+    place(rect, -50 - (index - 1) * 105)
     rect:SetAsLastSibling()
     local image = field.gameObject:GetComponent(typeof(CS.UnityEngine.UI.Image))
     if image ~= nil and not isnull(image) then
       image.color = CS.UnityEngine.Color(0, 0, 0, 0)
       image.raycastPadding = CS.UnityEngine.Vector4(0, 0, 0, 0)
     end
-    local ok, failure = pcall(function()
+    pcall(function()
       local template = self.mmmBoxTemplate
       if template == nil or isnull(template) then
         local all = rect.root:GetComponentsInChildren(typeof(CS.UnityEngine.UI.Image), true)
@@ -87,19 +92,7 @@ function PanelLogin:UpdateVerticalLayout()
       backgroundImage.color = CS.UnityEngine.Color(0, 0, 0, 0.6)
       backgroundImage.raycastTarget = false
       backgroundImage.enabled = true
-      local file = io.open(CS.MCEngine.PathHelper.PersistentResPath .. "/mmm_login_field" .. index .. ".txt", "w")
-      if file then
-        file:write("template=" .. tostring(template and template.gameObject.name) .. " sprite=" .. tostring(template and template.sprite.name) .. "\n")
-        file:close()
-      end
     end)
-    if not ok then
-      pcall(function()
-        local file = io.open(CS.MCEngine.PathHelper.PersistentResPath .. "/mmm_login_field" .. index .. ".txt", "w")
-        file:write("failed: " .. tostring(failure) .. "\n")
-        file:close()
-      end)
-    end
     local texts = {field.textComponent, field.placeholder:GetComponent(typeof(CS.UnityEngine.UI.Text))}
     for textIndex = 1, 2 do
       local text = texts[textIndex]
@@ -119,15 +112,9 @@ function PanelLogin:UpdateVerticalLayout()
     end
   end
   local button = self._btnLogin:GetComponent(typeof(u3d.RectTransform))
-  button.anchorMin = CS.UnityEngine.Vector2(0.5, 0.5)
-  button.anchorMax = CS.UnityEngine.Vector2(0.5, 0.5)
-  button.anchoredPosition = CS.UnityEngine.Vector2(0, -290 * scale)
-  button.localScale = CS.UnityEngine.Vector3(scale, scale, 1)
+  place(button, -290)
   button:SetAsLastSibling()
   local logo = self.imgLogo.rectTransform
-  logo.anchorMin = CS.UnityEngine.Vector2(0.5, 0.5)
-  logo.anchorMax = CS.UnityEngine.Vector2(0.5, 0.5)
   logo.sizeDelta = CS.UnityEngine.Vector2(390, 360)
-  logo.anchoredPosition = CS.UnityEngine.Vector2(0, 230 * scale)
-  logo.localScale = CS.UnityEngine.Vector3(scale, scale, 1)
+  place(logo, 230)
 end

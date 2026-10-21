@@ -24,6 +24,7 @@ func (p BuildProfile) Modules() []PatchFile {
 		{Path: "scripts/LogicInterface.luac", SHA256: p.LogicSHA256},
 		{Path: "scripts/AIEngine.luac", SHA256: p.AIEngineSHA256},
 		{Path: "scripts/PanelBattleNew.luac", SHA256: p.BattlePanelSHA256},
+		{Path: "scripts/ResolutionTool.luac", SHA256: p.WindowSHA256},
 	}
 	return append(files, retailLocalizationModules[:]...)
 }

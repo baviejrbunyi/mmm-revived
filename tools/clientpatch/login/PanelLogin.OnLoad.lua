@@ -47,6 +47,10 @@ function PanelLogin:OnLoad()
   self:AddButtonListener("cont/btn_login", bind(self, self.OnClickLogin))
   self._btnLogin = self:FindChildByPath("cont/btn_login")
   self:AddButtonListener("cont/btn_switch", bind(self, self._SwitchForceDebugLogin))
+  local switchButton = self:FindChildByPath("cont/btn_switch")
+  if switchButton then
+    switchButton:SetActive(false)
+  end
   self._btnCadpa16 = self:FindChildByPath("cont/cn/btn_cadpa16")
   self:AddButtonListener("cont/cn/btn_cadpa16", bind(self, self.OnClickCadpa16))
   self:AddButtonListener("cont/cn/btn_start", bind(self, self.OnClickLogin))
@@ -140,6 +144,23 @@ branch: %s]], PatchUtils:GetAppVersion(), PatchUtils:GetClientVersion(), PatchUt
   self:RefreshState()
   MC.UniSDKHandler:CacheIpv6SpeedTestServer(Switch.USE_PHAROS_SPEEDUP)
   mcpcall(self.ReplaceBackground, self)
+  local function watchScreen()
+    if self.imgLogo == nil or isnull(self.imgLogo) then
+      return
+    end
+    local width, height = CS.UnityEngine.Screen.width, CS.UnityEngine.Screen.height
+    if width ~= self.mmmScreenWidth or height ~= self.mmmScreenHeight then
+      self.mmmScreenWidth, self.mmmScreenHeight = width, height
+      self:UpdateVerticalLayout()
+      UTools.DelayCall(self, 0.1, function()
+        if self.imgLogo ~= nil and not isnull(self.imgLogo) then
+          self:UpdateVerticalLayout()
+        end
+      end)
+    end
+    UTools.DelayCall(self, 0.25, watchScreen)
+  end
+  UTools.DelayCall(self, 0.25, watchScreen)
   pcall(function()
     local args = CS.System.Environment.GetCommandLineArgs()
     local spec

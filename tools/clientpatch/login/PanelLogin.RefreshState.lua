@@ -41,7 +41,7 @@ function PanelLogin:RefreshState()
   if self.passwordInputField then
     self.passwordInputField.gameObject:SetActive(Switch.FORCE_DEBUG_LOGIN and not showMaintainNotice)
   end
-  self:FindChildByPath("cont/btn_switch"):SetActive(showDebugLogin and not showMaintainNotice)
+  self:FindChildByPath("cont/btn_switch"):SetActive(false)
   if showMaintainNotice then
     self:UpdateRefreshTime()
     self:SetUpdateEnable(bind(self, self.UpdateRefreshTime), true)
