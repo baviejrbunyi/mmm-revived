@@ -24,10 +24,11 @@ MODULES = [
     ('Battle.lua', 'scripts/Battle.luac', {('Battle', 'CheckAutoPlayCard'): 'realtimesync/Battle.CheckAutoPlayCard.lua', ('Battle', 'CheckSwitch'): 'realtimesync/Battle.CheckSwitch.lua'}),
     ('LogicInterface.lua', 'scripts/LogicInterface.luac', {('LogicInterface', 'UseCard'): 'realtimesync/LogicInterface.UseCard.lua'}),
     ('AIEngine.lua', 'scripts/AIEngine.luac', {('AIEngine', 'TryUseCard'): 'realtimesync/AIEngine.TryUseCard.lua'}),
-    ('BattleNewStage.lua', 'scripts/BattleNewStage.luac', {('BattleNewStage', '_TryDoFrame'): 'realtimesync/BattleNewStage.TryDoFrame.lua', ('BattleNewStage', '_GetPreloadPanels'): 'realtimesync/BattleNewStage._GetPreloadPanels.lua'}),
+    ('BattleNewStage.lua', 'scripts/BattleNewStage.luac', {('BattleNewStage', '_TryDoFrame'): 'realtimesync/BattleNewStage.TryDoFrame.lua', ('BattleNewStage', '_GetPreloadPanels'): 'realtimesync/BattleNewStage._GetPreloadPanels.lua', ('BattleNewStage', 'ShowGuide'): 'tutorial/BattleNewStage.ShowGuide.lua'}),
     ('SceneTimeControlComp.lua', 'scripts/SceneTimeControlComp.luac', {('SceneTimeControlComp', 'StopScaledTime'): 'realtimesync/SceneTimeControlComp.StopScaledTime.lua', ('SceneTimeControlComp', '_InitAutoState'): 'realtimesync/SceneTimeControlComp._InitAutoState.lua', ('SceneTimeControlComp', '_InitSpeedUpState'): 'realtimesync/SceneTimeControlComp._InitSpeedUpState.lua'}),
     ('PanelBattleNew.lua', 'scripts/PanelBattleNew.luac', {('PanelBattleNew', 'SetCardForceNonInteractable'): 'realtimesync/PanelBattleNew.SetCardForceNonInteractable.lua', ('PanelBattleNew', 'SetSpeedUpBtnVisible'): 'realtimesync/PanelBattleNew.SetSpeedUpBtnVisible.lua'}),
     ('ResolutionTool.lua', 'scripts/ResolutionTool.luac', {('ResolutionTool', '_GetDeviceResolution'): 'window/ResolutionTool._GetDeviceResolution.lua', ('ResolutionTool', 'OnWindowResize'): 'window/ResolutionTool.OnWindowResize.lua'}),
+    ('PanelSkipGuide.lua', 'scripts/PanelSkipGuide.luac', {('PanelSkipGuide', '_OnSkipClicked'): 'tutorial/PanelSkipGuide._OnSkipClicked.lua'}),
     ('UniSDKHandler.lua', 'scripts/UniSDKHandler.luac', {('UniSDKHandler', 'CheckOrder'): 'freeshop/UniSDKHandler.CheckOrder.lua'}),
     ('PanelLogin.lua', 'scripts/PanelLogin.luac', {('PanelLogin', name): f'login/PanelLogin.{name}.lua' for name in ('OnLoad', 'DoLogin', 'OnResponsePharosSpeedup', 'RefreshState', 'UpdateVerticalLayout', 'OnUnload', 'UseDebugLogin', '_SwitchForceDebugLogin', 'StartLogin', 'OnClickFix')}),
     ('ServerClient.lua', 'scripts/ServerClient.luac', {('ServerClient', 'CallServerMethod'): 'login/ServerClient.CallServerMethod.lua'}),
@@ -441,7 +442,11 @@ def build(arguments):
             localized[name] = ('%s/%s' % (LOCALIZATION, module.name), module.read_bytes())
         strings_original = (analysis / 'installed' / index[STRINGS]['file']).read_bytes()
         current = localized[STRINGS][1]
-        additions = json.loads((SOURCES / 'friendduel/strings.json').read_text(encoding='utf8'))
+        additions = {}
+        for group in json.loads((SOURCES / 'localization/strings.json').read_text(encoding='utf8')).values():
+            for key, text in group.items():
+                assert key not in additions, key
+                additions[key] = text
         data = tools.table_data(current, STRINGS)
         for key in additions:
             data.pop(key, None)

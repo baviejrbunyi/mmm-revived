@@ -275,6 +275,20 @@ function FriendComp:OnInit()
         test.ticks = test.ticks + 1
         local ok, failure = pcall(function()
           local avatar = MC.GameWorld.Avatar
+          if test.role == "skip" then
+            if test.ticks == 12 then
+              log("novice before", tostring(avatar.NoviceComp:IsNoviceFinish()), tostring(MC.GuideMgr:GetGuideId()))
+              avatar:CallServerMethod("skipTutorial")
+              avatar.NoviceComp:OnLeaveNovice()
+              UTools.DelayCall(MC.GameWorld, 0.5, function()
+                MC.GameWorld:EnterLobby()
+              end)
+            elseif test.ticks == 30 then
+              local stage = MC.StageManager:GetActiveStage()
+              log("novice after", tostring(avatar.NoviceComp:IsNoviceFinish()), tostring(stage ~= nil and stage:GetStageType()))
+            end
+            return
+          end
           local manager = MC.GameWorld.BattleMgrNew
           local battle = manager ~= nil and manager:GetCurrentBattle() or nil
           if battle ~= nil and battle.isRealTimePvP then

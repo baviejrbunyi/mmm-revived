@@ -34,6 +34,9 @@ func Register(srv *server.Service, r *server.Router) {
 		}
 		return s.executeGM(p, command.Command)
 	}))
+	r.Handle("skipTutorial", rpc.Bind(protocol.DecodeNone, func(p *server.Player, _ struct{}) error {
+		return s.skipTutorial(p)
+	}))
 	r.Handle("gmgeterror", rpc.Bind(protocol.DecodeNone, func(p *server.Player, _ struct{}) error {
 		return p.Send("onGmGetError", p.Account.GM.LastError)
 	}))

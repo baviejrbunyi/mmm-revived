@@ -48,6 +48,7 @@ type BuildProfile struct {
 	AIEngineSHA256       string
 	BattlePanelSHA256    string
 	WindowSHA256         string
+	SkipGuideSHA256      string
 	PatchedScriptsSHA256 string
 }
 
@@ -65,9 +66,9 @@ var Supported = BuildProfile{
 	ServerClientSHA256:   "da97ca7327cd75581d683816bae29119181c278f35baba6f91f2549fd82f7e41",
 	FriendTipSHA256:      "238ffca33b0b1867b1864a0cee4a7a26661a29fa03b3b1bdc737724f3dd39e6c",
 	FriendInfoSHA256:     "88b0996757f4193a2da17f00595625e47ee134b0da9709e78a1b1d9e87ede308",
-	FriendCompSHA256:     "60908778ac2bd719a6c9da8d50f01c82b93297d744afbe38a37edda20c55530c",
+	FriendCompSHA256:     "33d5625cb1a9b60adb20c6ce16dd95bde0f3459036eb3bc4654e77adde0e3b03",
 	BattleCompSHA256:     "2523369801a0762b23d0f576970202cc1481cd9e2faf8225e2d9839215c120cd",
-	BattleStageSHA256:    "ea1da13bf760f52af588929e0841bbeb829708df0bd823e666229a6db90919ec",
+	BattleStageSHA256:    "601210a0fadb5566a7fd1ff04e308d3d6847940984e41c6e13040a88f20688b6",
 	SceneTimeSHA256:      "a974da6bfb9eae38e46effa81f7b0a6e0580e65d7813b17b4c6296d77ae6ce41",
 	PaymentSHA256:        "4ae13c5dd9f94d3f6bcc49f438ceefc3775698a6a7e034c435413ec75c607d73",
 	PatchUtilsSHA256:     "609c5c1d968a730ccccdbfaf3d29828b7e7d999c145f194d09e04cd8be5e33cd",
@@ -76,7 +77,8 @@ var Supported = BuildProfile{
 	AIEngineSHA256:       "62b105fdb25b056f63a995678b2c7f717f558b6ddbc4d1720cfa1cc424d68b9c",
 	BattlePanelSHA256:    "3bb754d4c2256147bc6047cfc66a3141ec89104248c84840fe0655969c7ae124",
 	WindowSHA256:         "16bdc7a63a6ca09a168c794bea49dc299006da613f9bcfd1f1bf12a71a05734e",
-	PatchedScriptsSHA256: "6d4d8fa6f195d07e079bd558f6af3f7062d228fb47d1eadce17d18a583c414ad",
+	SkipGuideSHA256:      "7bd210a22f2e0c999afaec76e4a34ff2c5ea8eb39e423db9c9213c328d962a6c",
+	PatchedScriptsSHA256: "040c4034e6dbff1b85d8b5e854c97f937ca366cfdbec8670ae28ad1f1372a90c",
 }
 
 const PatchListPath = "/native/patchlist_win32.json"

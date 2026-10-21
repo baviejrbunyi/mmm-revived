@@ -1,0 +1,27 @@
+{
+  "duel": {
+    "FRIEND_DUEL_MODE_OWN": "Own Heroes",
+    "FRIEND_DUEL_MODE_RANDOM": "Random 5",
+    "FRIEND_DUEL_MODE_DRAFT": "Current Draft",
+    "FRIEND_DUEL_INVITE": "{1} challenges you to a duel!\nMode: {2}\n{3}",
+    "FRIEND_DUEL_ACCEPT": "Accept",
+    "FRIEND_DUEL_DECLINE": "Decline",
+    "FRIEND_DUEL_SENT": "Duel invitation sent",
+    "FRIEND_DUEL_DECLINED": "Your friend declined the duel",
+    "FRIEND_DUEL_BUSY": "Your friend is busy. Try again later.",
+    "FRIEND_DUEL_OFFLINE": "Your friend is offline",
+    "FRIEND_DUEL_EXPIRED": "The duel invitation has expired",
+    "FRIEND_DUEL_NOT_FRIEND": "You can only duel friends",
+    "FRIEND_DUEL_NO_DRAFT": "Both players need a Mystic Clash lineup that is ready to match",
+    "FRIEND_DUEL_CANCELLED": "The duel invitation was withdrawn",
+    "FRIEND_DUEL_NO_HEROES": "Both players need at least 3 heroes",
+    "FRIEND_DUEL_DRAFT_LOCKED": "Prepare your Mystic Clash lineup to use this mode",
+    "FRIEND_DUEL_CONTROL_AUTO": "Auto Abilities",
+    "FRIEND_DUEL_CONTROL_MANUAL": "Manual Abilities"
+  },
+  "tutorial": {
+    "SKIP_ALL_TUTORIALS": "Skip all tutorials?",
+    "NOVICE_BATTLE_TRY_QUIT_YES": "Quit",
+    "NOVICE_BATTLE_TRY_QUIT_NO": "Stay"
+  }
+}

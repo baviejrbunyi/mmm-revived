@@ -25,6 +25,7 @@ func (p BuildProfile) Modules() []PatchFile {
 		{Path: "scripts/AIEngine.luac", SHA256: p.AIEngineSHA256},
 		{Path: "scripts/PanelBattleNew.luac", SHA256: p.BattlePanelSHA256},
 		{Path: "scripts/ResolutionTool.luac", SHA256: p.WindowSHA256},
+		{Path: "scripts/PanelSkipGuide.luac", SHA256: p.SkipGuideSHA256},
 	}
 	return append(files, retailLocalizationModules[:]...)
 }
@@ -71,7 +72,7 @@ var retailLocalizationModules = [...]PatchFile{
 	{Path: "localization/download_data_cn.luac", SHA256: "38d3ecff491f5a7d6fc602be3fa1222c299f03a5b32ecde913008d39de3f6133"},
 	{Path: "localization/emoji_data_cn.luac", SHA256: "b25c0b24d24065af6d1cd0be4c6cbfb68563252da3fd91b15e6eaa145d0e6dde"},
 	{Path: "localization/error_code_cn.luac", SHA256: "89c2b8ed3853c87b8bffea632112d7542be270aa4bbf8797c4f24048e94a01b7"},
-	{Path: "localization/error_content_cn.luac", SHA256: "d973b6d7c86a5364e70ae81d92bc9ce0ac4e3cafad2fb0585730fd3fdef0d7c8"},
+	{Path: "localization/error_content_cn.luac", SHA256: "e82c4af2f8cc959f5c1a1c32cde81abd5711faa0a6c6a13548e2a7c51955accc"},
 	{Path: "localization/game_trailer_data_cn.luac", SHA256: "69d9274ee36c9c0866f76a6799213a7ced314679f9db2cdfd57536f9a47542ff"},
 	{Path: "localization/grid_movement_helpinfo_data_cn.luac", SHA256: "24fa17adef0c018928f16a6ef7e106d9791cfa84369aeda7fc86cd7cfb27908c"},
 	{Path: "localization/highlight_data_cn.luac", SHA256: "39e244880d5692e9674fdb07b04593399864e3cc58b478a8f471d3f686b79d58"},
