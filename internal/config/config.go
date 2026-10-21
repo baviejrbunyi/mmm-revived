@@ -1,0 +1,196 @@
+package config
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"net"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"github.com/pelletier/go-toml/v2"
+
+	"mmm-revived/internal/account"
+	"mmm-revived/internal/json"
+)
+
+const (
+	FileName       = "config.toml"
+	legacyFileName = "config.json"
+	AssetsDir      = "assets"
+	DataDir        = "data"
+	PatchesDir     = "patches"
+	CatalogFile    = "catalog.json"
+	DataTablesDir  = "datatables"
+)
+
+type Keys struct {
+	Private string `json:"private" toml:"private"`
+	Public  string `json:"public" toml:"public"`
+}
+
+type Config struct {
+	Host       string `json:"host" toml:"host"`
+	Port       int    `json:"port" toml:"port"`
+	HTTPPort   int    `json:"httpPort" toml:"httpPort"`
+	Start      string `json:"start" toml:"start"`
+	FreshStart bool   `json:"fresh_start" toml:"fresh_start"`
+	Keys       Keys   `json:"keys" toml:"keys"`
+	dir        string
+}
+
+func Default() Config {
+	return Config{
+		Host:       "127.0.0.1",
+		Port:       14100,
+		HTTPPort:   18080,
+		Start:      string(account.StartItems),
+		FreshStart: true,
+		Keys:       Keys{Private: "keys/server.pem", Public: "keys/client-public.pem"},
+	}
+}
+
+func Load(path string) (Config, error) {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return Config{}, err
+	}
+	c := Default()
+	c.dir = filepath.Dir(absolute)
+	data, err := os.ReadFile(absolute)
+	if errors.Is(err, fs.ErrNotExist) {
+		return c.migrate(absolute)
+	}
+	if err != nil {
+		return c, err
+	}
+	if err = toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields().Decode(&c); err != nil {
+		return c, fmt.Errorf("parse %s: %w", absolute, err)
+	}
+	return c, c.Validate()
+}
+
+func Exists(path string) bool {
+	for _, name := range []string{path, filepath.Join(filepath.Dir(path), legacyFileName)} {
+		if info, err := os.Stat(name); err == nil && info.Mode().IsRegular() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c Config) migrate(path string) (Config, error) {
+	legacy := filepath.Join(filepath.Dir(path), legacyFileName)
+	data, err := os.ReadFile(legacy)
+	if errors.Is(err, fs.ErrNotExist) {
+		return c, c.Write(path)
+	}
+	if err != nil {
+		return c, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err = decoder.Decode(&c); err != nil {
+		return c, fmt.Errorf("parse %s: %w", legacy, err)
+	}
+	if err = decoder.Decode(new(json.RawMessage)); !errors.Is(err, io.EOF) {
+		return c, fmt.Errorf("parse %s: unexpected content after configuration", legacy)
+	}
+	if err = c.Write(path); err != nil {
+		return c, err
+	}
+	return c, os.Remove(legacy)
+}
+
+const fileTemplate = `host = %s
+port = %d
+httpPort = %d
+fresh_start = %t # All new accounts will have 0 progression and 0 items
+start = %s # "items" | "unlocked" (used when fresh_start = false)
+
+[keys]
+private = %s
+public = %s
+`
+
+func quote(value string) string {
+	var builder strings.Builder
+	builder.WriteByte('"')
+	for _, r := range value {
+		switch {
+		case r == '"' || r == '\\':
+			builder.WriteByte('\\')
+			builder.WriteRune(r)
+		case r < 0x20 || r == 0x7f:
+			fmt.Fprintf(&builder, "\\u%04X", r)
+		default:
+			builder.WriteRune(r)
+		}
+	}
+	builder.WriteByte('"')
+	return builder.String()
+}
+
+func (c Config) Write(path string) error {
+	if err := c.Validate(); err != nil {
+		return err
+	}
+	data := fmt.Sprintf(fileTemplate, quote(c.Host), c.Port, c.HTTPPort, c.FreshStart, quote(c.Start), quote(c.Keys.Private), quote(c.Keys.Public))
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func (c Config) Validate() error {
+	var problems []error
+	if net.ParseIP(c.Host) == nil {
+		problems = append(problems, fmt.Errorf("host must be an IP address, got %q", c.Host))
+	}
+	for _, port := range []struct {
+		name  string
+		value int
+	}{{"port", c.Port}, {"httpPort", c.HTTPPort}} {
+		if port.value < 1 || port.value > 65535 {
+			problems = append(problems, fmt.Errorf("%s must be between 1 and 65535", port.name))
+		}
+	}
+	if c.Port == c.HTTPPort {
+		problems = append(problems, errors.New("port and httpPort must differ"))
+	}
+	if _, err := account.ParseStart(c.Start); err != nil {
+		problems = append(problems, err)
+	}
+	if c.Keys.Private == "" || c.Keys.Public == "" || c.Keys.Private == c.Keys.Public {
+		problems = append(problems, errors.New("keys.private and keys.public must be distinct paths"))
+	}
+	return errors.Join(problems...)
+}
+
+func (c Config) Address() string { return net.JoinHostPort(c.Host, strconv.Itoa(c.Port)) }
+
+func (c Config) HTTPAddress() string { return net.JoinHostPort(c.Host, strconv.Itoa(c.HTTPPort)) }
+
+func (c Config) StartMode() account.Start { return account.Start(c.Start) }
+
+func (c Config) Path(parts ...string) string {
+	path := filepath.Join(parts...)
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(c.dir, path)
+}
+
+func (c Config) Catalog() string { return c.Path(AssetsDir, DataTablesDir, CatalogFile) }
+
+func (c Config) Database() string { return c.Path(DataDir, "accounts") }
+
+func (c Config) Patches() string { return c.Path(PatchesDir) }
+
+func (c Config) PrivateKey() string { return c.Path(c.Keys.Private) }
+
+func (c Config) PublicKey() string { return c.Path(c.Keys.Public) }

@@ -1,0 +1,2 @@
+function PatchUtils.ResetPatch()
+end

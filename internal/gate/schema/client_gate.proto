@@ -1,0 +1,36 @@
+syntax = "proto2";
+package mobile.server;
+import "common.proto";
+message EncryptString {
+  required bytes encryptstr = 1;
+}
+message SessionSeed {
+  required int64 seed = 1;
+}
+message SessionKey {
+  required bytes random_padding_header = 1;
+  required bytes session_key = 2;
+  required int64 seed = 3;
+  required bytes random_padding_tail = 4;
+}
+message RecoverConfig {
+  required double delay_connect = 1;
+  required int32 reason = 2;
+}
+service IGateService {
+  rpc seed_request (.mobile.server.Void) returns (.mobile.server.Void);
+  rpc session_key (.mobile.server.EncryptString) returns (.mobile.server.Void);
+  rpc connect_server (.mobile.server.ConnectServerRequest) returns (.mobile.server.Void);
+  rpc entity_message (.mobile.server.EntityMessage) returns (.mobile.server.Void);
+  rpc custom_message (.mobile.server.CustomMessage) returns (.mobile.server.Void);
+}
+service IGateClient {
+  rpc seed_reply (.mobile.server.SessionSeed) returns (.mobile.server.Void);
+  rpc session_key_ok (.mobile.server.Void) returns (.mobile.server.Void);
+  rpc connect_reply (.mobile.server.ConnectServerReply) returns (.mobile.server.Void);
+  rpc entity_message (.mobile.server.EntityMessage) returns (.mobile.server.Void);
+  rpc chat_to_client (.mobile.server.OutBandInfo) returns (.mobile.server.Void);
+  rpc dispatch_filter_message (.mobile.server.FilterMessage) returns (.mobile.server.Void);
+  rpc custom_message (.mobile.server.CustomMessage) returns (.mobile.server.Void);
+  rpc disconnect_by_server (.mobile.server.RecoverConfig) returns (.mobile.server.Void);
+}

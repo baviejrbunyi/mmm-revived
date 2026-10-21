@@ -1,0 +1,2 @@
+function PanelLogin:OnClickFix()
+end

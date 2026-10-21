@@ -1,0 +1,88 @@
+syntax = "proto2";
+package mobile.server;
+message Void {
+}
+message ConnectServerRequest {
+  optional bytes routes = 1;
+  optional bytes deviceid = 2;
+  optional bytes cluster_id = 3;
+}
+message ConnectServerReply {
+  enum ReplyType {
+    BUSY = 0;
+    CONNECTED = 1;
+    FORBIDDEN = 2;
+    MAX_CONNECTION = 3;
+  }
+  optional bytes routes = 1;
+  required .mobile.server.ConnectServerReply.ReplyType type = 2 [default = BUSY];
+  optional bytes extramsg = 3;
+}
+message FilterObj {
+  required bytes strexp = 1;
+  optional int32 index = 2 [default = -1];
+}
+message FilterRule {
+  enum RuleType {
+    BROAD_CAST = 0;
+    FILTER_EXP = 1;
+    ID_LIST = 2;
+  }
+  optional .mobile.server.FilterRule.RuleType type = 1;
+  optional .mobile.server.FilterObj filter = 2;
+  repeated bytes idlist = 3;
+}
+message FilterMessage {
+  optional bytes rule = 1;
+  required bytes method = 2;
+  optional bytes parameters = 3 [default = ""];
+  optional bytes cluster_id = 4;
+}
+message RouteData {
+  enum RouteType {
+    Default = 0;
+    Client2Server = 1;
+    Server2Client = 2;
+    Server2Sserver = 3;
+    Client2Service = 4;
+    Service2Client = 5;
+    Server2Service = 6;
+    Service2Server = 7;
+  }
+  optional .mobile.server.RouteData.RouteType type = 1 [default = Default];
+  optional bytes strid = 2 [default = ""];
+  optional int32 intid = 3 [default = -1];
+}
+message CustomMessage {
+  optional .mobile.server.RouteData route = 1;
+  optional bytes msg = 2;
+}
+message OutBandInfo {
+  optional bytes routes = 1;
+  required bytes message = 2;
+}
+message ServerInfo {
+  required bytes ip = 1;
+  required int32 port = 2;
+  optional bytes namespace = 3;
+  optional bytes extra = 4;
+  optional bytes cluster_id = 5;
+}
+message EntityMailbox {
+  required bytes entityid = 1;
+  required .mobile.server.ServerInfo serverinfo = 2;
+  optional bytes gate_id = 3;
+}
+message Game2GameMessage {
+  required bytes route_header = 1;
+  optional bytes channel_header = 2;
+  optional bytes payload = 3;
+}
+message EntityMessage {
+  optional bytes id = 1;
+  optional bytes payload = 2;
+  optional bytes channel_id = 3;
+  optional uint32 message_index = 4;
+  optional bytes routes = 5;
+  optional bool is_unreliable = 6;
+}

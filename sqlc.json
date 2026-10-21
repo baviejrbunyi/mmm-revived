@@ -1,0 +1,426 @@
+{
+  "version": "2",
+  "sql": [
+    {
+      "engine": "sqlite",
+      "schema": "database/schema.sql",
+      "queries": "database/queries.sql",
+      "gen": {
+        "go": {
+          "package": "database",
+          "out": "internal/database",
+          "sql_package": "database/sql",
+          "emit_prepared_queries": true,
+          "emit_empty_slices": true,
+          "omit_unused_structs": true,
+          "overrides": [
+            {
+              "column": "account_credentials.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "accounts.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "account_records.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "friends.owner",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "friends.peer",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "friend_requests.receiver",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "friend_requests.source",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "FriendSource"
+              }
+            },
+            {
+              "column": "friend_requests.sender",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "blocks.owner",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "blocks.peer",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "friend_gifts.sender",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "friend_gifts.receiver",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "chat_messages.sender",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "chat_messages.receiver",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "presence.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "social_times.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guilds.boss",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_members.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_applications.applicant",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_invites.player",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_invites.inviter",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_player_state.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_news.actor",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_news.subject",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_reports.reporter",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guilds.id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_members.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_applications.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_invites.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_news.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_reports.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_chat.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_chat.sender",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_members.role",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildRole"
+              }
+            },
+            {
+              "column": "account_records.category",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "RecordCategory"
+              }
+            },
+            {
+              "column": "community_messages.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "community_messages.scope",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "MessageScope"
+              }
+            },
+            {
+              "column": "mailbox.id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "MailID"
+              }
+            },
+            {
+              "column": "mailbox.owner",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "mailbox.status",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "MailStatus"
+              }
+            },
+            {
+              "column": "mailbox.reward_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "RewardID"
+              }
+            },
+            {
+              "column": "uid_history.old_uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "uid_history.new_uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "support_usage.owner",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "support_usage.borrower",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "support_usage.hero",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "HeroID"
+              }
+            },
+            {
+              "column": "support_refresh.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "world_membership.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "world_messages.sender",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "guild_wars.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_war_history.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_war_history.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "async_records.attacker",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "rank_entries.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "rank_entries.mode",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "RankMode"
+              }
+            },
+            {
+              "column": "invite_links.invitee",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
+              "column": "invite_links.inviter",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            }
+          ],
+          "initialisms": [
+            "id",
+            "uid"
+          ],
+          "emit_exported_queries": true
+        }
+      }
+    }
+  ]
+}

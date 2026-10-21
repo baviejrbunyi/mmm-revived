@@ -1,0 +1,267 @@
+package account
+
+import (
+	"maps"
+	"slices"
+
+	"mmm-revived/internal/calendar"
+	"mmm-revived/internal/model"
+)
+
+const (
+	DaySeconds          int64 = 86400
+	DailyRefreshSeconds int64 = 18000
+)
+
+func LogicDay(now int64) int64 {
+	offset := calendar.ClientTime(now) - DailyRefreshSeconds
+	day := offset / DaySeconds
+	if offset < 0 && offset%DaySeconds != 0 {
+		day--
+	}
+	return day
+}
+
+func NewRetailAccount(uid model.UserID, name string, createdAt int64, r *Rules, catalog Catalog) Account {
+	start := r.Defaults.Retail
+	a := Account{
+		Retail:     true,
+		UID:        uid,
+		Name:       name,
+		TeamName:   name,
+		CreatedAt:  createdAt,
+		LastLogin:  createdAt,
+		Level:      max(1, start.Level),
+		Items:      map[model.ItemID]int64{6: start.Energy},
+		Heroes:     map[model.HeroID]model.Hero{},
+		Guides:     map[string]string{},
+		Artifacts:  map[model.InstanceID]model.Artifact{},
+		Highlights: map[model.InstanceID]model.Highlight{},
+		Energy:     model.PlayerEnergy{Initialized: true, Day: LogicDay(createdAt), Refreshed: createdAt},
+	}
+	for _, id := range start.Heroes {
+		template, known := catalog.Heroes[id]
+		if !known {
+			continue
+		}
+		a.Heroes[id] = model.Hero{
+			ID:         id,
+			Level:      DefaultHeroLevel,
+			Star:       template.Star,
+			Talents:    maps.Clone(template.Talents),
+			AwakeIDs:   []int{},
+			Artifacts:  map[int]model.InstanceID{},
+			Highlights: map[int]model.InstanceID{},
+		}
+		a.Profile.ShownHeroes = append(a.Profile.ShownHeroes, id)
+	}
+	if len(a.Profile.ShownHeroes) > 0 {
+		a.Profile.Lobby.Hero = a.Profile.ShownHeroes[0]
+	}
+	a.Profile.Head, a.Profile.Frame, a.Profile.Background = start.Head, start.Frame, start.Background
+	return a
+}
+
+func (a *Account) BeginRetail(r *Rules) error {
+	start := r.Defaults.Retail
+	if err := a.GrantItems(r, start.Items); err != nil {
+		return err
+	}
+	if rule, known := r.Journey.NoviceTasks[start.NoviceTask]; known {
+		a.Journey.Novice.Task = start.NoviceTask
+		a.openNoviceNodes(rule.Nodes)
+	}
+	return nil
+}
+
+func (a *Account) RegenerateEnergy(r *Rules, now int64) bool {
+	if !a.Retail || r == nil {
+		return false
+	}
+	start := r.Defaults.Retail
+	if start.EnergySeconds <= 0 {
+		return false
+	}
+	energy, bank, refreshed := a.Items[6], a.Energy.Bank, a.Energy.Refreshed
+	if a.Energy.Refreshed <= 0 || a.Energy.Refreshed > now {
+		a.Energy.Refreshed = now
+	}
+	limit := r.TeamLevels[a.Level].EnergyLimit
+	if a.Items[6] < limit {
+		gained := min((now-a.Energy.Refreshed)/start.EnergySeconds, limit-a.Items[6])
+		a.Items[6] += gained
+		a.Energy.Refreshed += gained * start.EnergySeconds
+	}
+	if a.Items[6] >= limit {
+		if start.BankSeconds > 0 && a.Energy.Bank < start.BankLimit {
+			gained := min((now-a.Energy.Refreshed)/start.BankSeconds, start.BankLimit-a.Energy.Bank)
+			a.Energy.Bank += gained
+			a.Energy.Refreshed += gained * start.BankSeconds
+		}
+		if a.Energy.Bank >= start.BankLimit {
+			a.Energy.Refreshed = now
+		}
+	}
+	return energy != a.Items[6] || bank != a.Energy.Bank || refreshed != a.Energy.Refreshed
+}
+
+func (a *Account) levelTeam(r *Rules) {
+	from := a.Level
+	for {
+		current, known := r.TeamLevels[a.Level]
+		if _, exists := r.TeamLevels[a.Level+1]; !known || !exists || a.Retail && current.Break > a.TeamBreak {
+			break
+		}
+		if a.Retail && current.Experience <= 0 && current.Break > 0 {
+			a.Level++
+			continue
+		}
+		if current.Experience <= 0 || a.Experience < current.Experience {
+			break
+		}
+		a.Experience -= current.Experience
+		a.Level++
+	}
+	if a.Retail {
+		for level := from + 1; level <= a.Level; level++ {
+			a.Items[6] += r.TeamLevels[level].EnergyRecover
+		}
+	} else {
+		a.TeamBreak = TeamBreakAt(r, a.Level)
+	}
+}
+
+func TeamBreakAt(r *Rules, level int) int {
+	result := 0
+	for current := 1; current <= level; current++ {
+		result = max(result, r.TeamLevels[current].Break)
+	}
+	return result
+}
+
+func LevelEnergyRecovery(r *Rules, from, to int) int64 {
+	var total int64
+	for level := from + 1; level <= to; level++ {
+		total += r.TeamLevels[level].EnergyRecover
+	}
+	return total
+}
+
+func (a *Account) FinishTeamBreak(r *Rules, battle model.BattleID) (map[model.ItemID]int64, bool, error) {
+	if !a.Retail || r == nil {
+		return nil, false, nil
+	}
+	tag := r.TeamLevels[a.Level].Break
+	rule, known := r.Defaults.Retail.TeamBreaks[tag]
+	if !known || tag <= a.TeamBreak || rule.Battle != battle {
+		return nil, false, nil
+	}
+	if rule.Task != 0 && a.Tasks[rule.Task].Status < 3 {
+		return nil, false, rejected("team breakthrough is locked")
+	}
+	items := map[model.ItemID]int64{}
+	if rule.Reward != 0 {
+		var err error
+		if items, err = rewardItems(r, rule.Reward, 1); err != nil {
+			return nil, false, err
+		}
+	}
+	a.TeamBreak = tag
+	if err := a.GrantItems(r, items); err != nil {
+		return nil, false, err
+	}
+	return items, true, nil
+}
+
+func (a *Account) resetRetailDaily(r *Rules) {
+	daily := r.Defaults.Retail.Daily
+	if daily.PointItem != 0 {
+		a.Items[daily.PointItem] = 0
+	}
+	for _, id := range daily.PointTasks {
+		a.Tasks[id] = model.Task{Status: 2}
+	}
+	selected := map[model.TaskID]bool{}
+	if a.Level < daily.NewbieLevel {
+		for _, id := range daily.NewbieTasks {
+			selected[id] = true
+		}
+	} else {
+		for _, kind := range slices.Sorted(maps.Keys(daily.Counts)) {
+			candidates := []RetailDailyTask{}
+			for _, task := range daily.Tasks {
+				if task.Type == kind && task.Level <= a.Level && task.Weight > 0 {
+					candidates = append(candidates, task)
+				}
+			}
+			for range daily.Counts[kind] {
+				var total int64
+				for _, task := range candidates {
+					total += task.Weight
+				}
+				if total <= 0 {
+					break
+				}
+				roll, err := secureIntN(total)
+				if err != nil {
+					break
+				}
+				for index, task := range candidates {
+					if roll -= task.Weight; roll < 0 {
+						selected[task.Task] = true
+						candidates = slices.Delete(candidates, index, index+1)
+						break
+					}
+				}
+			}
+		}
+	}
+	for id, rule := range r.Tasks {
+		if rule.Daily && !selected[id] {
+			a.Tasks[id] = model.Task{Status: 5}
+		}
+	}
+}
+
+func (a *Account) retailCosmetics(c Catalog, kind int, initial model.ItemID) []model.ItemID {
+	owned := []model.ItemID{initial}
+	for _, id := range c.Cosmetics[kind] {
+		if id != initial && a.Items[id] > 0 {
+			owned = append(owned, id)
+		}
+	}
+	return owned
+}
+
+func (a *Account) retailSkins(c Catalog) map[model.SkinID]int {
+	skins := make(map[model.SkinID]int, len(c.DefaultSkins))
+	for _, id := range c.DefaultSkins {
+		skins[id] = 1
+	}
+	for item, skin := range c.SkinItems {
+		if a.Items[item] > 0 {
+			skins[skin] = 1
+		}
+	}
+	return skins
+}
+
+func (a *Account) OwnsCosmetic(c Catalog, kind int, item model.ItemID) bool {
+	if !slices.Contains(c.Cosmetics[kind], item) {
+		return false
+	}
+	if !a.Retail {
+		return true
+	}
+	switch item {
+	case DefaultHead, DefaultHeadFrame, DefaultBackground:
+		return true
+	}
+	return a.Items[item] > 0
+}
+
+func (a *Account) RollRetailDay(r *Rules, now int64) {
+	a.InitializeJourney(r, now)
+	a.InitializeEvents(r, now)
+	a.RefreshTasks(r)
+}
