@@ -18,6 +18,6 @@
 .env
 .env.*
 /content/*
-!/content/README.txt
+!/content/placeholder.txt
 /MMM-*.zip
 /MMM-*.zip.tmp
