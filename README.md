@@ -6,7 +6,7 @@ Private server for Marvel Mystic Mayhem.
 
 - [Go 1.27.2 or newer](https://go.dev/dl/)
 - [just](https://github.com/casey/just#installation)
-- The Marvel MM CN game client
+- [The Marvel MM CN game client](https://archive.org/details/marvel-mystic-mayhem-v-3-2262-full-build)
 
 ## Host a game
 
