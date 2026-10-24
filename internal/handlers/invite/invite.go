@@ -45,10 +45,20 @@ func (s service) bindInvite(p *server.Player, code string) error {
 	if err != nil {
 		return p.Send("onBindTargetFailed")
 	}
+	previous, _, err := s.Store.Inviter(p.Account.UID)
+	if err != nil {
+		return err
+	}
 	if err = s.Store.BindInvite(inviter, p.Account.UID); err != nil {
 		return p.Send("onBindTargetFailed")
 	}
-	if err = s.Sync(p, "inviteComp", "taskComp"); err != nil {
+	if previous == 0 {
+		if err = s.journeyInvite(p, func(a *account.Account, rules *account.Rules) (map[model.ItemID]int64, error) {
+			return a.ClaimInviteBindReward(rules)
+		}); err != nil {
+			return err
+		}
+	} else if err = s.Sync(p, "inviteComp", "taskComp"); err != nil {
 		return err
 	}
 	if other := s.Online(inviter); other != nil {

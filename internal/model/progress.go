@@ -28,6 +28,7 @@ type Mission struct {
 	BoxMessage     string                `json:"box_message" wire:"boxMsg"`
 	Visited        map[MementoChipID]int `json:"visited" wire:"visited"`
 	LokiRecord     map[MementoChipID]int `json:"loki_record" wire:"lokiRec"`
+	TeamSteps      map[int]int           `json:"team_steps" wire:"teamStep"`
 	Step           int                   `json:"step" wire:"step"`
 	Oxygen         int                   `json:"oxygen" wire:"oxygen"`
 	ShieldDecrease int                   `json:"shield_decrease" wire:"shieldDec"`
@@ -74,22 +75,50 @@ type ChallengeComponent struct {
 }
 
 type BossComponent struct {
-	Passed     map[int]int `wire:"bossPassed"`
-	Daily      map[int]int `wire:"dailyPassed"`
-	Rewards    []int       `wire:"scoreRwded"`
-	TotalScore int64       `wire:"totalScore"`
-	DailyCount int         `wire:"dailyNum"`
-	OpenID     int         `wire:"openId"`
-	Settled    int         `wire:"rankSettled"`
-	Records    []Empty     `wire:"bossRecord"`
+	Passed     map[int]int  `wire:"bossPassed"`
+	Daily      map[int]int  `wire:"dailyPassed"`
+	Rewards    []int        `wire:"scoreRwded"`
+	TotalScore int64        `wire:"totalScore"`
+	DailyCount int          `wire:"dailyNum"`
+	OpenID     int          `wire:"openId"`
+	Settled    int          `wire:"rankSettled"`
+	Records    []BossRecord `wire:"bossRecord"`
+}
+
+type BossRecord struct {
+	Open    int    `json:"open" wire:"-"`
+	Mission int    `json:"mission" wire:"bossMissionId"`
+	Score   int64  `json:"score" wire:"score"`
+	Time    int64  `json:"time" wire:"t"`
+	Lineup  string `json:"lineup" wire:"lineupDetail"`
 }
 
 type ManualComponent struct {
-	Monsters   map[int]int `wire:"monsterManual"`
-	Artifacts  map[int]int `wire:"artifactSuitManual"`
-	Highlights map[int]int `wire:"highlightManual"`
-	Items      map[int]int `wire:"itemManual"`
-	EasterEggs map[int]int `wire:"easterEgg2num"`
+	Monsters   map[int]int64 `wire:"monsterManual"`
+	Artifacts  map[int]int64 `wire:"artifactSuitManual"`
+	Highlights map[int]int64 `wire:"highlightManual"`
+	Items      map[int]int64 `wire:"itemManual"`
+	EasterEggs map[int]int   `wire:"easterEgg2num"`
+}
+
+type ManualState struct {
+	Version     int                   `json:"version"`
+	Monsters    map[int]int64         `json:"monsters"`
+	Items       map[ItemID]int64      `json:"items"`
+	Artifacts   map[ArtifactID]int64  `json:"artifacts"`
+	Highlights  map[HighlightID]int64 `json:"highlights"`
+	Suits       map[int]int64         `json:"suits"`
+	Eggs        map[ItemID]int        `json:"eggs"`
+	Bests       map[int]int64         `json:"bests"`
+	BossRecords []BossRecord          `json:"boss_records"`
+	Benefits    BenefitsState         `json:"benefits"`
+}
+
+type BenefitsState struct {
+	Week     int64           `json:"week"`
+	Weekly   []string        `json:"weekly"`
+	Lasting  []string        `json:"lasting"`
+	Observed map[string]bool `json:"observed"`
 }
 
 type PuzzleComponent struct {
@@ -97,8 +126,8 @@ type PuzzleComponent struct {
 }
 
 type AchievementComponent struct {
-	Achievements map[int]int `wire:"achieveInfo"`
-	Points       int64       `wire:"achievePoint"`
+	Achievements map[int]AchievementRecord `wire:"achieveInfo"`
+	Points       int64                     `wire:"achievePoint"`
 }
 
 type SpiralComponent struct {

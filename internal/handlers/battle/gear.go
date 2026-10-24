@@ -46,9 +46,6 @@ func battleGear(a *account.Account, rule account.BattleRule) (any, map[model.Her
 	artifacts, highlights := GearInfo(a)
 	var heroes map[model.HeroID]any
 	for id, template := range rule.TemplateHeroes {
-		if _, owned := a.Heroes[id]; owned {
-			continue
-		}
 		if heroes == nil {
 			heroes = make(map[model.HeroID]any, len(a.Heroes)+len(rule.TemplateHeroes))
 			for owned, hero := range a.Heroes {
@@ -66,6 +63,7 @@ func battleGear(a *account.Account, rule account.BattleRule) (any, map[model.Her
 			equipped[slot+1] = model.Artifact{ID: artifact.ID, Level: artifact.Level, Template: artifact.Template, Install: id, Sub: maps.Clone(artifact.Sub)}
 		}
 		artifacts[id] = equipped
+		delete(highlights, id)
 		if state.Highlight != nil {
 			highlights[id] = model.Highlight{ID: state.Highlight.ID, Level: state.Highlight.Level, Awake: state.Highlight.Awake, Install: id}
 		}
@@ -94,9 +92,17 @@ type battleInfo struct {
 	SeasonScience  []int            `wire:"seasonScienceNodeIds"`
 	HyperFlowBuffs []int            `wire:"hyper_flow_buffs"`
 	Bonds          map[string]int64 `wire:"bondAttr"`
+	SkinCollection int              `wire:"skinCollectionLv"`
 	Activity       model.ActivityID `wire:"activityId,omitempty"`
+	Environments   []int            `wire:"environmentIds,omitempty"`
+}
+
+var mayhemEnvironments = [...]int{1001, 1002, 1003, 1004, 1005, 1006, 1007}
+
+func mayhemEnvironment(parameter int) int {
+	return mayhemEnvironments[(max(parameter, 1)-1)%len(mayhemEnvironments)]
 }
 
 func newBattleInfo(s *server.Service, a *account.Account) battleInfo {
-	return battleInfo{TeamLevel: a.Level, SeasonScience: slices.Clone(a.Events.Season.Nodes), HyperFlowBuffs: []int{}, Bonds: a.BondAttributes(s.Store.Rules)}
+	return battleInfo{TeamLevel: a.Level, SeasonScience: slices.Clone(a.Events.Season.Nodes), HyperFlowBuffs: []int{}, Bonds: a.BondAttributes(s.Store.Rules), SkinCollection: a.SkinCollectionLevel(s.Store.Rules)}
 }

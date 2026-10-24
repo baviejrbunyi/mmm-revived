@@ -38,6 +38,8 @@ type Rules struct {
 	ItemTypes             map[model.ItemID]int                            `json:"item_types"`
 	ArtifactLevels        map[int]map[int]LevelRule                       `json:"artifact_levels"`
 	Skins                 map[model.SkinID]model.HeroID                   `json:"skins"`
+	SkinRarities          map[model.SkinID]int                            `json:"skin_rarities"`
+	SkinCollection        SkinCollectionRule                              `json:"skin_collection"`
 	Artifacts             map[model.ArtifactID]ArtifactRule               `json:"artifacts"`
 	HeroStars             map[int]map[model.ItemID]int64                  `json:"hero_stars"`
 	HeroTalents           map[string]TalentRule                           `json:"hero_talents"`
@@ -61,6 +63,8 @@ type Rules struct {
 	HighlightTemplates    map[model.HighlightID]HighlightTemplate         `json:"highlight_templates"`
 	Bonds                 map[int]BondRule                                `json:"bonds"`
 	ExchangeHeroes        []model.HeroID                                  `json:"exchange_heroes"`
+	Manual                ManualRules                                     `json:"manual"`
+	Economy               Economy                                         `json:"-"`
 }
 
 type HeroTraits struct {
@@ -70,13 +74,14 @@ type HeroTraits struct {
 }
 
 type PVPRoundRule struct {
-	NewHero         int `json:"new_hero"`
-	NewStar         int `json:"new_hero_star"`
-	NewPool         int `json:"new_hero_random_num"`
-	Upgrades        int `json:"up_hero_chance"`
-	UpgradePool     int `json:"up_hero_random_num"`
-	MaximumUpgrades int `json:"uptomax_hero_chance"`
-	MaximumPool     int `json:"uptomax_hero_random_num"`
+	NewHero         int   `json:"new_hero"`
+	NewStar         int   `json:"new_hero_star"`
+	NewPool         int   `json:"new_hero_random_num"`
+	Upgrades        int   `json:"up_hero_chance"`
+	UpgradePool     int   `json:"up_hero_random_num"`
+	MaximumUpgrades int   `json:"uptomax_hero_chance"`
+	MaximumPool     int   `json:"uptomax_hero_random_num"`
+	AIStars         []int `json:"ai_star"`
 }
 
 type PVPRule struct {
@@ -90,6 +95,7 @@ type PVPRule struct {
 	LossReward    model.RewardID `json:"lose_point"`
 	PointTasks    []model.TaskID `json:"point_task"`
 	WinTasks      []model.TaskID `json:"max_win_task"`
+	DayRecover    int            `json:"day_recover"`
 }
 
 type TeamLevelRule struct {
@@ -174,6 +180,9 @@ type TaskRule struct {
 	Scope        TaskScope      `json:"scope"`
 	Lists        map[int][]int  `json:"param_lists"`
 	Texts        map[int]string `json:"param_texts"`
+	Achievement  int            `json:"achievement"`
+	Points       int64          `json:"points"`
+	Targets      []int          `json:"targets"`
 
 	Target int            `json:"target"`
 	Type   int            `json:"complete_type"`
@@ -243,6 +252,7 @@ type MementoTileRule struct {
 	Camp      int                   `json:"camp"`
 	Parameter int64                 `json:"param"`
 	Targets   []model.MementoChipID `json:"targets"`
+	Team      int                   `json:"team"`
 }
 
 type BattleRule struct {

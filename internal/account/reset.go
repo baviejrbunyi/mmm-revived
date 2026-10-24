@@ -156,5 +156,5 @@ func (a *Account) FreeResetHighlight(r *Rules, id model.InstanceID) (map[model.I
 }
 
 func (a *Account) ResetActivityOpen(now int64) bool {
-	return a.Level >= 7 && now >= a.CreatedAt && now < a.CreatedAt+DefaultResetDuration
+	return a.Level >= 7 && now >= a.CreatedAt && LogicDay(now)-LogicDay(a.CreatedAt) <= DefaultResetDuration/DaySeconds
 }

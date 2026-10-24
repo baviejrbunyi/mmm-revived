@@ -114,11 +114,7 @@ func (s *Service) Login(p *Player, name, password string) (failure error) {
 	if err = session.Send(payload); err != nil {
 		return err
 	}
-	mails, err := s.Store.Mailbox(a.UID)
-	if err != nil {
-		return err
-	}
-	if err = p.Send("upMails", mails, 1); err != nil {
+	if err = s.SendMailbox(p); err != nil {
 		return err
 	}
 	if err = SyncTime(p); err != nil {

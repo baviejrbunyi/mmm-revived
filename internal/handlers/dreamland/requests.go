@@ -62,6 +62,7 @@ type MementoVisit struct {
 	Mission model.MissionID
 	Chip    model.MementoChipID
 	Heroes  []model.HeroID
+	Team    int
 }
 
 type BoxMessage struct {
@@ -80,11 +81,12 @@ func DecodeMementoVisit(c protocol.Call) (MementoVisit, error) {
 	}
 	var info struct {
 		Heroes []model.HeroID `json:"heroes"`
+		Team   int            `json:"callTeam"`
 	}
 	if err = c.Record(2, &info); err != nil {
 		return MementoVisit{}, err
 	}
-	return MementoVisit{Mission: mission, Chip: model.MementoChipID(chip), Heroes: info.Heroes}, nil
+	return MementoVisit{Mission: mission, Chip: model.MementoChipID(chip), Heroes: info.Heroes, Team: info.Team}, nil
 }
 
 func message(c protocol.Call, index int) (string, error) {

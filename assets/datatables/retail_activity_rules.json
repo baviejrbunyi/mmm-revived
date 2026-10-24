@@ -1,150 +1,136 @@
 {
   "activities": {
     "7201": {
-      "end": 1764244799,
+      "end": 1768528799,
       "level": 60,
-      "parameter": 1,
-      "start": 1762430400,
+      "parameter": 3,
+      "start": 1766714400,
       "type": 35
     },
     "7202": {
-      "end": 1766059199,
+      "end": 1770343199,
       "level": 60,
       "parameter": 2,
-      "start": 1764244800,
+      "start": 1768528800,
       "type": 35
     },
     "7203": {
-      "end": 1767873599,
+      "end": 1772157599,
       "level": 60,
       "parameter": 3,
-      "start": 1766059200,
+      "start": 1770343200,
       "type": 35
     },
     "7204": {
-      "end": 1769687999,
+      "end": 1773971999,
       "level": 60,
       "parameter": 2,
-      "start": 1767873600,
+      "start": 1772157600,
       "type": 35
     },
     "7205": {
-      "end": 1771502399,
+      "end": 1775786399,
       "level": 60,
       "parameter": 3,
-      "start": 1769688000,
+      "start": 1773972000,
       "type": 35
     },
     "7206": {
-      "end": 1773316799,
+      "end": 1777600799,
       "level": 60,
       "parameter": 2,
-      "start": 1771502400,
+      "start": 1775786400,
       "type": 35
     },
     "7207": {
-      "end": 1775131199,
+      "end": 1779415199,
       "level": 60,
       "parameter": 3,
-      "start": 1773316800,
+      "start": 1777600800,
       "type": 35
     },
     "7208": {
-      "end": 1776945599,
+      "end": 1781229599,
       "level": 60,
       "parameter": 2,
-      "start": 1775131200,
+      "start": 1779415200,
       "type": 35
     },
     "7209": {
-      "end": 1778759999,
+      "end": 1783043999,
       "level": 60,
       "parameter": 3,
-      "start": 1776945600,
+      "start": 1781229600,
       "type": 35
     },
     "7210": {
-      "end": 1780574399,
+      "end": 1784858399,
       "level": 60,
       "parameter": 2,
-      "start": 1778760000,
+      "start": 1783044000,
       "type": 35
     },
     "7211": {
-      "end": 1782388799,
+      "end": 1786672799,
       "level": 60,
       "parameter": 3,
-      "start": 1780574400,
+      "start": 1784858400,
       "type": 35
     },
     "7212": {
-      "end": 1784203199,
+      "end": 1788487199,
       "level": 60,
       "parameter": 2,
-      "start": 1782388800,
+      "start": 1786672800,
       "type": 35
     },
     "7213": {
-      "end": 1786017599,
+      "end": 1790301599,
       "level": 60,
       "parameter": 3,
-      "start": 1784203200,
+      "start": 1788487200,
       "type": 35
     },
     "7214": {
-      "end": 1787831999,
+      "end": 1792115999,
       "level": 60,
       "parameter": 2,
-      "start": 1786017600,
+      "start": 1790301600,
       "type": 35
     },
     "7215": {
-      "end": 1789646399,
+      "end": 1793930399,
       "level": 60,
       "parameter": 3,
-      "start": 1787832000,
+      "start": 1792116000,
       "type": 35
     },
     "7216": {
-      "end": 1791460799,
+      "end": 1795744799,
       "level": 60,
       "parameter": 2,
-      "start": 1789646400,
+      "start": 1793930400,
       "type": 35
     },
     "7217": {
-      "end": 1793275199,
+      "end": 1797559199,
       "level": 60,
       "parameter": 3,
-      "start": 1791460800,
+      "start": 1795744800,
       "type": 35
     },
     "7218": {
-      "end": 1795089599,
+      "end": 1799373599,
       "level": 60,
       "parameter": 2,
-      "start": 1793275200,
+      "start": 1797559200,
       "type": 35
     },
     "7219": {
-      "end": 1796903999,
+      "end": 1801187999,
       "level": 60,
       "parameter": 3,
-      "start": 1795089600,
-      "type": 35
-    },
-    "7220": {
-      "end": 1798718399,
-      "level": 60,
-      "parameter": 2,
-      "start": 1796904000,
-      "type": 35
-    },
-    "7221": {
-      "end": 1800532799,
-      "level": 60,
-      "parameter": 3,
-      "start": 1798718400,
+      "start": 1799373600,
       "type": 35
     }
   },
@@ -647,7 +633,7 @@
       "per_second": 20
     }
   },
-  "daily_refresh": 43200,
+  "daily_refresh": 18000,
   "invite_maximum": 10,
   "invite_reward_maximum": 5,
   "items": {
@@ -663,14 +649,5 @@
   "rewards": {
     "63110127": []
   },
-  "score_policy_provenance": "Reconstructed from reward_base_num, reward_time_num and time_limit; original server implementation unavailable",
-  "source_files": {
-    "activity_data_en": "f4382167e5f5ad5112fedcdb10cce4076b86b4aa42b84ebfcffb44ab181beccf",
-    "camp_challenge_data": "25feec884a4523a8df201b9d302e8e5f8f82127cc46374949b951bb87f758719",
-    "camp_challenge_node_data": "ed178f49fdd0423190a3e6c1833052a967f506f9d45e7b917c0edcfecd00fac1",
-    "camp_challenge_score_data": "58fe6f0bc501920b600770103478300fc1e560c8d28461a5b82a61a290dd9756",
-    "constant_data": "d79b8f3381ca8137e2e76fbe80495a3f40d109c740df1f1a23f12d90e73ab6ac",
-    "item_data_en": "1f7198c732c670f37ae23ced29b906f6ecd0ab610aaa09d70b4ff145227687b1",
-    "reward_data": "29d717a0a3c1aba104a62d0a023dbeb241047b5f0813a018539151b7aa4ea800"
-  }
+  "score_policy_provenance": "Reconstructed from reward_base_num, reward_time_num and time_limit; original server implementation unavailable"
 }

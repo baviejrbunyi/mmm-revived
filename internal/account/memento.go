@@ -17,11 +17,16 @@ func (a *Account) MissionActive(r *Rules, id model.MissionID) bool {
 	return a.CurrentStory == id
 }
 
+const mementoGreenGoblin = 4
+
 func initializeMemento(mission *model.Mission, rule MissionRule, tiles map[model.MementoChipID]MementoTileRule) {
 	mission.Oxygen = rule.Switches[3]
 	for id, tile := range tiles {
 		if tile.Initial {
 			mission.Visited[id] = 0
+			if rule.Switches[mementoGreenGoblin] != 0 {
+				mission.Visited[id] = max(1, tile.Team)
+			}
 		}
 	}
 }
@@ -107,7 +112,7 @@ func (a *Account) MementoBattle(r *Rules, id model.MissionID, chip model.Memento
 	return nil
 }
 
-func (a *Account) visitMemento(r *Rules, id model.MissionID, chip model.MementoChipID, heroes []model.HeroID, battleStars int) error {
+func (a *Account) visitMemento(r *Rules, id model.MissionID, chip model.MementoChipID, heroes []model.HeroID, team, battleStars int) error {
 	mission, tile, err := a.mementoTile(r, id, chip)
 	if err != nil {
 		return err
@@ -134,12 +139,25 @@ func (a *Account) visitMemento(r *Rules, id model.MissionID, chip model.MementoC
 	}
 	rule := r.Missions[id]
 	mission.Visited, mission.LokiRecord, mission.Heroes = maps.Clone(mission.Visited), maps.Clone(mission.LokiRecord), maps.Clone(mission.Heroes)
+	mission.TeamSteps = maps.Clone(mission.TeamSteps)
+	if mission.TeamSteps == nil {
+		mission.TeamSteps = map[int]int{}
+	}
 	mission.Step++
-	mission.Visited[chip] = mission.Step
+	mark := mission.Step
+	goblin := rule.Switches[mementoGreenGoblin] != 0
+	if goblin {
+		if team != 2 || isBattle || tile.Type == model.MementoDeployment {
+			team = 1
+		}
+		mark = team
+		mission.TeamSteps[team]++
+	}
+	mission.Visited[chip] = mark
 	if rule.Switches[2] != 0 {
 		mission.LokiRecord[chip] = mission.Step
 	}
-	if rule.Switches[3] > 0 {
+	if rule.Switches[3] > 0 && tile.Type != model.MementoOxygen {
 		mission.Oxygen--
 	}
 	switch tile.Type {
@@ -162,12 +180,15 @@ func (a *Account) visitMemento(r *Rules, id model.MissionID, chip model.MementoC
 		mission.ShieldDecrease++
 	case model.MementoPortal:
 		for _, target := range tile.Targets {
-			mission.Visited[target] = mission.Step
+			mission.Visited[target] = mark
 		}
 	case model.MementoRecover:
 		clear(mission.Heroes)
 	case model.MementoFreeStep:
 		mission.Step--
+		if goblin {
+			mission.TeamSteps[team]--
+		}
 	case model.MementoOxygen:
 		mission.Oxygen = min(mission.Oxygen+int(tile.Parameter), rule.Switches[3])
 	case model.MementoBoss:
@@ -209,8 +230,8 @@ func (a *Account) visitMemento(r *Rules, id model.MissionID, chip model.MementoC
 	return nil
 }
 
-func (a *Account) VisitMemento(r *Rules, id model.MissionID, chip model.MementoChipID, heroes []model.HeroID) error {
-	return a.visitMemento(r, id, chip, heroes, 0)
+func (a *Account) VisitMemento(r *Rules, id model.MissionID, chip model.MementoChipID, heroes []model.HeroID, team int) error {
+	return a.visitMemento(r, id, chip, heroes, team, 0)
 }
 
 func (a *Account) FinishMementoBattle(r *Rules, id model.MissionID, chip model.MementoChipID, stars int, selected []model.HeroID) error {
@@ -222,7 +243,7 @@ func (a *Account) FinishMementoBattle(r *Rules, id model.MissionID, chip model.M
 			return rejected("Memento hero is unavailable")
 		}
 	}
-	if err := a.visitMemento(r, id, chip, nil, stars); err != nil {
+	if err := a.visitMemento(r, id, chip, nil, 1, stars); err != nil {
 		return err
 	}
 	mission := a.Missions[id]

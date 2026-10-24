@@ -231,7 +231,7 @@ func (s service) sendChat(p *server.Player, r SendChat) error {
 		if err := s.Sync(p, "taskComp"); err != nil {
 			return err
 		}
-		return guild.Reject(p, fmt.Errorf("%w: world chat is unavailable", social.ErrRejected))
+		return guild.SendWorldChat(s.Service, p, r.Kind, r.Text)
 	}
 	var message model.ChatMessage
 	err := s.Store.Update(p.Account, func(tx *sql.Tx) error {

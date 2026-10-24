@@ -79,12 +79,14 @@ func initializeArtifactGrowth(r *Rules, artifact *model.Artifact) error {
 		return nil
 	}
 	template := r.ArtifactTemplates[artifact.Template]
+	artifact.Order = nil
 	for range min(3, max(1, r.Artifacts[artifact.ID].Star-2)) {
 		name, value, err := rollAttribute(template, artifact.Growth)
 		if err != nil {
 			return err
 		}
 		artifact.Growth[name] = []int64{value}
+		artifact.Order = append(artifact.Order, name)
 	}
 	artifact.Sub = attributeTotals(artifact.Growth)
 	return nil
@@ -104,8 +106,10 @@ func (a *Account) RefineArtifact(r *Rules, id model.InstanceID, locked string) e
 	}
 	template := r.ArtifactTemplates[artifact.Template]
 	pending := map[string][]int64{}
+	var order model.AttributeOrder
 	if locked != "" {
 		pending[locked] = slices.Clone(artifact.Growth[locked])
+		order = append(order, locked)
 	}
 	counts := make([]int, 0, len(artifact.Growth))
 	for name, rolls := range artifact.Growth {
@@ -130,6 +134,7 @@ func (a *Account) RefineArtifact(r *Rules, id model.InstanceID, locked string) e
 			rolls = append(rolls, value)
 		}
 		pending[name] = rolls
+		order = append(order, name)
 	}
 	cost := map[model.ItemID]int64{1: 30000, 30: 5}
 	if locked != "" {
@@ -138,7 +143,7 @@ func (a *Account) RefineArtifact(r *Rules, id model.InstanceID, locked string) e
 	if err := a.Spend(cost); err != nil {
 		return err
 	}
-	original.PendingGrowth = pending
+	original.PendingGrowth, original.PendingOrder = pending, order
 	a.Artifacts[id] = original
 	return nil
 }
@@ -148,9 +153,9 @@ func (a *Account) ConfirmArtifactRefine(id model.InstanceID) error {
 	if !owned || len(artifact.PendingGrowth) == 0 {
 		return rejected("artifact has no pending refinement")
 	}
-	artifact.Growth = artifact.PendingGrowth
+	artifact.Growth, artifact.Order = artifact.PendingGrowth, artifact.PendingOrder
 	artifact.Sub = attributeTotals(artifact.Growth)
-	artifact.PendingGrowth = map[string][]int64{}
+	artifact.PendingGrowth, artifact.PendingOrder = map[string][]int64{}, nil
 	a.Artifacts[id] = artifact
 	return nil
 }

@@ -6,11 +6,10 @@ import (
 	"math"
 	"slices"
 
-	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/model"
 )
 
-var journeyActivityTypes = [...]int{10, 18, 20, 22, 24, 26, 30}
+var journeyActivityTypes = [...]int{1, 3, 6, 7, 10, 12, 16, 17, 18, 20, 22, 24, 25, 26, 28, 30, 32}
 
 var (
 	ErrJourneyPassUnavailable = fmt.Errorf("%w: battle pass is unavailable", ErrProgression)
@@ -101,7 +100,7 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 		}
 		state.Pass.Tasks = slices.Clone(rule.Tasks)
 		state.Pass.WeeklyTasks = slices.Clone(rule.WeeklyTasks)
-		if week := shopPeriod(2, now); state.Pass.Week != week {
+		if week := LogicWeek(now); state.Pass.Week != week {
 			state.Pass.Week = week
 			state.Pass.WeeklyXP = 0
 			for _, taskID := range rule.WeeklyTasks {
@@ -128,6 +127,9 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 			activity = model.JourneyActivity{Initialized: now, TrailerRewards: map[int]int{}, NodeStars: map[int]int{}, Missions: map[int]model.JourneyMission{}, MiniGames: map[int]int64{}, Pass: newJourneyPass(0)}
 		}
 		activity.Open = true
+		if rule.Type == 20 {
+			activity.BossGroup, activity.BossTickets = r.limitedBoss(calendar)
+		}
 		if rule.Type == 20 && activity.Pass.ID == 0 {
 			passID := rule.PassID
 			if passID == 0 && rule.Parameter == 1 {
@@ -199,6 +201,7 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 				activity.BattleNodes = append(activity.BattleNodes, value)
 			}
 		}
+		a.refreshJourneyEvent(r, rule, &activity, now)
 		state.Activities[id] = activity
 	}
 	a.InitializeRetailPVP(r, now)
@@ -220,7 +223,7 @@ func (a *Account) JourneySnapshot(profile *model.Avatar, now int64) {
 	}
 	pass := a.Journey.Pass
 	profile.BattlePass = model.BattlePassComponent{PassID: pass.ID, Level: pass.Level, Experience: pass.Experience, WeeklyXP: pass.WeeklyXP, ActiveType: pass.Active, FreeRewards: pass.Free, PaidRewards: pass.Paid, CurrentTasks: pass.Tasks, WeeklyTasks: pass.WeeklyTasks}
-	profile.MonthlyPass = model.MonthlyPassComponent{ExpiresAt: a.Journey.Monthly.Expires, LastReward: a.Journey.Monthly.LastDaily, RewardReady: a.Journey.Monthly.Expires > now && a.Journey.Monthly.LastDaily/86400 != now/86400}
+	profile.MonthlyPass = model.MonthlyPassComponent{ExpiresAt: a.Journey.Monthly.Expires, LastReward: a.Journey.Monthly.LastDaily, RewardReady: a.Journey.Monthly.Expires > now && LogicDay(a.Journey.Monthly.LastDaily) != LogicDay(now)}
 	for id, activity := range a.Journey.Activities {
 		if !activity.Open {
 			continue
@@ -238,10 +241,10 @@ func (a *Account) JourneySnapshot(profile *model.Avatar, now int64) {
 
 func (a *Account) journeyActivityAvailable(rule JourneyActivityRule, now int64, offset int64) bool {
 	calendar := now + offset
-	if a.Level < rule.Level || calendar < rule.Start || rule.End > 0 && calendar > rule.End {
+	if a.Level < rule.Level && !a.journeyLoginUnlocked(rule, now) || calendar < rule.Start || rule.End > 0 && calendar > rule.End {
 		return false
 	}
-	return rule.Duration <= 0 || now < a.CreatedAt+int64(rule.Duration)*86400
+	return rule.Duration <= 0 || LogicDay(now)-LogicDay(a.CreatedAt) <= int64(rule.Duration)
 }
 
 func (a *Account) JourneyActivityRule(r *Rules, id model.ActivityID, kind int, now int64) (JourneyActivityRule, error) {
@@ -256,10 +259,7 @@ func (a *Account) JourneyActivityRule(r *Rules, id model.ActivityID, kind int, n
 }
 
 func trailerUnlocked(initialized int64, days int, now int64) bool {
-	const refresh = 18000
-	start := calendar.ClientTime(initialized) - refresh
-	start -= start % 86400
-	return calendar.ClientTime(now) >= start+refresh+int64(days-1)*86400
+	return LogicDay(now)-LogicDay(initialized) >= int64(days-1)
 }
 
 func (a *Account) openNoviceNodes(nodes []int) {
@@ -496,7 +496,7 @@ func (a *Account) AddJourneyPassExperience(r *Rules, amount int64, weekly bool, 
 		return rejected("invalid pass experience")
 	}
 	pass := &a.Journey.Pass
-	if week := shopPeriod(2, now); pass.Week != week {
+	if week := LogicWeek(now); pass.Week != week {
 		pass.Week = week
 		pass.WeeklyXP = 0
 	}
@@ -531,7 +531,7 @@ func (a *Account) ClaimMonthlyPass(r *Rules, daily bool, now int64) (map[model.I
 	monthly := &a.Journey.Monthly
 	reward, count := r.Journey.MonthlyPurchaseReward, int64(monthly.PendingPurchase)
 	if daily {
-		if monthly.Expires <= now || monthly.LastDaily > 0 && monthly.LastDaily/86400 == now/86400 {
+		if monthly.Expires <= now || monthly.LastDaily > 0 && LogicDay(monthly.LastDaily) == LogicDay(now) {
 			return map[model.ItemID]int64{}, nil
 		}
 		reward, count = r.Journey.MonthlyDailyReward, 1

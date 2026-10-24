@@ -3,24 +3,22 @@ package account
 import (
 	"maps"
 	"slices"
+	"time"
 
 	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/model"
 )
 
 const (
-	DaySeconds          int64 = 86400
-	DailyRefreshSeconds int64 = 18000
+	DaySeconds          = calendar.DaySeconds
+	DailyRefreshSeconds = calendar.RefreshSeconds
 )
 
-func LogicDay(now int64) int64 {
-	offset := calendar.ClientTime(now) - DailyRefreshSeconds
-	day := offset / DaySeconds
-	if offset < 0 && offset%DaySeconds != 0 {
-		day--
-	}
-	return day
-}
+func LogicDay(now int64) int64 { return calendar.LogicDay(now) }
+
+func LogicWeek(now int64) int64 { return calendar.LogicWeek(now) }
+
+func LogicMonth(now int64) int64 { return calendar.LogicMonth(now) }
 
 func NewRetailAccount(uid model.UserID, name string, createdAt int64, r *Rules, catalog Catalog) Account {
 	start := r.Defaults.Retail
@@ -233,35 +231,16 @@ func (a *Account) retailCosmetics(c Catalog, kind int, initial model.ItemID) []m
 	return owned
 }
 
-func (a *Account) retailSkins(c Catalog) map[model.SkinID]int {
-	skins := make(map[model.SkinID]int, len(c.DefaultSkins))
-	for _, id := range c.DefaultSkins {
-		skins[id] = 1
-	}
-	for item, skin := range c.SkinItems {
-		if a.Items[item] > 0 {
-			skins[skin] = 1
-		}
-	}
-	return skins
-}
-
 func (a *Account) OwnsCosmetic(c Catalog, kind int, item model.ItemID) bool {
-	if !slices.Contains(c.Cosmetics[kind], item) {
-		return false
-	}
-	if !a.Retail {
-		return true
-	}
-	switch item {
-	case DefaultHead, DefaultHeadFrame, DefaultBackground:
-		return true
-	}
-	return a.Items[item] > 0
+	return a.ownsPermanentCosmetic(c, kind, item) || a.ownsTimedCosmetic(c, kind, item, time.Now().Unix())
 }
 
-func (a *Account) RollRetailDay(r *Rules, now int64) {
+func (a *Account) RollDay(r *Rules, now int64) error {
+	a.AdvanceCalendar(r, now)
 	a.InitializeJourney(r, now)
 	a.InitializeEvents(r, now)
+	a.InitializeRogue(r, now)
+	a.PrepareNetwork(r.Network, now)
 	a.RefreshTasks(r)
+	return a.PrepareDispatch(r, now)
 }

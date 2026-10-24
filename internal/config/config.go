@@ -16,6 +16,7 @@ import (
 
 	"mmm-revived/internal/account"
 	"mmm-revived/internal/json"
+	"mmm-revived/internal/model"
 )
 
 const (
@@ -34,23 +35,30 @@ type Keys struct {
 }
 
 type Config struct {
-	Host       string `json:"host" toml:"host"`
-	Port       int    `json:"port" toml:"port"`
-	HTTPPort   int    `json:"httpPort" toml:"httpPort"`
-	Start      string `json:"start" toml:"start"`
-	FreshStart bool   `json:"fresh_start" toml:"fresh_start"`
-	Keys       Keys   `json:"keys" toml:"keys"`
-	dir        string
+	Host            string  `json:"host" toml:"host"`
+	Port            int     `json:"port" toml:"port"`
+	HTTPPort        int     `json:"httpPort" toml:"httpPort"`
+	Start           string  `json:"start" toml:"start"`
+	FreshStart      bool    `json:"fresh_start" toml:"fresh_start"`
+	InfiniteEnergy  bool    `json:"infinite_energy" toml:"infinite_energy"`
+	FreeDraws       bool    `json:"free_draws" toml:"free_draws"`
+	DreamstoneShop  bool    `json:"dreamstone_shop" toml:"dreamstone_shop"`
+	AllBanners      bool    `json:"all_banners" toml:"all_banners"`
+	FeaturedBanners []int32 `json:"featured_banners" toml:"featured_banners"`
+	CalendarLoop    bool    `json:"calendar_loop" toml:"calendar_loop"`
+	Keys            Keys    `json:"keys" toml:"keys"`
+	dir             string
 }
 
 func Default() Config {
 	return Config{
-		Host:       "127.0.0.1",
-		Port:       14100,
-		HTTPPort:   18080,
-		Start:      string(account.StartItems),
-		FreshStart: true,
-		Keys:       Keys{Private: "keys/server.pem", Public: "keys/client-public.pem"},
+		Host:         "127.0.0.1",
+		Port:         14100,
+		HTTPPort:     18080,
+		Start:        string(account.StartItems),
+		FreshStart:   true,
+		CalendarLoop: true,
+		Keys:         Keys{Private: "keys/server.pem", Public: "keys/client-public.pem"},
 	}
 }
 
@@ -111,6 +119,12 @@ port = %d
 httpPort = %d
 fresh_start = %t # All new accounts will have 0 progression and 0 items
 start = %s # "items" | "unlocked" (used when fresh_start = false)
+infinite_energy = %t # Energy refills to max after every use
+free_draws = %t # Draws cost no keys (keeps 10 of each key)
+dreamstone_shop = %t # Show the Dreamstone top-up page in the shop (top-ups are free)
+all_banners = %t # Open every limited banner
+featured_banners = %s # Limited banner ids to open instead of the calendar rotation, e.g. [5, 12]
+calendar_loop = %t # Repeat the dated content calendar (Battle Pass, events, banners, PvP, guild wars) forever
 
 [keys]
 private = %s
@@ -135,11 +149,19 @@ func quote(value string) string {
 	return builder.String()
 }
 
+func banners(ids []int32) string {
+	values := make([]string, len(ids))
+	for i, id := range ids {
+		values[i] = strconv.Itoa(int(id))
+	}
+	return "[" + strings.Join(values, ", ") + "]"
+}
+
 func (c Config) Write(path string) error {
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	data := fmt.Sprintf(fileTemplate, quote(c.Host), c.Port, c.HTTPPort, c.FreshStart, quote(c.Start), quote(c.Keys.Private), quote(c.Keys.Public))
+	data := fmt.Sprintf(fileTemplate, quote(c.Host), c.Port, c.HTTPPort, c.FreshStart, quote(c.Start), c.InfiniteEnergy, c.FreeDraws, c.DreamstoneShop, c.AllBanners, banners(c.FeaturedBanners), c.CalendarLoop, quote(c.Keys.Private), quote(c.Keys.Public))
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
@@ -165,6 +187,11 @@ func (c Config) Validate() error {
 	if _, err := account.ParseStart(c.Start); err != nil {
 		problems = append(problems, err)
 	}
+	for _, id := range c.FeaturedBanners {
+		if id <= 0 {
+			problems = append(problems, fmt.Errorf("featured_banners must be draw pool ids, got %d", id))
+		}
+	}
 	if c.Keys.Private == "" || c.Keys.Public == "" || c.Keys.Private == c.Keys.Public {
 		problems = append(problems, errors.New("keys.private and keys.public must be distinct paths"))
 	}
@@ -176,6 +203,14 @@ func (c Config) Address() string { return net.JoinHostPort(c.Host, strconv.Itoa(
 func (c Config) HTTPAddress() string { return net.JoinHostPort(c.Host, strconv.Itoa(c.HTTPPort)) }
 
 func (c Config) StartMode() account.Start { return account.Start(c.Start) }
+
+func (c Config) Economy() account.EconomyOptions {
+	featured := make([]model.DrawPoolID, len(c.FeaturedBanners))
+	for i, id := range c.FeaturedBanners {
+		featured[i] = model.DrawPoolID(id)
+	}
+	return account.EconomyOptions{InfiniteEnergy: c.InfiniteEnergy, FreeDraws: c.FreeDraws, DreamstoneShop: c.DreamstoneShop, AllBanners: c.AllBanners, FeaturedBanners: featured}
+}
 
 func (c Config) Path(parts ...string) string {
 	path := filepath.Join(parts...)

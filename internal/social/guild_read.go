@@ -13,10 +13,8 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const weekSeconds = 7 * daySeconds
-
 func weekStart(now int64) int64 {
-	return (now+3*daySeconds)/weekSeconds*weekSeconds - 3*daySeconds
+	return (calendar.LogicWeek(now)*7-3)*daySeconds + calendar.RefreshSeconds
 }
 
 func (r *Repository) GuildSnapshot(uid model.UserID) (model.GuildComponent, error) {
@@ -42,7 +40,7 @@ func (r *Repository) GuildSnapshot(uid model.UserID) (model.GuildComponent, erro
 			result.Members[i] = entry.UID
 		}
 		result.Head, result.Frame = int(guild.Head), int(guild.Frame)
-		result.TaskRefreshed = weekStart(calendar.ClientTime(now))
+		result.TaskRefreshed = weekStart(now)
 		result.WarID, result.WarPhase = CurrentWar(now)
 		if result.WarID != 0 {
 			encoded, err := q.GetGuildWar(ctx, database.GetGuildWarParams{GuildID: guild.ID, War: int64(result.WarID)})
@@ -110,8 +108,12 @@ func (r *Repository) GuildMembers(uid model.UserID) (model.GuildMembersInfo, err
 	if err != nil {
 		return result, err
 	}
+	scores, err := r.weeklyScores(q, member.GuildID, time.Now().Unix())
+	if err != nil {
+		return result, err
+	}
 	for _, entry := range rows {
-		result.Members[entry.UID] = model.GuildMemberInfo{Joined: entry.Joined, Online: entry.Online, Offline: entry.Offline, Score: entry.Score, TotalScore: entry.HistoryScore}
+		result.Members[entry.UID] = model.GuildMemberInfo{Joined: entry.Joined, Online: entry.Online, Offline: entry.Offline, Score: scores[entry.UID], TotalScore: entry.HistoryScore}
 		switch entry.Role {
 		case model.GuildBoss:
 			result.Boss = entry.UID
@@ -198,7 +200,10 @@ func (r *Repository) GuildNews(uid model.UserID) ([]model.GuildNews, error) {
 	result := make([]model.GuildNews, len(rows))
 	for i, row := range rows {
 		parameters := []model.UserID{row.Actor}
-		if row.Subject != 0 {
+		switch {
+		case row.Kind == newsLevelUp:
+			parameters = []model.UserID{model.UserID(row.Value)}
+		case row.Subject != 0:
 			parameters = append(parameters, row.Subject)
 		}
 		result[i] = model.GuildNews{ID: row.ID, Kind: int(row.Kind), Time: row.Created, Parameters: parameters}

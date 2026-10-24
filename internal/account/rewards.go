@@ -165,7 +165,7 @@ func (a *Account) grantItems(r *Rules, quantities map[model.ItemID]int64, depth 
 				if err != nil {
 					return err
 				}
-				a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1}
+				a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1, Obtained: time.Now().Unix()}
 			}
 		case 1021, 1053:
 			for range amount {
@@ -183,14 +183,18 @@ func (a *Account) grantItems(r *Rules, quantities map[model.ItemID]int64, depth 
 				return rejected("unknown highlight reward")
 			}
 			for range amount {
-				a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1}
+				a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1, Obtained: time.Now().Unix()}
+			}
+		case timedItemType:
+			if !a.grantTimedCosmetic(r, rule, amount, time.Now().Unix()) {
+				a.Items[item] += amount
 			}
 		case 1032:
 			if !a.Retail {
 				a.Items[item] += amount
 				continue
 			}
-			if a.Items[item] <= 0 {
+			if !a.ownsSkin(r, model.SkinID(rule.Parameter)) {
 				a.Items[item] = 1
 				amount--
 			}
@@ -211,7 +215,7 @@ func (a *Account) createArtifact(r *Rules, id model.ArtifactID) error {
 	if err != nil {
 		return err
 	}
-	artifact := model.Artifact{ID: id, Level: 1, Template: template, PendingGrowth: map[string][]int64{}}
+	artifact := model.Artifact{ID: id, Level: 1, Template: template, PendingGrowth: map[string][]int64{}, Obtained: time.Now().Unix()}
 	if len(r.ArtifactTemplates) > 0 {
 		if err := initializeArtifactGrowth(r, &artifact); err != nil {
 			return err
@@ -285,7 +289,7 @@ func (a *Account) GrantItems(r *Rules, quantities map[model.ItemID]int64) error 
 	}
 	next := *a
 	next.Items, next.Heroes, next.Artifacts, next.Highlights, next.Tasks = maps.Clone(a.Items), maps.Clone(a.Heroes), maps.Clone(a.Artifacts), maps.Clone(a.Highlights), maps.Clone(a.Tasks)
-	next.LimitedHeroes = maps.Clone(a.LimitedHeroes)
+	next.LimitedHeroes, next.TimedCosmetics = maps.Clone(a.LimitedHeroes), maps.Clone(a.TimedCosmetics)
 	if next.Artifacts == nil {
 		next.Artifacts = map[model.InstanceID]model.Artifact{}
 	}

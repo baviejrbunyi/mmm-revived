@@ -13,11 +13,13 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"mmm-revived/internal/account"
 	"mmm-revived/internal/bootstrap"
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/config"
 	"mmm-revived/internal/gate"
 	"mmm-revived/internal/handlers"
@@ -67,6 +69,16 @@ func run(log *slog.Logger, c config.Config) error {
 	defer store.Close()
 	store.Start = c.StartMode()
 	store.Fresh = c.FreshStart
+	store.ConfigureCalendarLoop(c.CalendarLoop)
+	shift, err := store.ConfigureCalendar(nil)
+	if err != nil {
+		return fmt.Errorf("configure content calendar: %w", err)
+	}
+	start, period := calendar.Loop()
+	log.Info("content calendar", "offset_seconds", shift, "loop", c.CalendarLoop, "loop_start", time.Unix(start, 0).UTC(), "loop_days", period/calendar.DaySeconds, "loop_cycle", calendar.Cycle())
+	if err = store.ConfigureEconomy(c.Economy()); err != nil {
+		return fmt.Errorf("configure economy: %w", err)
+	}
 	web := bootstrap.Server{GateAddress: c.Address()}
 	patches, err := openPatches(log, c.Patches())
 	if err != nil {
@@ -86,11 +98,6 @@ func run(log *slog.Logger, c config.Config) error {
 			patches.ServeHTTP(w, r)
 		})
 	}
-	shift, err := store.ConfigureCalendar(nil)
-	if err != nil {
-		return fmt.Errorf("configure content calendar: %w", err)
-	}
-	log.Info("content calendar", "offset_seconds", shift)
 	listener, err := net.Listen("tcp", c.Address())
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)
@@ -104,7 +111,7 @@ func run(log *slog.Logger, c config.Config) error {
 	defer cancel()
 	service := server.NewService(store, server.Config{}, handlers.Register)
 	server := gate.Server{Key: key, Handler: service, Logger: log}
-	log.Info("server ready", "gate", listener.Addr(), "http", httpListener.Addr(), "start", c.Start, "fresh_start", c.FreshStart, "public_key", c.PublicKey())
+	log.Info("server ready", "gate", listener.Addr(), "http", httpListener.Addr(), "start", c.Start, "fresh_start", c.FreshStart, "infinite_energy", c.InfiniteEnergy, "free_draws", c.FreeDraws, "dreamstone_shop", c.DreamstoneShop, "all_banners", c.AllBanners, "featured_banners", c.FeaturedBanners, "public_key", c.PublicKey())
 	var running sync.WaitGroup
 	running.Go(func() { service.Run(ctx) })
 	results := make(chan error, 2)

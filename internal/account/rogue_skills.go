@@ -1,9 +1,16 @@
 package account
 
 import (
+	"maps"
 	"slices"
 
 	"mmm-revived/internal/model"
+)
+
+const (
+	rogueHeroPrefix  = "h"
+	rogueRelicPrefix = "r"
+	rogueSkillBase   = 7000000
 )
 
 type rogueTrigger uint8
@@ -164,6 +171,7 @@ func (a *Account) rogueSkills(r *Rules, event rogueTrigger, source model.RogueOb
 		value, level := carrier.relic, max(1, carrier.relic.Level)
 		id := value.ID
 		self := source.ID == id && carrier.index == sourceIndex
+		before := rogueSnapshot(run)
 		var err error
 		switch event {
 		case roguePrepare:
@@ -359,6 +367,7 @@ func (a *Account) rogueSkills(r *Rules, event rogueTrigger, source model.RogueOb
 		if err != nil {
 			return err
 		}
+		a.logRogueTrigger(before, run, carrier.oid, rogueSkillBase+id*100+level)
 	}
 	if event == rogueMerged && !onHero && source.ID == 2005 {
 		return a.rogueEnsureShop(r, 2, len(run.Shop), false)
@@ -394,4 +403,29 @@ func (a *Account) ApplyRogueBattleProgress(levels map[model.HeroID]int, deaths [
 		run.Objects[oid] = hero
 	}
 	return nil
+}
+
+type rogueState struct {
+	objects map[model.InstanceID]model.RogueObject
+	shop    map[int]model.RogueShopEntry
+	coin    int64
+	free    int
+}
+
+func rogueSnapshot(run *model.RogueRun) rogueState {
+	return rogueState{objects: maps.Clone(run.Objects), shop: maps.Clone(run.Shop), coin: run.Coin, free: run.FreeRefresh}
+}
+
+func (a *Account) logRogueTrigger(before rogueState, run *model.RogueRun, relic model.InstanceID, skill int) {
+	targets := []model.InstanceID{}
+	for _, oid := range slices.Sorted(maps.Keys(run.Objects)) {
+		value := run.Objects[oid]
+		if previous, existed := before.objects[oid]; existed && (previous.ID != value.ID || previous.Level != value.Level || previous.ExtraLevel != value.ExtraLevel || previous.Discount != value.Discount) {
+			targets = append(targets, oid)
+		}
+	}
+	if len(targets) == 0 && before.coin == run.Coin && before.free == run.FreeRefresh && maps.Equal(before.shop, run.Shop) {
+		return
+	}
+	a.RogueTriggers = append(a.RogueTriggers, model.RogueTrigger{Relic: relic, Skill: skill, Targets: targets})
 }

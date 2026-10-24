@@ -49,6 +49,19 @@ func RecordDeployment(value any) (map[model.HeroID]model.DeploymentHero, error) 
 	return heroes, nil
 }
 
+func MatchesDeployment(recorded map[model.HeroID]model.DeploymentHero, deployment []model.DeploymentHero) bool {
+	if len(recorded) != len(deployment) {
+		return false
+	}
+	for _, hero := range deployment {
+		entry, found := recorded[hero.Hero]
+		if !found || entry.Slot != hero.Slot || hero.Trial != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func DecodeRecord(record string) (map[any]any, error) {
 	if len(record) == 0 || len(record) > 1<<20 {
 		return nil, fmt.Errorf("%w: invalid asynchronous battle record size", account.ErrProgression)

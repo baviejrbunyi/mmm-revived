@@ -3,7 +3,6 @@ package multipvp
 import (
 	"database/sql"
 	"fmt"
-	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -111,7 +110,7 @@ func (s service) prepareBattle(p *server.Player, request battle.CreateBattle) (b
 	extra.Target = nil
 	extra.RetailTarget = &card
 	artifacts, highlights := battle.GearInfo(p.Account)
-	return true, p.Send("createBattle", request.Battle, p.Account.Events.Season.ID, 28, p.Account.Heroes, artifacts, highlights, model.Empty{}, model.Empty{}, model.AsyncBattleInfo{TeamLevel: p.Account.Level, Attacker: attacker, Defender: defender, Bonds: attacker.HeroInfo.Bonds}, extra, token)
+	return true, p.Send("createBattle", request.Battle, p.Account.Events.Season.ID, 28, p.Account.Heroes, artifacts, highlights, model.Empty{}, model.Empty{}, model.AsyncBattleInfo{TeamLevel: p.Account.Level, SkinCollection: attacker.HeroInfo.SkinCollection, Attacker: attacker, Defender: defender, Bonds: attacker.HeroInfo.Bonds}, extra, token)
 }
 
 func (s service) lockDeployment(p *server.Player, heroes []model.HeroID) error {
@@ -149,11 +148,7 @@ func (s service) finishBattle(p *server.Player, request battle.VerifyBattle) (bo
 	if err != nil {
 		return true, err
 	}
-	selected := map[model.HeroID]model.DeploymentHero{}
-	for _, hero := range p.Deployment {
-		selected[hero.Hero] = hero
-	}
-	if !reflect.DeepEqual(recorded, selected) {
+	if !battle.MatchesDeployment(recorded, p.Deployment) {
 		return true, fmt.Errorf("%w: Halloween replay deployment differs from authorized heroes", account.ErrProgression)
 	}
 	packet := request.Packet
@@ -214,6 +209,7 @@ func (s service) finishBattle(p *server.Player, request battle.VerifyBattle) (bo
 			}
 		}
 		p.Account.RecordJourneyBattleTasks(s.Store.Rules, 28, request.Win, request.Result.KillCount, 0, false)
+		p.Account.RecordJourneyBattleResult(s.Store.Rules, request.Battle, request.Win, packet)
 		return s.Store.RecordRank(tx, p.Account.UID, model.RankRetailPVP, int(id), p.Account.Journey.Activities[id].RetailPVP.Point, now)
 	})
 	if err != nil {
@@ -243,7 +239,7 @@ func (s service) replay(p *server.Player, id model.ActivityID, pending *model.Re
 		extra.RevengeIndex = pending.RevengeIndex - 1
 		extra.RevengeMineIndex = pending.Target.MineIndex
 	}
-	info := model.AsyncBattleInfo{TeamLevel: p.Account.Level, Attacker: p.Account.NetworkDefense(s.Store.Rules), Defender: pending.Defender, Bonds: p.Account.BondAttributes(s.Store.Rules)}
+	info := model.AsyncBattleInfo{TeamLevel: p.Account.Level, SkinCollection: p.Account.SkinCollectionLevel(s.Store.Rules), Attacker: p.Account.NetworkDefense(s.Store.Rules), Defender: pending.Defender, Bonds: p.Account.BondAttributes(s.Store.Rules)}
 	values := []any{p.Account.Heroes, p.Account.Artifacts, p.Account.Highlights, model.Empty{}, model.Empty{}, info, map[model.BattleID]battle.BattleExtra{r.Battle: extra}}
 	fields := []string{"1", pending.Token, strconv.FormatUint(uint64(p.Account.UID), 10), strconv.Itoa(int(r.Battle)), "0", "28", strconv.Itoa(r.Version), r.Record}
 	for _, value := range values {

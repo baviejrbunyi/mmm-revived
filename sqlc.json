@@ -400,6 +400,20 @@
               }
             },
             {
+              "column": "guild_contributions.guild_id",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "GuildID"
+              }
+            },
+            {
+              "column": "guild_contributions.uid",
+              "go_type": {
+                "import": "mmm-revived/internal/model",
+                "type": "UserID"
+              }
+            },
+            {
               "column": "invite_links.invitee",
               "go_type": {
                 "import": "mmm-revived/internal/model",

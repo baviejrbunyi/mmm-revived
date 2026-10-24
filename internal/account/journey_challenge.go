@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/bits"
 	"slices"
+	"time"
 
 	"mmm-revived/internal/model"
 )
@@ -37,10 +38,29 @@ func (a *Account) BeginJourneyChallenge(r *Rules, id int, battle model.BattleID,
 	if rule.Battle != battle {
 		return rejected("challenge battle does not match")
 	}
+	if a.doubleMaterialGroup(r, rule.Group) {
+		if _, err = a.doubleMaterialChances(r, rule.Group, count, time.Now().Unix()); err != nil {
+			return err
+		}
+	}
 	if err = a.Spend(map[model.ItemID]int64{6: rule.Energy * int64(count)}); err != nil {
 		return err
 	}
 	a.Journey.ChallengeRun = &model.JourneyChallengeRun{ID: id, Battle: battle, Count: count}
+	return nil
+}
+
+func (a *Account) energyExperience(energy int64) int64 {
+	if !a.Retail {
+		return 0
+	}
+	return max(0, energy)
+}
+
+func (a *Account) grantEnergyExperience(r *Rules, energy int64) error {
+	if experience := a.energyExperience(energy); experience > 0 {
+		return a.GrantItems(r, map[model.ItemID]int64{4: experience})
+	}
 	return nil
 }
 
@@ -49,13 +69,16 @@ func (a *Account) FinishJourneyChallenge(r *Rules, id int, battle model.BattleID
 	if run == nil || run.ID != id || run.Battle != battle || bitmap < 0 || bitmap > 7 || clearTime < 0 || clearTime > 86400 || kills < 0 || kills > 1000000 {
 		return nil, rejected("challenge result does not match active run")
 	}
-	if !won {
-		a.Journey.ChallengeRun = nil
-		return map[model.ItemID]int64{}, nil
-	}
 	rule, known := r.Journey.Challenges[id]
 	if !known || rule.Battle != battle {
 		return nil, rejected("unknown challenge")
+	}
+	if !won {
+		if err := a.grantEnergyExperience(r, rule.Energy*int64(run.Count)); err != nil {
+			return nil, err
+		}
+		a.Journey.ChallengeRun = nil
+		return map[model.ItemID]int64{}, nil
 	}
 	record := a.Journey.Challenges[id]
 	rewards, err := mergeJourneyRewards(r, rule.Rewards)
@@ -64,6 +87,9 @@ func (a *Account) FinishJourneyChallenge(r *Rules, id int, battle model.BattleID
 	}
 	rewards, err = multiplied(rewards, int64(run.Count))
 	if err != nil {
+		return nil, err
+	}
+	if rewards, err = a.consumeDoubleMaterial(r, rule.Group, run.Count, rewards); err != nil {
 		return nil, err
 	}
 	stars := max(record.Stars, bits.OnesCount(uint(bitmap)))
@@ -77,6 +103,9 @@ func (a *Account) FinishJourneyChallenge(r *Rules, id int, battle model.BattleID
 	extra, err := mergeJourneyRewards(r, first)
 	if err != nil {
 		return nil, err
+	}
+	if experience := a.energyExperience(rule.Energy * int64(run.Count)); experience > 0 {
+		extra[4] += experience
 	}
 	for item, count := range extra {
 		if rewards[item] > math.MaxInt64-count {
@@ -111,11 +140,17 @@ func (a *Account) SweepJourneyChallenge(r *Rules, id, count int) (map[model.Item
 	if err != nil {
 		return nil, err
 	}
+	if quantities, err = a.consumeDoubleMaterial(r, rule.Group, count, quantities); err != nil {
+		return nil, err
+	}
 	cost := map[model.ItemID]int64{6: rule.Energy * int64(count), 40: int64(count)}
 	next := *a
 	next.Items = maps.Clone(a.Items)
 	if err = next.Spend(cost); err != nil {
 		return nil, err
+	}
+	if experience := a.energyExperience(cost[6]); experience > 0 {
+		quantities[4] += experience
 	}
 	if err = next.GrantItems(r, quantities); err != nil {
 		return nil, err

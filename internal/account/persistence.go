@@ -145,12 +145,22 @@ func (s *Store) saveAtomic(a *Account, operation func(*sql.Tx) error) error {
 		}
 	}()
 	if s.Rules != nil {
+		if err = s.advanceAccountCalendar(tx, a, time.Now().Unix()); err != nil {
+			return err
+		}
 		a.InitializeJourney(s.Rules, time.Now().Unix())
 	}
 	if operation != nil {
+		level := a.Level
 		if err = operation(tx); err != nil {
 			return err
 		}
+		if s.Rules != nil && a.Level != level {
+			a.InitializeJourney(s.Rules, time.Now().Unix())
+		}
+	}
+	if _, err = s.DeliverSeasonMail(tx, a, time.Now().Unix()); err != nil {
+		return err
 	}
 	records, err := s.write(a, tx)
 	if err != nil {
@@ -172,6 +182,11 @@ func (s *Store) write(a *Account, tx *sql.Tx) (map[recordKey][]byte, error) {
 		if err := a.ProcessAutomaticTasks(s.Rules, time.Now().Unix()); err != nil {
 			return nil, err
 		}
+		a.applyEconomy(s.Rules)
+		a.ObserveManual(s.Rules, time.Now().Unix())
+	}
+	if err := s.creditGuildContribution(tx, a); err != nil {
+		return nil, err
 	}
 	profile, err := profileData(a)
 	if err != nil {
@@ -293,5 +308,6 @@ func (s *Store) restore(uid model.UserID, profile []byte) (*Account, error) {
 		}
 	}
 	s.saved[uid] = records
+	a.migrateLogicDays(time.Now().Unix())
 	return &a, nil
 }

@@ -26,9 +26,25 @@ func network[T any](s service, decode func(protocol.Call) (T, error), handle fun
 		if s.Store.Rules == nil {
 			return fmt.Errorf("%w: network rules unavailable", account.ErrProgression)
 		}
-		p.Account.PrepareNetwork(s.Store.Rules.Network, now)
+		if err := s.prepareSeason(p, now); err != nil {
+			return err
+		}
 		return handle(p, request, now)
 	})
+}
+
+func (s service) prepareSeason(p *server.Player, now int64) error {
+	season := p.Account.Network.Activity
+	p.Account.PrepareAsyncPVP(s.Store.Rules, now)
+	if season != 0 && season != p.Account.Network.Activity {
+		if err := s.SaveAndSync(p, "activityComp", "taskComp"); err != nil {
+			return err
+		}
+		if err := s.syncNetwork(p); err != nil {
+			return err
+		}
+	}
+	return s.DeliverSeasonMail(p)
 }
 
 func sendWorld[T any](p *server.Player, method string, value T) error {
@@ -117,8 +133,7 @@ func (s service) personalRanks(p *server.Player, q RankQuery, guild bool, now in
 func (s service) syncNetwork(p *server.Player) error {
 	profile := p.Account.NetworkSnapshot(time.Now().Unix())
 	if s.Store.Rules != nil {
-		rule := s.Store.Rules.Network.Activities[p.Account.Network.Activity]
-		profile.Environments = slices.Clone(rule.Environments)
+		profile.Environments = p.Account.NetworkEnvironments(s.Store.Rules.Network)
 	}
 	ctx := context.Background()
 	var err error

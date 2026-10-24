@@ -25,7 +25,7 @@ func Register(srv *server.Service, r *server.Router) {
 		return p.Send("onGetMostUseHero", battle, s.mostUsedHeroes(p))
 	}))
 	r.Handle("setGuide", rpc.Bind(DecodeGuide, s.setGuide))
-	r.HandleAll(rpc.Bare(func(*server.Player) error { return nil }), "noviceStartSaLog", "noviceEndSaLog", "unlockMonsterManual", "recordPlotFinish", "report", "reachNewbie", "acsdkCheatCheck", "acsdkHttpProxy")
+	r.HandleAll(rpc.Bare(func(*server.Player) error { return nil }), "noviceStartSaLog", "noviceEndSaLog", "recordPlotFinish", "report", "reachNewbie", "acsdkCheatCheck", "acsdkHttpProxy")
 	r.HandleAll(offline, "afterBindMobile", "checkGuestBind", "getBindMobileReward", "getSurveyReward", "ngpApplyPrime", "ngpApplyPrimeConfirm", "ngpLoginFromGame", "ngpPrimeEmailAuthCodePreCheck", "ngpPrimeEmailPreCheckConfirm", "pullHotfix", "refreshResource")
 	r.Handle("checkDiscordBind", rpc.Bind(protocol.DecodeIgnore, func(p *server.Player, _ struct{}) error { return p.Send("onCheckDiscordBind", false) }))
 	r.Handle("getUnimatrixToken", rpc.Bare(func(p *server.Player) error {

@@ -14,8 +14,13 @@ import (
 )
 
 func (s service) pvpRule(p *server.Player, activity model.ActivityID) (account.PVPRule, error) {
+	if p.State == server.Lobby {
+		if err := s.season(p); err != nil {
+			return account.PVPRule{}, err
+		}
+	}
 	rule, ok := s.Store.Rules.PVP[activity]
-	if p.State != server.Lobby || !ok || activity != account.DefaultPVPActivity {
+	if p.State != server.Lobby || !ok || activity != p.Account.RealtimeActivity() {
 		return rule, fmt.Errorf("%w: activity is not open", account.ErrProgression)
 	}
 	return rule, nil
@@ -79,6 +84,9 @@ func (s service) pvpAction(p *server.Player, action func() error) error {
 	if p.State != server.Lobby {
 		return fmt.Errorf("%w: player is not in lobby", account.ErrProgression)
 	}
+	if err := s.season(p); err != nil {
+		return err
+	}
 	if err := action(); err != nil {
 		return err
 	}
@@ -86,8 +94,13 @@ func (s service) pvpAction(p *server.Player, action func() error) error {
 }
 
 func (s service) claimActivityTasks(p *server.Player, r ActivityTasks) error {
+	if p.State == server.Lobby {
+		if err := s.season(p); err != nil {
+			return err
+		}
+	}
 	rule, ok := s.Store.Rules.PVP[r.Activity]
-	if !ok || r.Activity != account.DefaultPVPActivity {
+	if !ok || r.Activity != p.Account.RealtimeActivity() {
 		return fmt.Errorf("%w: activity is not open", account.ErrProgression)
 	}
 	rewards := make([]model.RewardID, 0, len(r.Tasks))

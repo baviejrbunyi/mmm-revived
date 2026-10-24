@@ -22,31 +22,36 @@ const (
 )
 
 type Player struct {
-	CampActivity    model.ActivityID
-	CampNode        int
-	Deployment      []model.DeploymentHero
-	ActivityBattle  model.ActivityID
-	ActivityMission int
-	ActivityNode    int
-	Brawl           model.ActivityID
-	Challenge       int
-	Spiral          int
-	BossMission     int
-	RogueBattle     bool
-	Limited         map[model.HeroID]model.RogueLimitedHero
-	Chip            *model.MementoChipID
-	SelectedHeroes  []model.HeroID
-	LastBattleWon   bool
-	Account         *account.Account
-	BattleID        model.BattleID
-	State           BattleState
-	properties      *actor.State
-	Nonce           string
-	Mission         model.MissionID
-	Session         *gate.Session
-	Room            *Room
-	Level           int
-	Day             int64
+	CampActivity          model.ActivityID
+	CampNode              int
+	Deployment            []model.DeploymentHero
+	ActivityBattle        model.ActivityID
+	ActivityMission       int
+	ActivityNode          int
+	Brawl                 model.ActivityID
+	LimitedBoss           model.ActivityID
+	LimitedBossGroup      int
+	LimitedBossDifficulty int
+	Challenge             int
+	Spiral                int
+	BossMission           int
+	RogueBattle           bool
+	Limited               map[model.HeroID]model.RogueLimitedHero
+	Chip                  *model.MementoChipID
+	SelectedHeroes        []model.HeroID
+	LastBattleWon         bool
+	Account               *account.Account
+	BattleID              model.BattleID
+	State                 BattleState
+	properties            *actor.State
+	Nonce                 string
+	Mission               model.MissionID
+	Session               *gate.Session
+	Room                  *Room
+	Level                 int
+	Day                   int64
+	mailSeen              model.MailID
+	mailReady             bool
 }
 
 type reply struct {

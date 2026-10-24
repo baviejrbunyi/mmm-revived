@@ -2,9 +2,10 @@ package gm
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"time"
 
+	"mmm-revived/internal/account"
 	"mmm-revived/internal/handlers/rogue"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/server"
@@ -17,7 +18,7 @@ func (s service) skipTutorial(p *server.Player) error {
 		return errGMRules
 	}
 	if p.Room != nil {
-		return errors.New("leave the multiplayer match before skipping the tutorial")
+		return fmt.Errorf("%w: leave the multiplayer match before skipping the tutorial", account.ErrProgression)
 	}
 	now := time.Now().Unix()
 	if err := s.Store.Update(p.Account, func(*sql.Tx) error {

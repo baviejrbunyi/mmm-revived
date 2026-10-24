@@ -94,3 +94,17 @@ func (a *Account) ShareJourneyInvite(r *Rules) error {
 	a.UpdateTask(3701, 1, 1)
 	return nil
 }
+
+func (a *Account) ClaimInviteBindReward(r *Rules) (map[model.ItemID]int64, error) {
+	if r.Journey.InviteBindReward == 0 {
+		return map[model.ItemID]int64{}, nil
+	}
+	quantities, err := rewardItems(r, r.Journey.InviteBindReward, 1)
+	if err != nil {
+		return nil, err
+	}
+	if err = a.GrantItems(r, quantities); err != nil {
+		return nil, err
+	}
+	return quantities, nil
+}

@@ -38,7 +38,7 @@ func (s service) nameCards(p *server.Player, r NameCards) error {
 		} else if online >= offline {
 			offline = max(a.LastLogin, online+1)
 		}
-		card := model.NameCard{Name: a.TeamName, Head: decimal(profile.Head), Frame: decimal(profile.Frame), Level: decimal(a.Level), Deleted: "0", Signature: profile.Signature, Story: decimal(storyMission(a.Passed)), Offline: decimal(offline), Online: decimal(online), SeasonLevel: decimal(a.Events.Season.Level), PVP: decimal(pvpScore(&a)), Heroes: decimal(entry.Heroes), Badge: decimal(profile.Badge), Background: decimal(profile.Background), Host: "1", Points: "0", Created: decimal(a.CreatedAt), Skins: decimal(len(s.Store.Catalog.Skins)), Server: "Local", GuildID: decimal(entry.Guild), GuildTitle: string(entry.GuildRole)}
+		card := model.NameCard{Name: a.TeamName, Head: decimal(profile.Head), Frame: decimal(profile.Frame), Level: decimal(a.Level), Deleted: "0", Signature: profile.Signature, Story: decimal(storyMission(a.Passed)), Offline: decimal(offline), Online: decimal(online), SeasonLevel: decimal(a.Events.Season.Level), PVP: decimal(pvpScore(&a)), Heroes: decimal(entry.Heroes), Badge: decimal(profile.Badge), Background: decimal(profile.Background), Host: "1", Points: "0", Created: decimal(a.CreatedAt), Skins: decimal(len(a.OwnedSkins(s.Store.Catalog))), Server: "Local", GuildID: decimal(entry.Guild), GuildTitle: string(entry.GuildRole)}
 		support := map[model.HeroID]model.Hero{}
 		for _, hero := range profile.SupportHeroes {
 			if value, ok := a.Heroes[hero]; ok {
@@ -80,10 +80,17 @@ func (s service) nameCards(p *server.Player, r NameCards) error {
 			}
 			selected[key] = value
 		}
+		if slices.Contains(r.Keys, "showTags") {
+			for _, key := range honorScores {
+				selected[strconv.Itoa(key)] = decimal(a.Manual.Bests[key])
+			}
+		}
 		cards = append(cards, selected)
 	}
 	return p.Send("onReqNameCard", r.Players, cards)
 }
+
+var honorScores = [...]int{1004102, 1004111, 1004121, 1004131, 2000000}
 
 func storyMission(passed map[model.MissionID]model.MissionProgress) model.MissionID {
 	for _, id := range storyMissions {

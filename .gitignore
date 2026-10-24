@@ -21,3 +21,6 @@
 !/content/placeholder.txt
 /MMM-*.zip
 /MMM-*.zip.tmp
+*.exe
+__pycache__/
+*.pyc

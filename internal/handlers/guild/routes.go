@@ -21,10 +21,7 @@ func Register(srv *server.Service, r *server.Router) {
 		}
 		return p.Send("onReqGuildInfo", 1, infos)
 	}))
-	r.Handle("clientReqGuildInfoAboutMembers", rpc.Bare(func(p *server.Player) error {
-		members, err := s.Store.Social.GuildMembers(p.Account.UID)
-		return sendResult(p, "onResponseGuildMembersInfo", members, err)
-	}))
+	r.Handle("clientReqGuildInfoAboutMembers", rpc.Bare(s.guildMembers))
 	r.Handle("clientReqGuildInfoAboutApply", rpc.Bare(func(p *server.Player) error {
 		applications, err := s.Store.Social.GuildApplications(p.Account.UID)
 		return sendResult(p, "onResponseGuildApplyInfo", applications, err)
@@ -61,6 +58,7 @@ func Register(srv *server.Service, r *server.Router) {
 	r.Handle("clientSetGuildAdmin", rpc.Bind(DecodeAdminDecision, s.setGuildAdmin))
 	r.Handle("clientReqTransferBoss", rpc.Bind(protocol.DecodePlayer, s.transferGuild))
 	r.Handle("clientReqReportGuild", rpc.Bind(DecodeGuildReport, s.reportGuild))
+	r.Handle("listWorldChannel", rpc.Bare(s.listWorld))
 	r.Handle("reqGuildLimitedHeads", rpc.Bare(func(p *server.Player) error {
 		return p.Send("onGetGuildLimitedHeads", model.Empty{}, model.Empty{})
 	}))

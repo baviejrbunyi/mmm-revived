@@ -13,6 +13,18 @@ type NetworkRules struct {
 	Wars       map[int]GuildWarRule           `json:"wars"`
 	Areas      map[int]GuildWarAreaRule       `json:"areas"`
 	WarLevels  map[int]GuildWarLevelRule      `json:"war_levels"`
+	Seasons    map[int]AsyncRankSeason        `json:"rank_seasons"`
+	Rankings   map[model.ActivityID]Ranking   `json:"season_rankings"`
+}
+
+type AsyncRankSeason struct {
+	Reset        int `json:"reset"`
+	Environments int `json:"environments"`
+}
+
+type Ranking struct {
+	Reward model.RewardID `json:"reward"`
+	Limit  int64          `json:"limit"`
 }
 
 type AsyncRankRule struct {

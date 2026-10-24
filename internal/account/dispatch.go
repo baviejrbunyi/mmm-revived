@@ -50,7 +50,7 @@ func (a *Account) dispatchOffers(r *Rules, state model.DispatchState) (model.Dis
 }
 
 func (a *Account) PrepareDispatch(r *Rules, now int64) error {
-	day := now / 86400
+	day := LogicDay(now)
 	if r == nil || len(r.DispatchMissions) == 0 || a.Level < 12 || a.Dispatch.Initialized && a.Dispatch.Day == day {
 		return nil
 	}
@@ -127,9 +127,9 @@ func (a *Account) CancelDispatch(id model.DispatchID, now int64) error {
 	return nil
 }
 
-func (a *Account) ClaimDispatch(r *Rules, ids []model.DispatchID, now int64) (map[model.ItemID]int64, error) {
+func (a *Account) ClaimDispatch(r *Rules, ids []model.DispatchID, now int64) (map[model.ItemID]int64, model.ItemID, error) {
 	if len(ids) == 0 || len(ids) > 20 {
-		return nil, rejected("invalid dispatch reward selection")
+		return nil, 0, rejected("invalid dispatch reward selection")
 	}
 	rewards := map[model.ItemID]int64{}
 	var heroes []model.HeroID
@@ -138,12 +138,12 @@ func (a *Account) ClaimDispatch(r *Rules, ids []model.DispatchID, now int64) (ma
 		mission, exists := a.Dispatch.Missions[id]
 		rule, known := r.DispatchMissions[mission.Type]
 		if !exists || !known || seen[id] || mission.Started == 0 || now < mission.Ends {
-			return nil, rejected("dispatch reward is not available")
+			return nil, 0, rejected("dispatch reward is not available")
 		}
 		seen[id] = true
 		items, err := rewardItems(r, rule.Reward, 1)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		addItems(rewards, items)
 		bonus := int64(0)
@@ -155,14 +155,18 @@ func (a *Account) ClaimDispatch(r *Rules, ids []model.DispatchID, now int64) (ma
 		if rule.ExtraReward != 0 && bonus > 0 {
 			items, err = rewardItems(r, rule.ExtraReward, bonus)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			addItems(rewards, items)
 		}
 		heroes = append(heroes, mission.Heroes...)
 	}
 	if err := a.GrantItems(r, rewards); err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	egg, err := a.rollDispatchEgg(r, len(ids), now)
+	if err != nil {
+		return nil, 0, err
 	}
 	a.Dispatch.Missions = maps.Clone(a.Dispatch.Missions)
 	for _, id := range ids {
@@ -170,5 +174,5 @@ func (a *Account) ClaimDispatch(r *Rules, ids []model.DispatchID, now int64) (ma
 	}
 	a.AddProficiency(r, heroes, 200)
 	a.RecordJourneyTaskEvent(r, 45, len(ids), 0)
-	return rewards, nil
+	return rewards, egg, nil
 }

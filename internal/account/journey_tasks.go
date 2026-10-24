@@ -27,7 +27,7 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 			return rejected("task is not claimable")
 		}
 		seen[id] = true
-		reward, err := mergeJourneyRewards(r, []model.RewardID{rule.Reward})
+		reward, err := mergeJourneyRewards(r, []model.RewardID{a.journeyTaskReward(id, rule)})
 		if err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 	next := *a
 	next.Tasks = maps.Clone(a.Tasks)
 	oldWeekly := next.Journey.Pass.WeeklyXP
-	if next.Journey.Pass.Week != shopPeriod(2, now) {
+	if next.Journey.Pass.Week != LogicWeek(now) {
 		oldWeekly = 0
 	}
 	if err := next.AddJourneyPassExperience(r, weeklyXP, true, now); err != nil {
@@ -79,10 +79,12 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 		return err
 	}
 	next.Items[37] += regularXP + awardedWeekly
+	next.Journey.TaskStats.Doubled = maps.Clone(next.Journey.TaskStats.Doubled)
 	for _, id := range ids {
 		task := next.Tasks[id]
 		task.Status = 4
 		next.Tasks[id] = task
+		delete(next.Journey.TaskStats.Doubled, id)
 	}
 	*a = next
 	return nil
@@ -100,7 +102,7 @@ func (a *Account) ProcessAutomaticTasks(r *Rules, now int64) error {
 		next.refreshJourneyTaskValuesAt(r, now)
 		var ready []model.TaskID
 		for id, rule := range r.Tasks {
-			if rule.AutoClaim == 1 && next.Tasks[id].Status == 3 && next.journeyTaskEnabled(r, id, rule, now) {
+			if next.Tasks[id].Status == 3 && (rule.AutoClaim == 1 || next.journeyEventAutoClaim(r, id, now)) && next.journeyTaskEnabled(r, id, rule, now) {
 				ready = append(ready, id)
 			}
 		}

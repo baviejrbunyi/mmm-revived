@@ -22,7 +22,9 @@ func Register(srv *server.Service, r *server.Router) {
 		}
 		var shared bool
 		if err := s.Store.Update(p.Account, func(*sql.Tx) (err error) {
-			shared, err = p.Account.ShareOnce(s.Store.Rules, time.Now().Unix())
+			if shared, err = p.Account.ShareOnce(s.Store.Rules, time.Now().Unix()); err == nil {
+				p.Account.RecordJourneyTaskEvent(s.Store.Rules, 59, 1, 0)
+			}
 			return err
 		}); err != nil {
 			return err

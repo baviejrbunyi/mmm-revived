@@ -21,7 +21,7 @@ func (a *Account) InitializeRetailShare(r *Rules, now int64) {
 		a.System.LastShare = now
 		return
 	}
-	if a.System.LastShare > 0 && a.System.LastShare/86400 < now/86400 && task.Status >= 3 {
+	if a.System.LastShare > 0 && LogicDay(a.System.LastShare) < LogicDay(now) && task.Status >= 3 {
 		a.Tasks[DailyShareTask] = model.Task{Status: 2}
 	}
 }
@@ -34,7 +34,7 @@ func (a *Account) ShareOnce(r *Rules, now int64) (bool, error) {
 	if !known || rule.Type != 59 || rule.AutoClaim != 1 || rule.Target < 1 || rule.Reward <= 0 {
 		return false, rejected("daily share task is unavailable")
 	}
-	if a.System.LastShare > now || a.System.LastShare > 0 && a.System.LastShare/86400 == now/86400 {
+	if a.System.LastShare > now || a.System.LastShare > 0 && LogicDay(a.System.LastShare) == LogicDay(now) {
 		return false, nil
 	}
 	next := *a
@@ -43,7 +43,7 @@ func (a *Account) ShareOnce(r *Rules, now int64) (bool, error) {
 		next.Tasks = map[model.TaskID]model.Task{}
 	}
 	next.InitializeRetailShare(r, now)
-	if next.System.LastShare > 0 && next.System.LastShare/86400 == now/86400 {
+	if next.System.LastShare > 0 && LogicDay(next.System.LastShare) == LogicDay(now) {
 		*a = next
 		return false, nil
 	}

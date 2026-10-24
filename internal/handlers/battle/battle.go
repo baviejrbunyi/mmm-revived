@@ -24,6 +24,7 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 	p.RogueBattle, p.BossMission, p.Limited = false, 0, nil
 	p.Challenge, p.Spiral = 0, 0
 	p.ActivityBattle, p.ActivityMission, p.ActivityNode, p.Brawl = 0, 0, 0, 0
+	p.LimitedBoss, p.LimitedBossGroup, p.LimitedBossDifficulty = 0, 0, 0
 	p.CampActivity, p.CampNode = 0, 0
 	p.Mission, p.Chip, p.Deployment = 0, nil, nil
 	for _, prepare := range s.modes.Prepare {
@@ -87,7 +88,13 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 		}
 		if r.Extra.Activity > 0 {
 			activity, known := rules.Journey.Activities[r.Extra.Activity]
-			if known && (activity.Type == 20 || activity.Type == 22) {
+			if known && activity.Type == 20 && r.Extra.OpenID > 0 {
+				if err := p.Account.BeginLimitedBoss(rules, r.Extra.Activity, r.Extra.OpenID, r.Extra.Difficulty, r.Battle, time.Now().Unix()); err != nil {
+					return err
+				}
+				p.LimitedBoss, p.LimitedBossGroup, p.LimitedBossDifficulty = r.Extra.Activity, r.Extra.OpenID, r.Extra.Difficulty
+				campaignMission = 0
+			} else if known && (activity.Type == 20 || activity.Type == 22) {
 				node := int(r.Extra.Node)
 				if activity.Type == 22 {
 					node = r.Extra.BattleNode
@@ -126,6 +133,7 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 					return account.ErrProgression
 				}
 				p.Brawl, info.Activity = r.Extra.Activity, r.Extra.Activity
+				info.Environments = []int{mayhemEnvironment(activity.Parameter)}
 				extraBattle = info
 			}
 		}
@@ -233,6 +241,15 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 				battleRewards[id] += count
 			}
 		}
+		if p.LimitedBoss > 0 {
+			items, err := p.Account.FinishLimitedBoss(s.Store.Rules, p.LimitedBoss, p.LimitedBossGroup, p.LimitedBossDifficulty, r.Win)
+			if err != nil {
+				return err
+			}
+			for id, count := range items {
+				battleRewards[id] += count
+			}
+		}
 		if p.CampActivity > 0 {
 			if err := p.Account.FinishRetailCamp(s.Store.Rules, p.CampActivity, p.CampNode, p.BattleID, r.Win, r.Result.Extra.UseTime, time.Now().Unix()); err != nil {
 				return err
@@ -285,6 +302,7 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 			if err := p.Account.FinishBossBattle(s.Store.Rules, p.BossMission, r.Win, r.Result.Extra.UseTime); err != nil {
 				return err
 			}
+			p.Account.RecordBossBattle(p.BossMission, r.Win, p.SelectedHeroes, time.Now().Unix())
 		}
 		if s.Store.Rules != nil {
 			group := s.Store.Rules.BattleModes[p.BattleID]
@@ -294,6 +312,7 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 			statistics := statisticsFrom(r.Packet)
 			p.Account.RecordJourneyBattleTasks(s.Store.Rules, group, r.Win, r.Result.KillCount, statistics.Mana, r.Result.Extra.UseAssist)
 			p.Account.RecordJourneyBattleStatistics(s.Store.Rules, statistics.Ultimates, statistics.Cards)
+			p.Account.RecordJourneyBattleResult(s.Store.Rules, p.BattleID, r.Win, r.Packet)
 			p.Account.CompleteJourneyBattle(s.Store.Rules, p.BattleID, r.Win, r.Result.StarBitmap, time.Now().Unix())
 			if r.Win {
 				items, broke, err := p.Account.FinishTeamBreak(s.Store.Rules, p.BattleID)

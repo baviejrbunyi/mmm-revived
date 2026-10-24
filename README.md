@@ -34,7 +34,24 @@ You do not need the content zip.
    just join "<game folder>" http://<host address>:18080
    ```
 
-2. Open the game and accept the download and restart prompts.
+3. Open the game and accept the download and restart prompts.
+
+## Updating
+
+When a new version of this project comes out:
+
+1. Close the game and stop the server (Ctrl+C).
+2. In the project directory, run:
+
+   ```
+   git pull
+   just configure "<game folder>"
+   just run
+   ```
+
+3. Open the game and accept the download and restart prompts.
+
+Friends who joined your server do not need to run anything: they get the update the next time they open the game. If their game stops connecting, they can run `git pull` and their `just join` command again.
 
 ## Config
 
@@ -47,6 +64,14 @@ Edit `build/config.toml`, then run `just configure "<game folder>"` and `just ru
 | `httpPort` | Download port (DLC) |
 | `fresh_start` | `true` = start from zero // `false` = have everything |
 | `start` | `"items"` = all items, `"unlocked"` = all items + story done |
+| `infinite_energy` | `true` = energy refills to max after every use (rewards and team XP unchanged) |
+| `free_draws` | `true` = draws cost no keys (keeps 10 of each key) |
+| `dreamstone_shop` | `true` = show the Dreamstone top-up page in the shop (top-ups are free) |
+| `all_banners` | `true` = open every limited banner |
+| `featured_banners` | Limited banners to open instead of the calendar rotation, e.g. `[5, 12]` (see below) |
+| `calendar_loop` | `true` (default) = replay the dated content (Battle Pass, events, banners, PvP, guild wars) in a 231-day loop so it never runs out // `false` = real dates only |
+
+Banner ids: 2 Iron Man, 3 Captain America, 4 Loki, 5 Invisible Woman, 6 Mister Fantastic, 7 Spider-Man, 8 Thor, 9 Gambit, 10 Juggernaut, 11 Namor, 12 Emma Frost, 13 Silver Surfer, 14 Doctor Strange, 15 Green Goblin, 17 Daredevil, 19 Magneto, 20 Storm, 21 Phoenix, 23 Venom, 25 Wolverine, 27 Cyclops, 29 Morgan le Fay. These options work with `fresh_start` and apply to existing accounts on the next login.
 
 ## What's added (Custom Content)
 

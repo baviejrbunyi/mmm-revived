@@ -84,7 +84,7 @@ func (s *Store) createAccountWithCredential(name string, credential *database.Cr
 	} else {
 		a = NewAccount(model.UserID(next), name, created, s.Catalog)
 	}
-	a.LastLogin = a.CreatedAt
+	a.LastLogin, a.DayScheme = a.CreatedAt, LogicDayScheme
 	a.Initialize(s.Catalog, s.Rules)
 	if err = a.PrepareDispatch(s.Rules, a.LastLogin); err != nil {
 		return nil, err

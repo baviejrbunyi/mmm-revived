@@ -4,7 +4,6 @@ import (
 	"maps"
 	"math"
 	"slices"
-	"time"
 
 	"mmm-revived/internal/model"
 )
@@ -14,12 +13,11 @@ const MaxBulkCount = math.MaxInt32
 func shopPeriod(kind int, now int64) int64 {
 	switch kind {
 	case 1:
-		return now / 86400
+		return LogicDay(now)
 	case 2:
-		return (now + 3*86400) / (7 * 86400)
+		return LogicWeek(now)
 	case 3:
-		date := time.Unix(now, 0).UTC()
-		return int64(date.Year()*12 + int(date.Month()))
+		return LogicMonth(now)
 	default:
 		return 0
 	}
@@ -205,6 +203,7 @@ func (a *Account) Craft(r *Rules, id model.CraftID, count int, materials map[mod
 	if err = a.exchange(r, cost, rewards); err != nil {
 		return nil, err
 	}
+	a.RecordJourneyTaskEvent(r, 79, count, 0)
 	return rewards, nil
 }
 

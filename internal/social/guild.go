@@ -27,7 +27,7 @@ type GuildLimits struct {
 	MaximumLevel       int
 }
 
-var DefaultGuildLimits = GuildLimits{CreationCost: 1000, Members: 30, Admins: 5, Applications: 50, PlayerApplications: 5, Invites: 5, LeaveCooldown: 86400, RequestLifetime: 86400, RenameCooldown: 604800, MaximumLevel: 80}
+var DefaultGuildLimits = GuildLimits{CreationCost: 1000, Members: 30, Admins: 5, Applications: 99, PlayerApplications: 5, Invites: 5, LeaveCooldown: 21600, RequestLifetime: 86400, RenameCooldown: 604800, MaximumLevel: 80}
 
 const (
 	newsCreated int64 = iota
@@ -161,7 +161,7 @@ func (r *Repository) ensureFreeGuild(q *database.Queries, uid model.UserID, code
 }
 
 func (r *Repository) checkGuildEntry(guild database.Guild, level int) error {
-	if guild.MemberCount >= int64(r.GuildLimits.Members) {
+	if guild.MemberCount >= int64(r.memberLimit(guild.Level)) {
 		return reject(CodeGuildFull, "guild is full")
 	}
 	if int64(level) < guild.MinimumLevel {

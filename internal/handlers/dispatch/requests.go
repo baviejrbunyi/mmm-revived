@@ -38,3 +38,17 @@ func DecodeDispatchStart(c protocol.Call) (DispatchStart, error) {
 	}
 	return r, err
 }
+
+func DecodeMonsters(c protocol.Call) ([]int, error) {
+	if len(c.Args) == 0 {
+		return nil, nil
+	}
+	list, _ := c.Args[0].([]any)
+	ids := make([]int, 0, min(len(list), 200))
+	for _, value := range list[:min(len(list), 200)] {
+		if n, err := protocol.Integer(value); err == nil && n > 0 && n <= math.MaxInt32 {
+			ids = append(ids, int(n))
+		}
+	}
+	return ids, nil
+}

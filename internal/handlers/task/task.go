@@ -18,7 +18,7 @@ func (s service) claimTasks(p *server.Player, tasks []model.TaskID) error {
 	if err := p.Account.ClaimTasks(rules, tasks); err != nil {
 		return err
 	}
-	if err := s.SaveAndSync(p, "taskComp", "itemComp", "heroComp"); err != nil {
+	if err := s.SaveAndSync(p, "taskComp", "itemComp", "heroComp", "achieveComp"); err != nil {
 		return err
 	}
 	ids := make([]model.RewardID, 0, len(tasks))

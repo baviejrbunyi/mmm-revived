@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/database"
 	"mmm-revived/internal/handlers/rogue"
 	"mmm-revived/internal/model"
@@ -102,9 +103,6 @@ func (s service) executeGM(p *server.Player, command model.GMCommand) error {
 		if _, err = s.Store.ConfigureCalendar(result.Clock); err != nil {
 			return err
 		}
-		if err = server.SyncTime(p); err != nil {
-			return err
-		}
 	}
 	if result.ResetBattle {
 		s.Queue().Cancel(p.Account.UID)
@@ -124,12 +122,8 @@ func (s service) executeGM(p *server.Player, command model.GMCommand) error {
 	if err = rogue.Sync(p); err != nil {
 		return err
 	}
-	if result.Mail != 0 {
-		mails, err := s.Store.Mailbox(p.Account.UID)
-		if err != nil {
-			return err
-		}
-		if err = p.Send("upMails", mails, 1); err != nil {
+	if result.Clock != nil {
+		if err = server.SyncTime(p); err != nil {
 			return err
 		}
 	}
@@ -175,7 +169,7 @@ func (s service) gmGuild(p *server.Player, tx *sql.Tx, action string, now int64)
 	case "reset_guild_war_ticket":
 		for id, value := range state.Members {
 			value.Tickets = 3
-			value.Day = now / 86400
+			value.Day = calendar.LogicDay(now)
 			state.Members[id] = value
 		}
 	case "send_box_gm":

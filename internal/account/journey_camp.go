@@ -4,8 +4,8 @@ import (
 	"maps"
 	"math"
 	"slices"
-	"time"
 
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/model"
 )
 
@@ -55,11 +55,7 @@ func (a *Account) BeginRetailCamp(r *Rules, id model.ActivityID, node int, battl
 	if err != nil {
 		return err
 	}
-	day := int(time.Unix(now+r.Journey.CalendarOffset-r.RetailActivity.DailyRefresh, 0).UTC().Weekday())
-	if day == 0 {
-		day = 7
-	}
-	if !slices.Contains(rule.Days, day) {
+	if !slices.Contains(rule.Days, calendar.LogicWeekday(now)) {
 		return rejected("camp node is closed today")
 	}
 	activity := a.Journey.Activities[id]

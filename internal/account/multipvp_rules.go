@@ -11,13 +11,16 @@ type RetailPVPRules struct {
 	AI               map[int]RetailPVPAIRule                  `json:"ai"`
 	DailyHeroAttacks int                                      `json:"daily_hero_attacks"`
 	MaximumRevenge   int                                      `json:"maximum_revenge"`
+	SettleDays       map[model.ActivityID]int                 `json:"settle_days"`
 }
 
 type RetailPVPMainRule struct {
-	DailyRefresh int   `json:"daily_refresh"`
-	Mines        []int `json:"mine_map"`
-	WinMine      int64 `json:"win_base_mine"`
-	WinPoint     int64 `json:"win_base_point"`
+	DailyRefresh  int            `json:"daily_refresh"`
+	Mines         []int          `json:"mine_map"`
+	WinMine       int64          `json:"win_base_mine"`
+	WinPoint      int64          `json:"win_base_point"`
+	RankingReward model.RewardID `json:"ranking_reward"`
+	RankingLimit  int64          `json:"request_ranking"`
 }
 
 type RetailPVPPointRule struct {
@@ -27,6 +30,8 @@ type RetailPVPPointRule struct {
 	Mines      int   `json:"mine"`
 	MineLimit  int64 `json:"mine_limit"`
 	PointLimit int64 `json:"point_limit"`
+	AIWeight   int64 `json:"ai_weight"`
+	AIRange    int   `json:"ai_range"`
 }
 
 type RetailPVPMineRule struct {

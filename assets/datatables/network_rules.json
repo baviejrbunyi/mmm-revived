@@ -176,13 +176,838 @@
       ],
       "environments": [
         1211,
-        1203,
+        1212,
         1202,
         1208,
         1213,
         1205
       ],
       "camps": []
+    },
+    "1104": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1211,
+        1209,
+        1202,
+        1212,
+        1213,
+        1205
+      ],
+      "camps": []
+    },
+    "1105": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1209,
+        1201,
+        1212,
+        1213,
+        1205
+      ],
+      "camps": []
+    },
+    "1106": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1214,
+        1212,
+        1216,
+        1217,
+        1218
+      ],
+      "camps": []
+    },
+    "1107": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1208,
+        1209,
+        1214,
+        1212,
+        1213
+      ],
+      "camps": []
+    },
+    "1108": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1201,
+        1206,
+        1213,
+        1214,
+        1212,
+        1222
+      ],
+      "camps": [
+        1219,
+        1220
+      ]
+    },
+    "1109": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1214,
+        1212,
+        1216,
+        1217,
+        1218
+      ],
+      "camps": [
+        1220,
+        1226
+      ]
+    },
+    "1110": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1208,
+        1206,
+        1215,
+        1201,
+        1214,
+        1212
+      ],
+      "camps": [
+        1219,
+        1223
+      ]
+    },
+    "1111": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1206,
+        1210,
+        1218,
+        1217,
+        1216
+      ],
+      "camps": [
+        1223,
+        1220
+      ]
+    },
+    "1112": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1218,
+        1202,
+        1210,
+        1213,
+        1214
+      ],
+      "camps": [
+        1223,
+        1224
+      ]
+    },
+    "1113": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1202,
+        1210,
+        1206,
+        1209,
+        1211,
+        1215
+      ],
+      "camps": [
+        1219,
+        1220
+      ]
+    },
+    "1114": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1213,
+        1211,
+        1212,
+        1215,
+        1201
+      ],
+      "camps": [
+        1225,
+        1220
+      ]
+    },
+    "1115": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1213,
+        1211,
+        1209,
+        1212,
+        1201,
+        1205
+      ],
+      "camps": [
+        1225,
+        1226
+      ]
+    },
+    "1116": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1208,
+        1206,
+        1215,
+        1201,
+        1214,
+        1212
+      ],
+      "camps": [
+        1219,
+        1223
+      ]
+    },
+    "1117": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1206,
+        1210,
+        1218,
+        1217,
+        1216
+      ],
+      "camps": [
+        1223,
+        1220
+      ]
+    },
+    "1118": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1218,
+        1202,
+        1210,
+        1213,
+        1214
+      ],
+      "camps": [
+        1223,
+        1224
+      ]
+    },
+    "1119": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1202,
+        1210,
+        1206,
+        1209,
+        1211,
+        1215
+      ],
+      "camps": [
+        1219,
+        1220
+      ]
+    },
+    "1120": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1213,
+        1211,
+        1212,
+        1215,
+        1201
+      ],
+      "camps": [
+        1225,
+        1220
+      ]
+    },
+    "1121": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1213,
+        1211,
+        1209,
+        1212,
+        1201,
+        1205
+      ],
+      "camps": [
+        1225,
+        1226
+      ]
+    },
+    "1122": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1208,
+        1206,
+        1215,
+        1201,
+        1214,
+        1212
+      ],
+      "camps": [
+        1219,
+        1223
+      ]
+    },
+    "1123": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1206,
+        1210,
+        1218,
+        1217,
+        1216
+      ],
+      "camps": [
+        1223,
+        1220
+      ]
+    },
+    "1124": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1218,
+        1202,
+        1210,
+        1213,
+        1214
+      ],
+      "camps": [
+        1223,
+        1224
+      ]
+    },
+    "1125": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1202,
+        1210,
+        1206,
+        1209,
+        1211,
+        1215
+      ],
+      "camps": [
+        1219,
+        1220
+      ]
+    },
+    "1126": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1213,
+        1211,
+        1212,
+        1215,
+        1201
+      ],
+      "camps": [
+        1225,
+        1220
+      ]
+    },
+    "1127": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1213,
+        1211,
+        1209,
+        1212,
+        1201,
+        1205
+      ],
+      "camps": [
+        1225,
+        1226
+      ]
+    },
+    "1128": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1208,
+        1206,
+        1215,
+        1201,
+        1214,
+        1212
+      ],
+      "camps": [
+        1219,
+        1223
+      ]
+    },
+    "1129": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1206,
+        1210,
+        1218,
+        1217,
+        1216
+      ],
+      "camps": [
+        1223,
+        1220
+      ]
+    },
+    "1130": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1205,
+        1218,
+        1202,
+        1210,
+        1213,
+        1214
+      ],
+      "camps": [
+        1223,
+        1224
+      ]
+    },
+    "1131": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1202,
+        1210,
+        1206,
+        1209,
+        1211,
+        1215
+      ],
+      "camps": [
+        1219,
+        1220
+      ]
+    },
+    "1132": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1206,
+        1213,
+        1211,
+        1212,
+        1215,
+        1201
+      ],
+      "camps": [
+        1225,
+        1220
+      ]
+    },
+    "1133": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1213,
+        1211,
+        1209,
+        1212,
+        1201,
+        1205
+      ],
+      "camps": [
+        1225,
+        1226
+      ]
+    },
+    "1134": {
+      "battles": [
+        60001,
+        60002
+      ],
+      "attempts": 5,
+      "refreshes": 5,
+      "tasks": [
+        4111,
+        4112,
+        4113,
+        4114,
+        4115
+      ],
+      "environments": [
+        1208,
+        1206,
+        1215,
+        1201,
+        1214,
+        1212
+      ],
+      "camps": [
+        1219,
+        1223
+      ]
     }
   },
   "wars": {
@@ -228,6 +1053,380 @@
         104
       ],
       "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "4": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "5": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "6": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "7": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10011,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "8": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "9": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "10": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10011,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "11": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "12": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "13": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10011,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "14": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "15": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "16": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10011,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "17": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "18": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "19": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10011,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "20": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "21": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "22": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10011,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "23": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10021,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "101": 60810011,
+        "102": 60810012,
+        "103": 60810013,
+        "104": 60810014
+      }
+    },
+    "24": {
+      "areas": [
+        201,
+        202,
+        203,
+        204
+      ],
+      "boss_group": 10031,
+      "boss_hp": 2000,
+      "boss_reward": 60810001,
+      "area_rewards": {
+        "201": 60810011,
+        "202": 60810012,
+        "203": 60810013,
+        "204": 60810014
+      }
+    },
+    "25": {
+      "areas": [
+        101,
+        102,
+        103,
+        104
+      ],
+      "boss_group": 10011,
       "boss_hp": 2000,
       "boss_reward": 60810001,
       "area_rewards": {
@@ -306,6 +1505,74 @@
           10332
         ]
       ]
+    },
+    "201": {
+      "hp": 4500,
+      "sets": [
+        [
+          20111,
+          20112
+        ],
+        [
+          20121,
+          20122
+        ],
+        [
+          20131,
+          20132
+        ]
+      ]
+    },
+    "202": {
+      "hp": 4500,
+      "sets": [
+        [
+          20211,
+          20212
+        ],
+        [
+          20221,
+          20222
+        ],
+        [
+          20231,
+          20232
+        ]
+      ]
+    },
+    "203": {
+      "hp": 4500,
+      "sets": [
+        [
+          20311,
+          20312
+        ],
+        [
+          20321,
+          20322
+        ],
+        [
+          20331,
+          20332
+        ]
+      ]
+    },
+    "204": {
+      "hp": 4500,
+      "sets": [
+        [
+          20411,
+          20412
+        ],
+        [
+          20421,
+          20422
+        ],
+        [
+          20431,
+          20432
+        ]
+      ]
     }
   },
   "war_levels": {
@@ -353,7 +1620,7 @@
       "group": 10112,
       "battle": 81125,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -403,7 +1670,7 @@
       "group": 10011,
       "battle": 80115,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 60,
       "assist": 12,
@@ -443,7 +1710,7 @@
       "group": 10421,
       "battle": 84215,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -493,7 +1760,7 @@
       "group": 10422,
       "battle": 84225,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -543,7 +1810,7 @@
       "group": 10321,
       "battle": 83215,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -593,7 +1860,7 @@
       "group": 10322,
       "battle": 83225,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -643,7 +1910,7 @@
       "group": 10221,
       "battle": 82215,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -693,7 +1960,7 @@
       "group": 10222,
       "battle": 82225,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -743,7 +2010,7 @@
       "group": 10121,
       "battle": 81215,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -793,7 +2060,7 @@
       "group": 10122,
       "battle": 81225,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -843,7 +2110,7 @@
       "group": 10021,
       "battle": 80215,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 60,
       "assist": 12,
@@ -883,7 +2150,7 @@
       "group": 10431,
       "battle": 84315,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -933,7 +2200,7 @@
       "group": 10432,
       "battle": 84325,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -983,7 +2250,7 @@
       "group": 10331,
       "battle": 83315,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1033,7 +2300,7 @@
       "group": 10332,
       "battle": 83325,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -1083,7 +2350,7 @@
       "group": 10231,
       "battle": 82315,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1153,7 +2420,7 @@
       "group": 10232,
       "battle": 82325,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -1203,7 +2470,7 @@
       "group": 10412,
       "battle": 84125,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -1253,7 +2520,7 @@
       "group": 10131,
       "battle": 81315,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1323,7 +2590,7 @@
       "group": 10132,
       "battle": 81325,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -1373,7 +2640,7 @@
       "group": 10312,
       "battle": 83125,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -1423,7 +2690,7 @@
       "group": 10211,
       "battle": 82115,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1473,7 +2740,7 @@
       "group": 10212,
       "battle": 82125,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 50,
       "medals": 50,
       "assist": 10,
@@ -1503,7 +2770,7 @@
       "group": 10411,
       "battle": 84115,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1563,7 +2830,7 @@
       "group": 10111,
       "battle": 81115,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1583,7 +2850,7 @@
       "group": 10311,
       "battle": 83115,
       "minimum_level": 61,
-      "maximum_level": 80,
+      "maximum_level": 90,
       "reduction": 40,
       "medals": 40,
       "assist": 10,
@@ -1608,6 +2875,1256 @@
       "medals": 30,
       "assist": 6,
       "reward": 60811112
+    },
+    "201222": {
+      "group": 20122,
+      "battle": 81242,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "201223": {
+      "group": 20122,
+      "battle": 81243,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811222
+    },
+    "201224": {
+      "group": 20122,
+      "battle": 81244,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811223
+    },
+    "201225": {
+      "group": 20122,
+      "battle": 81245,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811224
+    },
+    "204223": {
+      "group": 20422,
+      "battle": 84243,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811222
+    },
+    "204224": {
+      "group": 20422,
+      "battle": 84244,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811223
+    },
+    "204225": {
+      "group": 20422,
+      "battle": 84245,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811224
+    },
+    "204321": {
+      "group": 20432,
+      "battle": 84341,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "204312": {
+      "group": 20431,
+      "battle": 84332,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "204313": {
+      "group": 20431,
+      "battle": 84333,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811312
+    },
+    "204314": {
+      "group": 20431,
+      "battle": 84334,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811313
+    },
+    "204315": {
+      "group": 20431,
+      "battle": 84335,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811314
+    },
+    "204311": {
+      "group": 20431,
+      "battle": 84331,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "204322": {
+      "group": 20432,
+      "battle": 84342,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "204323": {
+      "group": 20432,
+      "battle": 84343,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811322
+    },
+    "204324": {
+      "group": 20432,
+      "battle": 84344,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811323
+    },
+    "204325": {
+      "group": 20432,
+      "battle": 84345,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811324
+    },
+    "204221": {
+      "group": 20422,
+      "battle": 84241,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "201115": {
+      "group": 20111,
+      "battle": 81135,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811114
+    },
+    "201114": {
+      "group": 20111,
+      "battle": 81134,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811113
+    },
+    "204213": {
+      "group": 20421,
+      "battle": 84233,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811212
+    },
+    "204212": {
+      "group": 20421,
+      "battle": 84232,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "203312": {
+      "group": 20331,
+      "battle": 83332,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "203313": {
+      "group": 20331,
+      "battle": 83333,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811312
+    },
+    "203314": {
+      "group": 20331,
+      "battle": 83334,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811313
+    },
+    "203315": {
+      "group": 20331,
+      "battle": 83335,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811314
+    },
+    "204211": {
+      "group": 20421,
+      "battle": 84231,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "203322": {
+      "group": 20332,
+      "battle": 83342,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "203323": {
+      "group": 20332,
+      "battle": 83343,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811322
+    },
+    "203324": {
+      "group": 20332,
+      "battle": 83344,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811323
+    },
+    "203325": {
+      "group": 20332,
+      "battle": 83345,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811324
+    },
+    "204125": {
+      "group": 20412,
+      "battle": 84145,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811124
+    },
+    "204124": {
+      "group": 20412,
+      "battle": 84144,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811123
+    },
+    "204123": {
+      "group": 20412,
+      "battle": 84143,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811122
+    },
+    "203321": {
+      "group": 20332,
+      "battle": 83341,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "204111": {
+      "group": 20411,
+      "battle": 84131,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "202312": {
+      "group": 20231,
+      "battle": 82332,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "202313": {
+      "group": 20231,
+      "battle": 82333,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811312
+    },
+    "202314": {
+      "group": 20231,
+      "battle": 82334,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811313
+    },
+    "202315": {
+      "group": 20231,
+      "battle": 82335,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811314
+    },
+    "204115": {
+      "group": 20411,
+      "battle": 84135,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811114
+    },
+    "202322": {
+      "group": 20232,
+      "battle": 82342,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "202323": {
+      "group": 20232,
+      "battle": 82343,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811322
+    },
+    "202324": {
+      "group": 20232,
+      "battle": 82344,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811323
+    },
+    "202325": {
+      "group": 20232,
+      "battle": 82345,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811324
+    },
+    "204114": {
+      "group": 20411,
+      "battle": 84134,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811113
+    },
+    "204113": {
+      "group": 20411,
+      "battle": 84133,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811112
+    },
+    "204112": {
+      "group": 20411,
+      "battle": 84132,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "204121": {
+      "group": 20412,
+      "battle": 84141,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "204122": {
+      "group": 20412,
+      "battle": 84142,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "201312": {
+      "group": 20131,
+      "battle": 81332,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "201313": {
+      "group": 20131,
+      "battle": 81333,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811312
+    },
+    "201314": {
+      "group": 20131,
+      "battle": 81334,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811313
+    },
+    "201315": {
+      "group": 20131,
+      "battle": 81335,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811314
+    },
+    "203311": {
+      "group": 20331,
+      "battle": 83331,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "201322": {
+      "group": 20132,
+      "battle": 81342,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "201323": {
+      "group": 20132,
+      "battle": 81343,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811322
+    },
+    "201324": {
+      "group": 20132,
+      "battle": 81344,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811323
+    },
+    "201325": {
+      "group": 20132,
+      "battle": 81345,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811324
+    },
+    "203225": {
+      "group": 20322,
+      "battle": 83245,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811224
+    },
+    "203224": {
+      "group": 20322,
+      "battle": 83244,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811223
+    },
+    "203223": {
+      "group": 20322,
+      "battle": 83243,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811222
+    },
+    "203121": {
+      "group": 20312,
+      "battle": 83141,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "203122": {
+      "group": 20312,
+      "battle": 83142,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "202115": {
+      "group": 20211,
+      "battle": 82135,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811114
+    },
+    "203221": {
+      "group": 20322,
+      "battle": 83241,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "201311": {
+      "group": 20131,
+      "battle": 81331,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "202111": {
+      "group": 20211,
+      "battle": 82131,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "202112": {
+      "group": 20211,
+      "battle": 82132,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "201221": {
+      "group": 20122,
+      "battle": 81241,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "203213": {
+      "group": 20321,
+      "battle": 83233,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811212
+    },
+    "203212": {
+      "group": 20321,
+      "battle": 83232,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "202121": {
+      "group": 20212,
+      "battle": 82141,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "202122": {
+      "group": 20212,
+      "battle": 82142,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "202123": {
+      "group": 20212,
+      "battle": 82143,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811122
+    },
+    "202124": {
+      "group": 20212,
+      "battle": 82144,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811123
+    },
+    "202125": {
+      "group": 20212,
+      "battle": 82145,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811124
+    },
+    "203211": {
+      "group": 20321,
+      "battle": 83231,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "203125": {
+      "group": 20312,
+      "battle": 83145,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811124
+    },
+    "203124": {
+      "group": 20312,
+      "battle": 83144,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811123
+    },
+    "203123": {
+      "group": 20312,
+      "battle": 83143,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811122
+    },
+    "201111": {
+      "group": 20111,
+      "battle": 81131,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "201112": {
+      "group": 20111,
+      "battle": 81132,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "203115": {
+      "group": 20311,
+      "battle": 83135,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811114
+    },
+    "203114": {
+      "group": 20311,
+      "battle": 83134,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811113
+    },
+    "203113": {
+      "group": 20311,
+      "battle": 83133,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811112
+    },
+    "201121": {
+      "group": 20112,
+      "battle": 81141,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "201122": {
+      "group": 20112,
+      "battle": 81142,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811121
+    },
+    "201123": {
+      "group": 20112,
+      "battle": 81143,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811122
+    },
+    "201124": {
+      "group": 20112,
+      "battle": 81144,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811123
+    },
+    "201125": {
+      "group": 20112,
+      "battle": 81145,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811124
+    },
+    "203112": {
+      "group": 20311,
+      "battle": 83132,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "203111": {
+      "group": 20311,
+      "battle": 83131,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811111
+    },
+    "202321": {
+      "group": 20232,
+      "battle": 82341,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "202311": {
+      "group": 20231,
+      "battle": 82331,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811311
+    },
+    "204214": {
+      "group": 20421,
+      "battle": 84234,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811213
+    },
+    "204215": {
+      "group": 20421,
+      "battle": 84235,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811214
+    },
+    "201211": {
+      "group": 20121,
+      "battle": 81231,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "204222": {
+      "group": 20422,
+      "battle": 84242,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "202221": {
+      "group": 20222,
+      "battle": 82241,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "203214": {
+      "group": 20321,
+      "battle": 83234,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811213
+    },
+    "203215": {
+      "group": 20321,
+      "battle": 83235,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811214
+    },
+    "202211": {
+      "group": 20221,
+      "battle": 82231,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "203222": {
+      "group": 20322,
+      "battle": 83242,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "100311": {
+      "group": 10031,
+      "battle": 80311,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 40,
+      "assist": 6,
+      "reward": 60811021
+    },
+    "100312": {
+      "group": 10031,
+      "battle": 80312,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 40,
+      "assist": 6,
+      "reward": 60811021
+    },
+    "100313": {
+      "group": 10031,
+      "battle": 80313,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811022
+    },
+    "100314": {
+      "group": 10031,
+      "battle": 80314,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 55,
+      "assist": 10,
+      "reward": 60811023
+    },
+    "100315": {
+      "group": 10031,
+      "battle": 80315,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 60,
+      "assist": 12,
+      "reward": 60811024
+    },
+    "202114": {
+      "group": 20211,
+      "battle": 82134,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811113
+    },
+    "202113": {
+      "group": 20211,
+      "battle": 82133,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811112
+    },
+    "201321": {
+      "group": 20132,
+      "battle": 81341,
+      "minimum_level": 1,
+      "maximum_level": 30,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811321
+    },
+    "202212": {
+      "group": 20221,
+      "battle": 82232,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "202213": {
+      "group": 20221,
+      "battle": 82233,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811212
+    },
+    "202214": {
+      "group": 20221,
+      "battle": 82234,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811213
+    },
+    "202215": {
+      "group": 20221,
+      "battle": 82235,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811214
+    },
+    "202222": {
+      "group": 20222,
+      "battle": 82242,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 4,
+      "reward": 60811221
+    },
+    "202223": {
+      "group": 20222,
+      "battle": 82243,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 6,
+      "reward": 60811222
+    },
+    "202224": {
+      "group": 20222,
+      "battle": 82244,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 45,
+      "medals": 45,
+      "assist": 8,
+      "reward": 60811223
+    },
+    "202225": {
+      "group": 20222,
+      "battle": 82245,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 50,
+      "medals": 50,
+      "assist": 10,
+      "reward": 60811224
+    },
+    "201113": {
+      "group": 20111,
+      "battle": 81133,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811112
+    },
+    "201212": {
+      "group": 20121,
+      "battle": 81232,
+      "minimum_level": 31,
+      "maximum_level": 40,
+      "reduction": 25,
+      "medals": 25,
+      "assist": 4,
+      "reward": 60811211
+    },
+    "201213": {
+      "group": 20121,
+      "battle": 81233,
+      "minimum_level": 41,
+      "maximum_level": 50,
+      "reduction": 30,
+      "medals": 30,
+      "assist": 6,
+      "reward": 60811212
+    },
+    "201214": {
+      "group": 20121,
+      "battle": 81234,
+      "minimum_level": 51,
+      "maximum_level": 60,
+      "reduction": 35,
+      "medals": 35,
+      "assist": 8,
+      "reward": 60811213
+    },
+    "201215": {
+      "group": 20121,
+      "battle": 81235,
+      "minimum_level": 61,
+      "maximum_level": 90,
+      "reduction": 40,
+      "medals": 40,
+      "assist": 10,
+      "reward": 60811214
     }
   },
   "bots": {
@@ -1961,6 +4478,186 @@
       },
       "environment": 1213,
       "camp": 1219
+    }
+  },
+  "rank_seasons": {
+    "1": {
+      "reset": 1000,
+      "environments": 3
+    },
+    "2": {
+      "reset": 1050,
+      "environments": 3
+    },
+    "3": {
+      "reset": 1100,
+      "environments": 3
+    },
+    "4": {
+      "reset": 1150,
+      "environments": 4
+    },
+    "5": {
+      "reset": 1200,
+      "environments": 4
+    },
+    "6": {
+      "reset": 1250,
+      "environments": 4
+    },
+    "7": {
+      "reset": 1300,
+      "environments": 5
+    },
+    "8": {
+      "reset": 1350,
+      "environments": 5
+    },
+    "9": {
+      "reset": 1400,
+      "environments": 5
+    },
+    "10": {
+      "reset": 1500,
+      "environments": 6
+    }
+  },
+  "season_rankings": {
+    "1101": {
+      "reward": 0,
+      "limit": 0
+    },
+    "1102": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1103": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1104": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1105": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1106": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1107": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1108": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1109": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1110": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1111": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1112": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1113": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1114": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1115": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1116": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1117": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1118": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1119": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1120": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1121": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1122": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1123": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1124": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1125": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1126": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1127": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1128": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1129": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1130": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1131": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1132": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1133": {
+      "reward": 90000100,
+      "limit": 200
+    },
+    "1134": {
+      "reward": 90000100,
+      "limit": 200
     }
   }
 }

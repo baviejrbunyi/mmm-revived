@@ -33,6 +33,7 @@ func (s *Store) LoadGuildWar(tx *sql.Tx, uid model.UserID, war int, now int64) (
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return 0, state, err
 	}
+	migrateGuildWarDays(&state, now)
 	if state.Endurance == nil {
 		state.Areas = slices.Clone(rule.Areas[:3])
 		state.Blocked = rule.Areas[3]
@@ -48,7 +49,7 @@ func (s *Store) LoadGuildWar(tx *sql.Tx, uid model.UserID, war int, now int64) (
 	if err != nil {
 		return 0, state, err
 	}
-	day := now / 86400
+	day := LogicDay(now)
 	for _, entry := range members {
 		value, ok := state.Members[entry.UID]
 		if !ok {

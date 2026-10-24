@@ -33,7 +33,7 @@ func (s *Store) DeliverGuildWarClear(tx *sql.Tx, guild model.GuildID, reward mod
 		return err
 	}
 	for _, member := range members {
-		if _, err = q.DeliverMail(ctx, database.DeliverMailParams{Owner: member.UID, Title: texts[0], Content: texts[1], Sender: texts[2], Created: now, RewardID: reward, Items: encoded, HasReward: 1}); err != nil {
+		if _, err = s.deliverMail(q, ctx, database.DeliverMailParams{Owner: member.UID, Title: texts[0], Content: texts[1], Sender: texts[2], Created: now, RewardID: reward, Items: encoded, HasReward: 1}); err != nil {
 			return err
 		}
 	}

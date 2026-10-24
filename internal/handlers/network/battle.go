@@ -178,7 +178,7 @@ func (s service) prepareNetworkBattle(p *server.Player, r battle.CreateBattle) (
 		if err != nil {
 			return true, err
 		}
-		extra = model.AsyncBattleInfo{TeamLevel: p.Account.Level, Attacker: p.Account.NetworkDefense(s.Store.Rules), Defender: defender, Bonds: p.Account.BondAttributes(s.Store.Rules)}
+		extra = model.AsyncBattleInfo{TeamLevel: p.Account.Level, SkinCollection: p.Account.SkinCollectionLevel(s.Store.Rules), Attacker: p.Account.NetworkDefense(s.Store.Rules), Defender: defender, Bonds: p.Account.BondAttributes(s.Store.Rules)}
 		pending = &model.NetworkBattle{Battle: r.Battle, Opponent: uid, Friend: friend, Activity: r.Extra.Activity, Target: r.Extra.Target, Mode: r.Extra.Mode, Defender: defender}
 	}
 	token := server.RandomToken()

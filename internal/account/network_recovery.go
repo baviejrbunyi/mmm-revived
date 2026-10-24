@@ -25,7 +25,8 @@ func (s *Store) RecoverNetworkBattles() error {
 	if err != nil {
 		return err
 	}
-	today := time.Now().Unix() / 86400
+	now := time.Now().Unix()
+	today := LogicDay(now)
 	for _, row := range rows {
 		var network model.NetworkState
 		if err = json.Unmarshal(row.Network, &network); err != nil {
@@ -47,6 +48,7 @@ func (s *Store) RecoverNetworkBattles() error {
 				if err = json.Unmarshal(encoded, &state); err != nil {
 					return err
 				}
+				migrateGuildWarDays(&state, now)
 				if member, exists := state.Members[row.UID]; exists && member.Day == today {
 					member.Tickets = min(3, member.Tickets+1)
 					state.Members[row.UID] = member

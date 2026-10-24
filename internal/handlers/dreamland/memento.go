@@ -27,7 +27,7 @@ func (s service) visitMemento(p *server.Player, r MementoVisit) error {
 	if s.Store.Rules == nil {
 		err = server.ErrProgressionRules
 	} else if p.State == server.Lobby {
-		err = p.Account.VisitMemento(s.Store.Rules, r.Mission, r.Chip, r.Heroes)
+		err = p.Account.VisitMemento(s.Store.Rules, r.Mission, r.Chip, r.Heroes, r.Team)
 	}
 	if err != nil {
 		if errors.Is(err, account.ErrProgression) || errors.Is(err, server.ErrProgressionRules) {

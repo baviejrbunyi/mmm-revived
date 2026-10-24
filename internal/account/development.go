@@ -203,6 +203,7 @@ func (a *Account) UpgradeArtifact(r *Rules, id model.InstanceID, count int) erro
 			return err
 		}
 		artifact.Growth = cloneGrowth(artifact.Growth)
+		artifact.Order = artifact.Ordered().Order
 		template := r.ArtifactTemplates[artifact.Template]
 		for _, threshold := range rule.SubLevels {
 			if threshold <= artifact.Level || threshold > artifact.Level+count {
@@ -213,6 +214,7 @@ func (a *Account) UpgradeArtifact(r *Rules, id model.InstanceID, count int) erro
 				if err != nil {
 					return err
 				}
+				artifact.Order = append(artifact.Order, name)
 				artifact.Growth[name] = []int64{value}
 			} else {
 				name, err := randomChoice(slices.Sorted(maps.Keys(artifact.Growth)))
@@ -233,7 +235,7 @@ func (a *Account) UpgradeArtifact(r *Rules, id model.InstanceID, count int) erro
 		return err
 	}
 	artifact.Level += count
-	artifact.PendingGrowth = map[string][]int64{}
+	artifact.PendingGrowth, artifact.PendingOrder = map[string][]int64{}, nil
 	a.Artifacts[id] = artifact
 	a.RecordJourneyTaskEvent(r, 16, 1, 0)
 	a.RefreshTasks(r)
@@ -244,6 +246,12 @@ func (a *Account) SetSkin(r *Rules, heroID model.HeroID, skin model.SkinID) erro
 	hero, ok := a.Heroes[heroID]
 	if !ok || skin != 0 && r.Skins[skin] != heroID {
 		return rejected("skin does not belong to hero")
+	}
+	if r.defaultSkin(skin) {
+		skin = 0
+	}
+	if skin != 0 && !a.ownsSkin(r, skin) {
+		return rejected("skin is not owned")
 	}
 	hero.Skin = skin
 	a.Heroes[heroID] = hero

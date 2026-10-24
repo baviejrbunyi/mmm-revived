@@ -96,7 +96,7 @@ func (s service) asyncReplay(p *server.Player, r battle.VerifyBattle) (string, e
 	if pending.Friend {
 		extra.FriendUID = model.UserID(pending.Opponent)
 	}
-	info := model.AsyncBattleInfo{TeamLevel: p.Account.Level, Attacker: p.Account.NetworkDefense(s.Store.Rules), Defender: pending.Defender, Bonds: p.Account.BondAttributes(s.Store.Rules)}
+	info := model.AsyncBattleInfo{TeamLevel: p.Account.Level, SkinCollection: p.Account.SkinCollectionLevel(s.Store.Rules), Attacker: p.Account.NetworkDefense(s.Store.Rules), Defender: pending.Defender, Bonds: p.Account.BondAttributes(s.Store.Rules)}
 	values := []any{p.Account.Heroes, p.Account.Artifacts, p.Account.Highlights, model.Empty{}, model.Empty{}, info, map[model.BattleID]battle.BattleExtra{r.Battle: extra}}
 	fields := []string{"1", pending.Token, strconv.FormatInt(int64(p.Account.UID), 10), strconv.Itoa(int(r.Battle)), "0", "6", strconv.Itoa(r.Version), r.Record}
 	for _, value := range values {
@@ -137,11 +137,7 @@ func (s service) startAsyncBattle(p *server.Player, r AsyncStart, now int64) err
 	if err != nil {
 		return err
 	}
-	selected := make(map[model.HeroID]model.DeploymentHero, len(p.Deployment))
-	for _, hero := range p.Deployment {
-		selected[hero.Hero] = hero
-	}
-	if !reflect.DeepEqual(heroes, selected) {
+	if !battle.MatchesDeployment(heroes, p.Deployment) {
 		return fmt.Errorf("%w: asynchronous initial deployment differs from selected heroes", account.ErrProgression)
 	}
 	return s.Store.Update(p.Account, func(tx *sql.Tx) error {
@@ -199,6 +195,9 @@ func (s service) settleAsyncBattle(a *account.Account, input AsyncBattle, result
 	defenderUID, _ := battle.Integer(defender["uid"])
 	delta, deltaOK := battle.Integer(battle.Dictionary(battle.Dictionary(pvp["detail"])["finalScore"])["score"])
 	defenderDelta, defenderDeltaOK := battle.Integer(battle.Dictionary(battle.Dictionary(pvp["oppoDetail"])["finalScore"])["score"])
+	if pending.Opponent < 0 && pvp["oppoDetail"] == nil {
+		defenderDelta, defenderDeltaOK = 0, true
+	}
 	if attackerUID != int64(a.UID) || defenderUID != pending.Opponent || !deltaOK || !defenderDeltaOK || delta != int64(result.ScoreDelta) || delta < -10000 || delta > 10000 || defenderDelta < -10000 || defenderDelta > 10000 {
 		return errors.New("native battle scoring proof mismatch")
 	}
@@ -257,6 +256,7 @@ func (s service) settleAsyncBattle(a *account.Account, input AsyncBattle, result
 		if kills >= 0 && kills <= 1000000 {
 			a.RecordJourneyBattleTasks(s.Store.Rules, int(input.Battle), win, int(kills), 0, false)
 		}
+		a.RecordJourneyBattleResult(s.Store.Rules, input.Battle, win, packet)
 		record, err := server.EncodePayload(packet)
 		if err != nil {
 			return err

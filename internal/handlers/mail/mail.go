@@ -78,11 +78,7 @@ func (s service) mail(p *server.Player, action mailAction) error {
 			return err
 		}
 	}
-	mails, err := s.Store.Mailbox(p.Account.UID)
-	if err != nil {
-		return err
-	}
-	if err = p.Send("upMails", mails, 1); err != nil {
+	if err = s.SendMailbox(p); err != nil {
 		return err
 	}
 	if len(quantities) > 0 {

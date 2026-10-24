@@ -8,6 +8,7 @@ type JourneyState struct {
 	GuildJoined    int64            `json:"guild_joined"`
 	GuildLoginDays int              `json:"guild_login_days"`
 	GuildLoginDay  int64            `json:"guild_login_day"`
+	GuildTaskWeek  int64            `json:"guild_task_week"`
 
 	SpentItems       map[ItemID]int64 `json:"spent_items"`
 	TaskBaselines    map[TaskID]int64 `json:"task_baselines"`
@@ -31,6 +32,17 @@ type JourneyState struct {
 	Activities  map[ActivityID]JourneyActivity `json:"activities"`
 	LoginDays   int                            `json:"login_days"`
 	LoginDay    int64                          `json:"login_day"`
+	TaskStats   JourneyTaskStats               `json:"task_stats"`
+}
+
+type JourneyTaskStats struct {
+	Achieved map[TaskID]int64 `json:"achieved"`
+	Doubled  map[TaskID]bool  `json:"doubled"`
+	Digest   uint64           `json:"-"`
+}
+
+type AchievementRecord struct {
+	Time int64 `wire:"t"`
 }
 
 type JourneyNovice struct {
@@ -94,8 +106,15 @@ type JourneyActivity struct {
 	StarRewards    []int                  `json:"star_rewards" wire:"rwdStarList"`
 	NodeStars      map[int]int            `json:"node_stars" wire:"nodeStar"`
 	Pass           JourneyPass            `json:"pass" wire:"battlePass"`
+	BossGroup      int                    `json:"-" wire:"currBossGroupId,omitempty"`
+	BossTickets    int64                  `json:"-" wire:"bossLevelTicketMax,omitempty"`
+	BossUsed       int64                  `json:"boss_used,omitempty" wire:"bossLevelTicketCost,omitempty"`
 	Missions       map[int]JourneyMission `json:"missions" wire:"storyLevelStat"`
 	MiniGames      map[int]int64          `json:"mini_games" wire:"gridMovementLevelStat"`
+	DailyUsed      int                    `json:"daily_used" wire:"-"`
+	Week           int64                  `json:"week" wire:"-"`
+	WeekCoins      int64                  `json:"week_coins" wire:"weekCoinGot"`
+	TaskMarks      map[TaskID]int64       `json:"task_marks" wire:"-"`
 }
 
 func (JourneyActivity) isActivityInfo() {}
@@ -116,6 +135,7 @@ type JourneyHyperBattle struct {
 
 type JourneyHyperNode struct {
 	Rewarded         int                `json:"rewarded" wire:"-"`
+	RewardedStars    int                `json:"rewarded_stars" wire:"rewardedStar"`
 	ID               int                `json:"id" wire:"nodeId"`
 	Open             bool               `json:"open" wire:"opened"`
 	Stars            int                `json:"stars" wire:"star"`

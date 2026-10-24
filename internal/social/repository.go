@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/database"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/storage"
@@ -97,6 +98,7 @@ type Repository struct {
 	GuildLimits GuildLimits
 	db          *storage.Database
 	Limits      Limits
+	progress    guildProgress
 }
 
 func Open(db *storage.Database) (*Repository, error) {
@@ -109,7 +111,7 @@ func searchPattern(name string) string {
 	return patternEscaper.Replace(strings.ToLower(name)) + "*"
 }
 
-func today() int64 { return time.Now().Unix() / daySeconds }
+func today() int64 { return calendar.LogicDay(time.Now().Unix()) }
 
 func (r *Repository) transaction(operation func(*sql.Tx) error) error {
 	tx, err := r.db.SQL.BeginTx(context.Background(), nil)
@@ -121,6 +123,11 @@ func (r *Repository) transaction(operation func(*sql.Tx) error) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func (r *Repository) ClosePresence(now int64) error {
+	_, err := r.db.SQL.ExecContext(context.Background(), "UPDATE presence SET offline=? WHERE online>=offline", now)
+	return err
 }
 
 func (r *Repository) Presence(uid model.UserID, online bool) error {

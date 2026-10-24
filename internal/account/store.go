@@ -27,6 +27,9 @@ type Store struct {
 	Fresh    bool
 	mu       sync.Mutex
 	saved    map[model.UserID]map[recordKey][]byte
+	mailMu   sync.Mutex
+	mailed   map[model.UserID]struct{}
+	bossDone map[string]bool
 }
 
 func Open(dir, catalogPath string) (*Store, error) {
@@ -111,6 +114,7 @@ func (s *Store) Login(name string) (*Account, error) {
 	a.LastLogin = time.Now().Unix()
 	a.RegenerateEnergy(s.Rules, a.LastLogin)
 	a.Initialize(s.Catalog, s.Rules)
+	a.ExpireCosmetics(s.Catalog, a.LastLogin)
 	if err = a.PrepareDispatch(s.Rules, a.LastLogin); err != nil {
 		return nil, err
 	}

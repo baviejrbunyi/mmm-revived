@@ -34,7 +34,7 @@ func (a *Account) Spend(cost map[model.ItemID]int64) error {
 		spent = map[model.ItemID]int64{}
 	}
 	now := time.Now().Unix()
-	day, week := LogicDay(now), shopPeriod(2, now)
+	day, week := LogicDay(now), LogicWeek(now)
 	daily, weekly := maps.Clone(a.Journey.DailySpent), maps.Clone(a.Journey.WeeklySpent)
 	if daily == nil || a.Journey.SpentDay != day {
 		daily = map[model.ItemID]int64{}
@@ -155,7 +155,7 @@ func (a *Account) BeginMission(r *Rules, chapter model.ChapterID, id model.Missi
 	if !ok {
 		return rejected("missing initial mission node")
 	}
-	mission := model.Mission{ID: id, Node: model.MissionNode{ID: rule.FirstNode}, Heroes: map[model.HeroID]int{}, Visited: map[model.MementoChipID]int{}, LokiRecord: map[model.MementoChipID]int{}}
+	mission := model.Mission{ID: id, Node: model.MissionNode{ID: rule.FirstNode}, Heroes: map[model.HeroID]int{}, Visited: map[model.MementoChipID]int{}, LokiRecord: map[model.MementoChipID]int{}, TeamSteps: map[int]int{}}
 	if node.Type == 5 {
 		tiles := r.MementoMaps[node.Map]
 		if len(tiles) == 0 {
@@ -164,6 +164,9 @@ func (a *Account) BeginMission(r *Rules, chapter model.ChapterID, id model.Missi
 		initializeMemento(&mission, rule, tiles)
 	}
 	if err := a.Spend(map[model.ItemID]int64{6: rule.Energy}); err != nil {
+		return err
+	}
+	if err := a.grantEnergyExperience(r, rule.Energy); err != nil {
 		return err
 	}
 	a.Missions[id] = mission
@@ -188,6 +191,7 @@ func (a *Account) AdvanceMission(r *Rules, id model.MissionID) error {
 	if finishedReward(r, id, mission) {
 		mission.Node = model.MissionNode{}
 		a.Missions[id] = mission
+		a.leaveMission(id)
 		return nil
 	}
 	if !a.MissionActive(r, id) {
@@ -202,22 +206,29 @@ func (a *Account) AdvanceMission(r *Rules, id model.MissionID) error {
 			return rejected("mission reward is not claimed")
 		}
 	} else if node.Next == 0 {
-		return rejected("mission node cannot advance")
+		mission.Node = model.MissionNode{}
+		a.Missions[id] = mission
+		a.leaveMission(id)
+		return nil
 	}
 	mission.Node = model.MissionNode{ID: node.Next}
 	a.Missions[id] = mission
 	if node.Next == 0 {
-		if a.CurrentStory == id {
-			a.CurrentStory = 0
-		}
-		if a.CurrentMemento == id {
-			a.CurrentMemento = 0
-		}
-		if a.CurrentMission == id {
-			a.CurrentMission = 0
-		}
+		a.leaveMission(id)
 	}
 	return nil
+}
+
+func (a *Account) leaveMission(id model.MissionID) {
+	if a.CurrentStory == id {
+		a.CurrentStory = 0
+	}
+	if a.CurrentMemento == id {
+		a.CurrentMemento = 0
+	}
+	if a.CurrentMission == id {
+		a.CurrentMission = 0
+	}
 }
 
 func (a *Account) FinishMissionBattle(r *Rules, id model.MissionID, stars int) error {
@@ -239,7 +250,7 @@ func (a *Account) FinishMissionBattle(r *Rules, id model.MissionID, stars int) e
 
 func finishedReward(r *Rules, id model.MissionID, mission model.Mission) bool {
 	node, ok := r.Nodes[mission.Node.ID]
-	return ok && node.Type == 2 && node.Next == 0 && mission.Node.Rewarded == 1 && !r.Missions[id].Memento
+	return ok && node.Type == 2 && node.Next == 0 && mission.Node.Rewarded == 1
 }
 
 func (a *Account) ClaimMission(r *Rules, id model.MissionID) error {
@@ -269,13 +280,8 @@ func (a *Account) ClaimMission(r *Rules, id model.MissionID) error {
 	}
 	mission.Node.Rewarded = 1
 	a.Missions[id], a.Passed[id] = mission, progress
-	if node.Next == 0 && !r.Missions[id].Memento {
-		if a.CurrentStory == id {
-			a.CurrentStory = 0
-		}
-		if a.CurrentMission == id {
-			a.CurrentMission = 0
-		}
+	if node.Next == 0 {
+		a.leaveMission(id)
 	}
 	a.RefreshTasks(r)
 	return nil

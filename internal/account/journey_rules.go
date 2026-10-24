@@ -9,10 +9,12 @@ type JourneyRules struct {
 	LocalRewardDefaults       map[model.RewardID]JourneyLocalReward `json:"local_reward_defaults"`
 	MiniGameUnlockMission     int                                   `json:"minigame_unlock_mission"`
 	Challenges                map[int]JourneyChallengeRule          `json:"challenges"`
+	ChallengeTypes            map[int][]int                         `json:"challenge_types"`
 	SpiralGroups              map[int]JourneySpiralGroupRule        `json:"spiral_groups"`
 	SpiralMissions            map[int]JourneySpiralRule             `json:"spiral_missions"`
 	InviteRewards             map[int]model.RewardID                `json:"invite_rewards"`
 	InviteCountTasks          map[int]model.TaskID                  `json:"invite_count_tasks"`
+	InviteBindReward          model.RewardID                        `json:"invite_bind_reward"`
 
 	Hyperflows   map[int]JourneyHyperRule       `json:"hyperflows"`
 	HyperBuffs   map[int]JourneyHyperBuffRule   `json:"hyper_buffs"`
@@ -31,6 +33,8 @@ type JourneyRules struct {
 	NoviceNodes            map[int]JourneyNoviceNode                `json:"novice_nodes"`
 	Passes                 map[int]JourneyPassRule                  `json:"passes"`
 	LimitedPasses          map[int]JourneyPassRule                  `json:"limited_passes"`
+	LimitedBosses          map[int]JourneyLimitedBossRule           `json:"limited_bosses"`
+	LimitedBossRewards     map[int]JourneyLimitedBossReward         `json:"limited_boss_rewards"`
 	Activities             map[model.ActivityID]JourneyActivityRule `json:"activities"`
 	Trailers               map[int]JourneyTrailerRule               `json:"trailers"`
 	SoloGroups             map[int]JourneySoloRule                  `json:"solo_groups"`
@@ -79,6 +83,20 @@ type JourneyActivityRule struct {
 	Rewards    map[int]model.RewardID `json:"rewards"`
 	Thresholds map[int]int            `json:"thresholds"`
 	Battles    []model.BattleID       `json:"battles"`
+	LoginDay   int                    `json:"login_day"`
+	LoginLevel int                    `json:"login_level"`
+	Tasks      []model.TaskID         `json:"tasks"`
+	Conditions []JourneyConditionRule `json:"conditions"`
+	Rotation   []int                  `json:"rotation"`
+	Permanent  []model.TaskID         `json:"permanent"`
+	Coin       model.ItemID           `json:"coin"`
+	WeeklyCap  int                    `json:"weekly_cap"`
+}
+
+type JourneyConditionRule struct {
+	Tasks []model.TaskID `json:"tasks"`
+	Daily bool           `json:"daily"`
+	Once  bool           `json:"once"`
 }
 
 type JourneyTrailerRule struct {
@@ -97,6 +115,21 @@ type JourneyMiniGameRule struct {
 	Start       int64          `json:"start"`
 	Level       int            `json:"level"`
 	Reward      model.RewardID `json:"reward"`
+}
+
+type JourneyLimitedBossRule struct {
+	Battles     []model.BattleID `json:"battles"`
+	Cost        []int64          `json:"cost"`
+	Open        int64            `json:"open"`
+	End         int64            `json:"end"`
+	Rewards     []model.RewardID `json:"rewards"`
+	LevelReward int              `json:"level_reward"`
+}
+
+type JourneyLimitedBossReward struct {
+	Tag    int            `json:"tag"`
+	Levels []int          `json:"levels"`
+	Reward model.RewardID `json:"reward"`
 }
 
 type JourneyMissionRule struct {

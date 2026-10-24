@@ -3,10 +3,16 @@ package account
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"maps"
+	"math"
+	"math/rand/v2"
 	"slices"
+	"strconv"
+	"strings"
 
 	"mmm-revived/internal/database"
+	"mmm-revived/internal/json"
 	"mmm-revived/internal/model"
 )
 
@@ -21,7 +27,7 @@ func (a *Account) PrepareNetwork(r NetworkRules, now int64) {
 	if n.Activity == 0 {
 		n.Activity = r.DefaultActivity()
 	}
-	if day := now / 86400; n.Day != day {
+	if day := LogicDay(now); n.Day != day {
 		n.Day = day
 		n.Attempts = r.Activities[n.Activity].Attempts
 		n.Refreshed = 1
@@ -64,7 +70,7 @@ func (a *Account) NetworkDefense(r *Rules) model.AsyncDefense {
 		score = 1000
 	}
 	level, _ := r.Network.Rank(score)
-	info := model.AsyncHeroInfo{Heroes: make(map[model.HeroID]model.Hero, len(n.Defense)), EquippedGear: make(map[model.HeroID]map[int]model.Artifact, len(n.Defense)), Equipped: make(map[model.HeroID]model.Highlight, len(n.Defense)), Bonds: a.BondAttributes(r)}
+	info := model.AsyncHeroInfo{Heroes: make(map[model.HeroID]model.Hero, len(n.Defense)), EquippedGear: make(map[model.HeroID]map[int]model.Artifact, len(n.Defense)), Equipped: make(map[model.HeroID]model.Highlight, len(n.Defense)), Bonds: a.BondAttributes(r), SkinCollection: a.SkinCollectionLevel(r)}
 	for id := range n.Defense {
 		hero, owned := a.Heroes[id]
 		if !owned {
@@ -122,7 +128,7 @@ func (a *Account) SetNetworkDefense(r NetworkRules, heroes map[model.HeroID]int,
 		seen[id] = true
 	}
 	rule := r.Activities[a.Network.Activity]
-	if environment != 0 && !slices.Contains(rule.Environments, environment) || camp != 0 && !slices.Contains(rule.Camps, camp) {
+	if environment != 0 && environment != a.Network.Environment && !slices.Contains(a.NetworkEnvironments(r), environment) || camp != 0 && !slices.Contains(rule.Camps, camp) {
 		return rejected("defense environment unavailable")
 	}
 	a.Network.Defense, a.Network.DefenseOrder = maps.Clone(heroes), slices.Clone(heroOrder)
@@ -220,6 +226,7 @@ func (s *Store) ClaimSupport(a *Account, tx *sql.Tx) (int64, error) {
 		count += amount
 		claimed[row.Day] += amount
 	}
+	a.RecordJourneyTaskEvent(s.Rules, 78, int(min(count, 1)), 0)
 	count = min(count, 100) * 300
 	if err = a.GrantItems(s.Rules, map[model.ItemID]int64{1: count}); err != nil {
 		return 0, err
@@ -245,7 +252,7 @@ func supportUsage(q *database.Queries, borrower, owner model.UserID, day int64) 
 }
 
 func (s *Store) SupportAvailable(a *Account, owner model.UserID, now int64) error {
-	_, err := supportUsage(s.Database.Queries, a.UID, owner, now/86400)
+	_, err := supportUsage(s.Database.Queries, a.UID, owner, LogicDay(now))
 	return err
 }
 
@@ -254,7 +261,7 @@ func (s *Store) RecordSupport(a *Account, tx *sql.Tx, now int64) error {
 	if selected.Owner == 0 || selected.Guild {
 		return nil
 	}
-	q, day := s.Database.Queries.WithTx(tx), now/86400
+	q, day := s.Database.Queries.WithTx(tx), LogicDay(now)
 	total, err := supportUsage(q, a.UID, selected.Owner, day)
 	if err != nil {
 		return err
@@ -294,4 +301,168 @@ func (s *Store) AbandonAsyncBattle(a *Account) {
 		}
 	}
 	a.Network.Pending = nil
+}
+
+const (
+	seasonMailSender  = "MARVEL Mystic Mayhem Team"
+	bifrostRewardMail = 8014
+)
+
+func (r *Rules) AsyncSeason(now int64) model.ActivityID {
+	return r.datedActivity(asyncActivityType, now, func(id model.ActivityID) bool {
+		_, known := r.Network.Activities[id]
+		return known
+	})
+}
+
+func (a *Account) PrepareAsyncPVP(r *Rules, now int64) {
+	season := r.AsyncSeason(now)
+	if season == 0 {
+		return
+	}
+	fresh := !a.Network.Initialized
+	a.PrepareNetwork(r.Network, now)
+	n := &a.Network
+	if n.Activity == season {
+		return
+	}
+	if !fresh {
+		a.settleAsyncSeason(r, n.Activity, season)
+		if reset := r.Network.Seasons[r.networkRank(n.Score)].Reset; reset > 0 {
+			n.Score = reset
+		}
+		n.MaxScore = n.Score
+		n.Points, n.Rewarded, n.RewardedTasks = 0, nil, nil
+		n.Targets, n.Friends, n.LastRefresh = nil, map[model.UserID]model.AsyncTarget{}, 0
+	}
+	n.Activity = season
+	if n.Environment != 0 && !slices.Contains(a.NetworkEnvironments(r.Network), n.Environment) {
+		n.Environment = 0
+	}
+	if n.Camp != 0 && !slices.Contains(r.Network.Activities[season].Camps, n.Camp) {
+		n.Camp = 0
+	}
+	a.PrepareNetwork(r.Network, now)
+}
+
+func (r *Rules) networkRank(score int) int {
+	rank, _ := r.Network.Rank(score)
+	return rank
+}
+
+func (a *Account) settleAsyncSeason(r *Rules, previous, next model.ActivityID) {
+	n := &a.Network
+	if n.Points > 0 || len(n.Rewarded) > 0 || len(n.RewardedTasks) > 0 {
+		items := map[model.ItemID]int64{}
+		for id, rank := range r.Network.Ranks {
+			if rank.Reward == 0 || n.MaxScore < rank.Minimum || slices.Contains(n.Rewarded, id) {
+				continue
+			}
+			if quantities, err := rewardItems(r, rank.Reward, 1); err == nil {
+				addItems(items, quantities)
+			}
+		}
+		for _, id := range r.Network.Activities[previous].Tasks {
+			rule, known := r.Tasks[id]
+			if !known || slices.Contains(n.RewardedTasks, id) || n.Points < int64(rule.Target) {
+				continue
+			}
+			if quantities, err := rewardItems(r, rule.Reward, 1); err == nil {
+				addItems(items, quantities)
+			}
+		}
+		a.queueSeasonMail(model.SeasonMail{Template: bifrostRewardMail, Title: "Battle for the Bifrost Season Rewards", Content: "The last Battle for the Bifrost season has ended. Its unclaimed rank and shard rewards have been sent to you.", Items: items})
+	}
+	if ranking := r.Network.Rankings[previous]; n.Points > 0 && ranking.Reward != 0 && ranking.Limit > 0 {
+		a.queueSeasonMail(model.SeasonMail{Title: "Battle for the Bifrost Ranking Reward", Content: "The last Battle for the Bifrost season has ended. You finished at rank {1}. Here is your ranking reward.", Reward: ranking.Reward, Mode: model.RankAsync, Rank: int(previous), Score: int64(n.MaxScore), Limit: ranking.Limit})
+	}
+	for _, id := range slices.Concat(r.Network.Activities[previous].Tasks, r.Network.Activities[next].Tasks) {
+		a.Tasks[id] = model.Task{Status: 2}
+	}
+}
+
+func (a *Account) NetworkEnvironments(r NetworkRules) []int {
+	n := &a.Network
+	environments := slices.Clone(r.Activities[n.Activity].Environments)
+	seed := uint64(a.UID)<<16 ^ uint64(n.Activity)
+	random := rand.New(rand.NewPCG(seed, uint64(n.Activity)))
+	random.Shuffle(len(environments), func(i, j int) { environments[i], environments[j] = environments[j], environments[i] })
+	score := n.MaxScore
+	if !n.Initialized {
+		score = 1000
+	}
+	rank, _ := r.Rank(score)
+	if count := r.Seasons[rank].Environments; count > 0 {
+		environments = environments[:min(count, len(environments))]
+	}
+	return environments
+}
+
+func (s *Store) DeliverSeasonMail(tx *sql.Tx, a *Account, now int64) (bool, error) {
+	if len(a.Network.SeasonMail) == 0 {
+		return false, nil
+	}
+	q, ctx := s.queries(tx), context.Background()
+	count, err := q.MailboxCount(ctx, a.UID)
+	if err != nil {
+		return false, err
+	}
+	delivered := false
+	for len(a.Network.SeasonMail) > 0 && count < MailboxLimit {
+		mail := a.Network.SeasonMail[0]
+		items := maps.Clone(mail.Items)
+		if items == nil {
+			items = map[model.ItemID]int64{}
+		}
+		if mail.Mode != "" {
+			position, err := seasonRankPosition(q, a.UID, mail)
+			if err != nil {
+				return delivered, err
+			}
+			rank := strconv.FormatInt(position, 10)
+			mail.Title, mail.Content = strings.ReplaceAll(mail.Title, "{1}", rank), strings.ReplaceAll(mail.Content, "{1}", rank)
+			if position > 0 && position <= mail.Limit {
+				quantities, err := rewardItems(s.Rules, mail.Reward, 1)
+				if err != nil {
+					return delivered, err
+				}
+				addItems(items, quantities)
+			}
+		}
+		if len(items) > 0 {
+			var payloads [4][]byte
+			for index, value := range [...]any{model.LocalizedText{"cn": mail.Title, "en": mail.Title}, model.LocalizedText{"cn": mail.Content, "en": mail.Content}, model.LocalizedText{"cn": seasonMailSender, "en": seasonMailSender}, items} {
+				if payloads[index], err = json.Marshal(value); err != nil {
+					return delivered, err
+				}
+			}
+			if _, err = s.deliverMail(q, ctx, database.DeliverMailParams{Owner: a.UID, Title: payloads[0], Content: payloads[1], Sender: payloads[2], Template: mail.Template, Created: now, Expires: now + 30*DaySeconds, RewardID: mail.Reward, Items: payloads[3], HasReward: 1}); err != nil {
+				return delivered, err
+			}
+			count++
+			delivered = true
+		}
+		a.Network.SeasonMail = a.Network.SeasonMail[1:]
+	}
+	if len(a.Network.SeasonMail) == 0 {
+		a.Network.SeasonMail = nil
+	}
+	return delivered, nil
+}
+
+func seasonRankPosition(q *database.Queries, uid model.UserID, mail model.SeasonMail) (int64, error) {
+	ctx := context.Background()
+	score, achieved := mail.Score, int64(math.MaxInt64)
+	entry, err := q.GetRankEntry(ctx, database.GetRankEntryParams{UID: uid, Mode: mail.Mode, RankID: int64(mail.Rank)})
+	switch {
+	case err == nil && entry.Score >= score:
+		score, achieved = entry.Score, entry.Achieved
+	case err != nil && !errors.Is(err, sql.ErrNoRows):
+		return 0, err
+	}
+	if score <= 0 {
+		return 0, nil
+	}
+	higher, err := q.RankHigherCount(ctx, database.RankHigherCountParams{Mode: mail.Mode, RankID: int64(mail.Rank), Score: score, Achieved: achieved, UID: uid})
+	return higher + 1, err
 }

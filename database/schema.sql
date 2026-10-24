@@ -375,3 +375,15 @@ BEGIN
     UPDATE invite_links SET inviter=NEW.uid WHERE inviter=OLD.uid;
     UPDATE invite_links SET invitee=NEW.uid WHERE invitee=OLD.uid;
 END;
+
+CREATE TABLE IF NOT EXISTS guild_contributions (
+    guild_id INTEGER NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+    uid INTEGER NOT NULL REFERENCES accounts(uid),
+    week INTEGER NOT NULL,
+    score INTEGER NOT NULL,
+    PRIMARY KEY(guild_id,week,uid)
+) WITHOUT ROWID;
+CREATE TRIGGER IF NOT EXISTS guild_contribution_uid_changed AFTER UPDATE OF uid ON accounts WHEN NEW.uid != OLD.uid
+BEGIN
+    UPDATE guild_contributions SET uid=NEW.uid WHERE uid=OLD.uid;
+END;

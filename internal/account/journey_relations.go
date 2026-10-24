@@ -22,15 +22,16 @@ func (s *Store) refreshJourneyRelationalTasks(tx *sql.Tx, a *Account) error {
 		return err
 	}
 	a.Journey.GuildMember = err == nil
+	now := time.Now().Unix()
+	a.refreshGuildTasks(s.Rules, now)
 	if err == nil {
-		now := time.Now().Unix()
 		if a.Journey.GuildJoined != member.Joined {
 			a.Journey.GuildJoined = member.Joined
 			a.Journey.GuildLoginDays = 0
 			a.Journey.GuildLoginDay = 0
 		}
-		if a.Journey.GuildLoginDay != now/86400 {
-			a.Journey.GuildLoginDay = now / 86400
+		if a.Journey.GuildLoginDay != LogicDay(now) {
+			a.Journey.GuildLoginDay = LogicDay(now)
 			a.Journey.GuildLoginDays++
 		}
 	}

@@ -84,3 +84,14 @@ func (q *Queue) Expire(before time.Time) []Entry {
 	})
 	return expired
 }
+
+func (q *Queue) Entry(player model.UserID) (Entry, bool) {
+	if !q.players[player] {
+		return Entry{}, false
+	}
+	i := slices.IndexFunc(q.entries, func(entry Entry) bool { return entry.Player == player })
+	if i < 0 {
+		return Entry{}, false
+	}
+	return q.entries[i], true
+}

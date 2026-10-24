@@ -32,6 +32,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.acknowledgePeerMessagesStmt, err = db.PrepareContext(ctx, AcknowledgePeerMessages); err != nil {
 		return nil, fmt.Errorf("error preparing query AcknowledgePeerMessages: %w", err)
 	}
+	if q.addGuildContributionStmt, err = db.PrepareContext(ctx, AddGuildContribution); err != nil {
+		return nil, fmt.Errorf("error preparing query AddGuildContribution: %w", err)
+	}
+	if q.addGuildHistoryScoreStmt, err = db.PrepareContext(ctx, AddGuildHistoryScore); err != nil {
+		return nil, fmt.Errorf("error preparing query AddGuildHistoryScore: %w", err)
+	}
 	if q.addGuildWarProgressStmt, err = db.PrepareContext(ctx, AddGuildWarProgress); err != nil {
 		return nil, fmt.Errorf("error preparing query AddGuildWarProgress: %w", err)
 	}
@@ -82,6 +88,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.deleteGuildApplicationStmt, err = db.PrepareContext(ctx, DeleteGuildApplication); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteGuildApplication: %w", err)
+	}
+	if q.deleteGuildContributionsStmt, err = db.PrepareContext(ctx, DeleteGuildContributions); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteGuildContributions: %w", err)
 	}
 	if q.deleteGuildInviteStmt, err = db.PrepareContext(ctx, DeleteGuildInvite); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteGuildInvite: %w", err)
@@ -251,6 +260,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listGuildApplicationsStmt, err = db.PrepareContext(ctx, ListGuildApplications); err != nil {
 		return nil, fmt.Errorf("error preparing query ListGuildApplications: %w", err)
 	}
+	if q.listGuildContributionsStmt, err = db.PrepareContext(ctx, ListGuildContributions); err != nil {
+		return nil, fmt.Errorf("error preparing query ListGuildContributions: %w", err)
+	}
 	if q.listGuildInvitesStmt, err = db.PrepareContext(ctx, ListGuildInvites); err != nil {
 		return nil, fmt.Errorf("error preparing query ListGuildInvites: %w", err)
 	}
@@ -398,6 +410,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.setGuildLeftStmt, err = db.PrepareContext(ctx, SetGuildLeft); err != nil {
 		return nil, fmt.Errorf("error preparing query SetGuildLeft: %w", err)
 	}
+	if q.setGuildProgressStmt, err = db.PrepareContext(ctx, SetGuildProgress); err != nil {
+		return nil, fmt.Errorf("error preparing query SetGuildProgress: %w", err)
+	}
 	if q.setGuildRoleStmt, err = db.PrepareContext(ctx, SetGuildRole); err != nil {
 		return nil, fmt.Errorf("error preparing query SetGuildRole: %w", err)
 	}
@@ -463,6 +478,16 @@ func (q *Queries) Close() error {
 	if q.acknowledgePeerMessagesStmt != nil {
 		if cerr := q.acknowledgePeerMessagesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing acknowledgePeerMessagesStmt: %w", cerr)
+		}
+	}
+	if q.addGuildContributionStmt != nil {
+		if cerr := q.addGuildContributionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addGuildContributionStmt: %w", cerr)
+		}
+	}
+	if q.addGuildHistoryScoreStmt != nil {
+		if cerr := q.addGuildHistoryScoreStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addGuildHistoryScoreStmt: %w", cerr)
 		}
 	}
 	if q.addGuildWarProgressStmt != nil {
@@ -548,6 +573,11 @@ func (q *Queries) Close() error {
 	if q.deleteGuildApplicationStmt != nil {
 		if cerr := q.deleteGuildApplicationStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteGuildApplicationStmt: %w", cerr)
+		}
+	}
+	if q.deleteGuildContributionsStmt != nil {
+		if cerr := q.deleteGuildContributionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteGuildContributionsStmt: %w", cerr)
 		}
 	}
 	if q.deleteGuildInviteStmt != nil {
@@ -830,6 +860,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listGuildApplicationsStmt: %w", cerr)
 		}
 	}
+	if q.listGuildContributionsStmt != nil {
+		if cerr := q.listGuildContributionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listGuildContributionsStmt: %w", cerr)
+		}
+	}
 	if q.listGuildInvitesStmt != nil {
 		if cerr := q.listGuildInvitesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listGuildInvitesStmt: %w", cerr)
@@ -1075,6 +1110,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing setGuildLeftStmt: %w", cerr)
 		}
 	}
+	if q.setGuildProgressStmt != nil {
+		if cerr := q.setGuildProgressStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setGuildProgressStmt: %w", cerr)
+		}
+	}
 	if q.setGuildRoleStmt != nil {
 		if cerr := q.setGuildRoleStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing setGuildRoleStmt: %w", cerr)
@@ -1188,6 +1228,8 @@ type Queries struct {
 	acknowledgeAllMessagesStmt        *sql.Stmt
 	acknowledgePairMessagesStmt       *sql.Stmt
 	acknowledgePeerMessagesStmt       *sql.Stmt
+	addGuildContributionStmt          *sql.Stmt
+	addGuildHistoryScoreStmt          *sql.Stmt
 	addGuildWarProgressStmt           *sql.Stmt
 	addSupportUsageStmt               *sql.Stmt
 	blockEitherStmt                   *sql.Stmt
@@ -1205,6 +1247,7 @@ type Queries struct {
 	deleteFriendRequestPairStmt       *sql.Stmt
 	deleteGuildStmt                   *sql.Stmt
 	deleteGuildApplicationStmt        *sql.Stmt
+	deleteGuildContributionsStmt      *sql.Stmt
 	deleteGuildInviteStmt             *sql.Stmt
 	deleteGuildMemberStmt             *sql.Stmt
 	deletePlayerGuildApplicationsStmt *sql.Stmt
@@ -1261,6 +1304,7 @@ type Queries struct {
 	listFriendRanksStmt               *sql.Stmt
 	listFriendsStmt                   *sql.Stmt
 	listGuildApplicationsStmt         *sql.Stmt
+	listGuildContributionsStmt        *sql.Stmt
 	listGuildInvitesStmt              *sql.Stmt
 	listGuildMembersStmt              *sql.Stmt
 	listGuildMessagesStmt             *sql.Stmt
@@ -1310,6 +1354,7 @@ type Queries struct {
 	setFriendNicknameStmt             *sql.Stmt
 	setGuildBossStmt                  *sql.Stmt
 	setGuildLeftStmt                  *sql.Stmt
+	setGuildProgressStmt              *sql.Stmt
 	setGuildRoleStmt                  *sql.Stmt
 	setGuildSearchStmt                *sql.Stmt
 	setPresenceOfflineStmt            *sql.Stmt
@@ -1334,6 +1379,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		acknowledgeAllMessagesStmt:        q.acknowledgeAllMessagesStmt,
 		acknowledgePairMessagesStmt:       q.acknowledgePairMessagesStmt,
 		acknowledgePeerMessagesStmt:       q.acknowledgePeerMessagesStmt,
+		addGuildContributionStmt:          q.addGuildContributionStmt,
+		addGuildHistoryScoreStmt:          q.addGuildHistoryScoreStmt,
 		addGuildWarProgressStmt:           q.addGuildWarProgressStmt,
 		addSupportUsageStmt:               q.addSupportUsageStmt,
 		blockEitherStmt:                   q.blockEitherStmt,
@@ -1351,6 +1398,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteFriendRequestPairStmt:       q.deleteFriendRequestPairStmt,
 		deleteGuildStmt:                   q.deleteGuildStmt,
 		deleteGuildApplicationStmt:        q.deleteGuildApplicationStmt,
+		deleteGuildContributionsStmt:      q.deleteGuildContributionsStmt,
 		deleteGuildInviteStmt:             q.deleteGuildInviteStmt,
 		deleteGuildMemberStmt:             q.deleteGuildMemberStmt,
 		deletePlayerGuildApplicationsStmt: q.deletePlayerGuildApplicationsStmt,
@@ -1407,6 +1455,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listFriendRanksStmt:               q.listFriendRanksStmt,
 		listFriendsStmt:                   q.listFriendsStmt,
 		listGuildApplicationsStmt:         q.listGuildApplicationsStmt,
+		listGuildContributionsStmt:        q.listGuildContributionsStmt,
 		listGuildInvitesStmt:              q.listGuildInvitesStmt,
 		listGuildMembersStmt:              q.listGuildMembersStmt,
 		listGuildMessagesStmt:             q.listGuildMessagesStmt,
@@ -1456,6 +1505,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		setFriendNicknameStmt:             q.setFriendNicknameStmt,
 		setGuildBossStmt:                  q.setGuildBossStmt,
 		setGuildLeftStmt:                  q.setGuildLeftStmt,
+		setGuildProgressStmt:              q.setGuildProgressStmt,
 		setGuildRoleStmt:                  q.setGuildRoleStmt,
 		setGuildSearchStmt:                q.setGuildSearchStmt,
 		setPresenceOfflineStmt:            q.setPresenceOfflineStmt,

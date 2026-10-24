@@ -129,6 +129,7 @@ type RogueRun struct {
 	NextObject    int64                      `json:"next_object"`
 	Started       int64                      `json:"started"`
 	Claimed       bool                       `json:"claimed"`
+	RankChange    int64                      `json:"rank_change"`
 }
 
 type RoguePVERun struct {
@@ -200,4 +201,10 @@ type RogueBattleExtra struct {
 	EnemyBuffs      []int                       `wire:"enemy_buff"`
 	Mana            int64                       `wire:"mana"`
 	Bonds           map[string]int64            `wire:"bondAttr,omitempty"`
+}
+
+type RogueTrigger struct {
+	Relic   InstanceID
+	Skill   int
+	Targets []InstanceID
 }

@@ -19,7 +19,7 @@ REPO = HERE.parents[1]
 MODULES = [
     ('PanelFriendTip.lua', 'scripts/PanelFriendTip.luac', {('PanelFriendTip', 'Show'): 'friendduel/PanelFriendTip.Show.lua'}),
     ('FriendInfo.lua', 'scripts/FriendInfo.luac', {('FriendItem', 'SetInfo'): 'friendduel/FriendInfo.SetInfo.lua'}),
-    ('FriendComp.lua', 'scripts/FriendComp.luac', {('FriendComp', 'OnInit'): 'friendduel/FriendComp.OnInit.lua'}),
+    ('FriendComp.lua', 'scripts/FriendComp.luac', {('FriendComp', 'OnInit'): 'friendduel/FriendComp.OnInit.lua', ('FriendComp', 'onJoinWorldChannel'): 'worldchat/FriendComp.onJoinWorldChannel.lua', ('FriendComp', 'onListWorldChannel'): 'worldchat/FriendComp.onListWorldChannel.lua'}),
     ('BattleComp.lua', 'scripts/BattleComp.luac', {('BattleComp', 'PvPBattleStart'): 'realtimesync/BattleComp.PvPBattleStart.lua', ('BattleComp', 'PvPBattleMatched'): 'realtimesync/BattleComp.PvPBattleMatched.lua'}),
     ('Battle.lua', 'scripts/Battle.luac', {('Battle', 'CheckAutoPlayCard'): 'realtimesync/Battle.CheckAutoPlayCard.lua', ('Battle', 'CheckSwitch'): 'realtimesync/Battle.CheckSwitch.lua'}),
     ('LogicInterface.lua', 'scripts/LogicInterface.luac', {('LogicInterface', 'UseCard'): 'realtimesync/LogicInterface.UseCard.lua'}),
@@ -29,7 +29,20 @@ MODULES = [
     ('PanelBattleNew.lua', 'scripts/PanelBattleNew.luac', {('PanelBattleNew', 'SetCardForceNonInteractable'): 'realtimesync/PanelBattleNew.SetCardForceNonInteractable.lua', ('PanelBattleNew', 'SetSpeedUpBtnVisible'): 'realtimesync/PanelBattleNew.SetSpeedUpBtnVisible.lua'}),
     ('ResolutionTool.lua', 'scripts/ResolutionTool.luac', {('ResolutionTool', '_GetDeviceResolution'): 'window/ResolutionTool._GetDeviceResolution.lua', ('ResolutionTool', 'OnWindowResize'): 'window/ResolutionTool.OnWindowResize.lua'}),
     ('PanelSkipGuide.lua', 'scripts/PanelSkipGuide.luac', {('PanelSkipGuide', '_OnSkipClicked'): 'tutorial/PanelSkipGuide._OnSkipClicked.lua'}),
-    ('UniSDKHandler.lua', 'scripts/UniSDKHandler.luac', {('UniSDKHandler', 'CheckOrder'): 'freeshop/UniSDKHandler.CheckOrder.lua'}),
+    ('HeroHighlight.lua', 'scripts/HeroHighlight.luac', {('HeroHighlight', '_OnHighlightModelClicked'): 'tutorial/HeroHighlight._OnHighlightModelClicked.lua'}),
+    ('UniSDKHandler.lua', 'scripts/UniSDKHandler.luac', {('UniSDKHandler', 'CheckOrder'): 'freeshop/UniSDKHandler.CheckOrder.lua', ('UniSDKHandler', 'GetProductPrice'): 'freeshop/UniSDKHandler.GetProductPrice.lua'}),
+    ('DrawComp.lua', 'scripts/DrawComp.luac', {('DrawComp', 'OnInit'): 'economy/DrawComp.OnInit.lua'}),
+    ('PanelLimitDrawUp.lua', 'scripts/PanelLimitDrawUp.luac', {('PanelLimitDrawUp', 'SetInfo'): 'economy/PanelLimitDrawUp.SetInfo.lua'}),
+    ('PanelLimitDrawUpInvincible.lua', 'scripts/PanelLimitDrawUpInvincible.luac', {('PanelLimitDrawUpInvincible', 'SetInfo'): 'economy/PanelLimitDrawUpInvincible.SetInfo.lua'}),
+    ('PanelDrawPaiLianAnimator.lua', 'scripts/PanelDrawPaiLianAnimator.luac', {('PanelDrawPaiLianAnimator', 'Show'): 'economy/PanelDrawPaiLianAnimator.Show.lua'}),
+    ('PanelDrawPaiLianAnimatorInvincible.lua', 'scripts/PanelDrawPaiLianAnimatorInvincible.luac', {('PanelDrawPaiLianAnimatorInvincible', 'Show'): 'economy/PanelDrawPaiLianAnimatorInvincible.Show.lua'}),
+    ('ResourceHelper.lua', 'scripts/ResourceHelper.luac', {('ResourceHelper', 'GetExpSprite'): 'localization/ResourceHelper.GetExpSprite.lua'}),
+    ('BasicComp.lua', 'scripts/BasicComp.luac', {('BasicComp', 'GetRandomName'): 'localization/BasicComp.GetRandomName.lua'}),
+    ('I18NHelper.lua', 'scripts/I18NHelper.luac', {('I18NHelper', 'GetNumFormat'): 'localization/I18NHelper.GetNumFormat.lua'}),
+    ('PanelBooks.lua', 'scripts/PanelBooks.luac', {('BookSkinLvGo', 'CalculateSkinLv'): 'gallery/BookSkinLvGo.CalculateSkinLv.lua'}),
+    ('ManualComp.lua', 'scripts/ManualComp.luac', {('ManualComp', 'InitBindEasterEggReddot'): 'gallery/ManualComp.InitBindEasterEggReddot.lua'}),
+    ('UniMatrixHelper.lua', 'scripts/UniMatrixHelper.luac', {('UniMatrixHelper', n): f'worldchat/UniMatrixHelper.{n}.lua' for n in ('JoinDivisionWorldChannel', 'LeaveChannel', 'SendWorldMessage')}),
+    ('NovelMgr.lua', 'scripts/NovelMgr.luac', {('NovelMgr', name): f'novel/NovelMgr.{name}.lua' for name in ('PlayFadeinAnim', 'PlayFadeinEndAnim', 'PlayFadeoutEndAnim')}),
     ('PanelLogin.lua', 'scripts/PanelLogin.luac', {('PanelLogin', name): f'login/PanelLogin.{name}.lua' for name in ('OnLoad', 'DoLogin', 'OnResponsePharosSpeedup', 'RefreshState', 'UpdateVerticalLayout', 'OnUnload', 'UseDebugLogin', '_SwitchForceDebugLogin', 'StartLogin', 'OnClickFix')}),
     ('ServerClient.lua', 'scripts/ServerClient.luac', {('ServerClient', 'CallServerMethod'): 'login/ServerClient.CallServerMethod.lua'}),
     ('PatchUtils.lua', 'scripts/PatchUtils.luac', {('PatchUtils', 'ResetPatch'): 'repair/PatchUtils.ResetPatch.lua', ('PatchUtils', 'RestartOrQuitGame'): 'repair/PatchUtils.RestartOrQuitGame.lua'}),
@@ -40,8 +53,22 @@ FALSE_READS = [
 ]
 STRINGS = 'error_content_cn.lua'
 STRINGS_PATH = 'localization/error_content_cn.luac'
+DATA_TEXT = 'localization/data_text.json'
+CJK = re.compile('[\u3400-\u9fff]')
+TRANSLATED = {'draw_pool_data', 'activity_data', 'act_condition_task_data', 'activity_follow_data', 'battlepass_task_data', 'activity_version_preview_data', 'hero_purchase_pack_data', 'gift_data', 'server_list_data', 'draw_prize_data', 'card_data_new_cn', 'character_data_new_cn', 'error_content_cn', 'item_data_cn', 'mail_data_cn', 'shop_data_cn'}
 LOCALIZATION = 'localization'
 SCRIPTS = 'scripts'
+
+
+def values(value):
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from values(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from values(child)
+    elif isinstance(value, str):
+        yield value
 
 
 def sha(data):
@@ -139,6 +166,28 @@ def serialize(header, root):
 
     prototype(root)
     return bytes(data)
+
+
+def rebuild_constants(original, replacements):
+    header, root = parse(original)
+    assert serialize(header, root) == original
+    count = 0
+
+    def replace(node):
+        nonlocal count
+        for position, (tag, value) in enumerate(node['constants']):
+            if tag not in (4, 20) or value is None:
+                continue
+            source = value.decode('utf8', errors='surrogateescape')
+            if source in replacements:
+                encoded = replacements[source].encode('utf8')
+                node['constants'][position] = (20 if len(encoded) > 40 else 4, encoded)
+                count += 1
+        for child in node['children']:
+            replace(child)
+
+    replace(root)
+    return serialize(header, root), count
 
 
 def active_locals(root, pc):
@@ -440,6 +489,19 @@ def build(arguments):
             name = module.stem + '.lua'
             assert name in index, name
             localized[name] = ('%s/%s' % (LOCALIZATION, module.name), module.read_bytes())
+        for table, replacements in json.loads((SOURCES / DATA_TEXT).read_text(encoding='utf8')).items():
+            name = table + '.lua'
+            assert name in index, name
+            path = '%s/%s.luac' % (LOCALIZATION, table)
+            if table.endswith('_cn'):
+                source = localized[name][1]
+            else:
+                source = (analysis / 'installed' / index[name]['file']).read_bytes()
+            patched, changed = rebuild_constants(source, replacements)
+            remaining = sorted({value for value in values(tools.module_data(patched, table)) if value in replacements or table in TRANSLATED and CJK.search(value)})
+            assert not remaining, (table, remaining)
+            report['modules'][name] = {'method': 'constants', 'changed_constants': changed, 'original_sha256': sha(source), 'patched_sha256': sha(patched)}
+            localized[name] = (path, patched)
         strings_original = (analysis / 'installed' / index[STRINGS]['file']).read_bytes()
         current = localized[STRINGS][1]
         additions = {}

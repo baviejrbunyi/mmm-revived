@@ -11,6 +11,7 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 	a.InitializeDraw()
 	a.InitializeSystem()
 	a.InitializeGM()
+	a.AdvanceCalendar(r, a.LastLogin)
 	a.InitializeEvents(r, a.LastLogin)
 	a.InitializeRogue(r, a.LastLogin)
 	if a.Dispatch.Missions == nil {
@@ -57,6 +58,9 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 			a.Profile.Lobby.Hero = a.Profile.ShownHeroes[0]
 		}
 	}
+	if len(a.Profile.Tags) == 0 {
+		a.Profile.Tags = model.HonorTags{"story", "heroes", "skins", "createTime"}
+	}
 	if a.Lineups == nil {
 		a.Lineups = map[int]model.Lineup{}
 	}
@@ -65,9 +69,6 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 	}
 	if a.Activities == nil {
 		a.Activities = map[model.ActivityID]model.PVPActivity{}
-	}
-	if _, ok := a.Activities[DefaultPVPActivity]; !ok {
-		a.Activities[DefaultPVPActivity] = model.PVPActivity{Chance: 99}
 	}
 	if a.Missions == nil {
 		a.Missions = map[model.MissionID]model.Mission{}
@@ -110,6 +111,9 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 		if mission, ok := a.Missions[a.CurrentStory]; ok && finishedReward(r, a.CurrentStory, mission) {
 			a.CurrentStory = 0
 		}
+		if mission, ok := a.Missions[a.CurrentMemento]; ok && finishedReward(r, a.CurrentMemento, mission) {
+			a.CurrentMemento = 0
+		}
 		if mission, ok := a.Missions[a.CurrentMission]; ok && finishedReward(r, a.CurrentMission, mission) {
 			a.CurrentMission = 0
 		}
@@ -128,6 +132,9 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 			}
 			if mission.LokiRecord == nil {
 				mission.LokiRecord = map[model.MementoChipID]int{}
+			}
+			if mission.TeamSteps == nil {
+				mission.TeamSteps = map[int]int{}
 			}
 			if node := r.Nodes[mission.Node.ID]; len(mission.Visited) == 0 && mission.Step == 0 && node.Type == 5 {
 				initializeMemento(&mission, r.Missions[id], r.MementoMaps[node.Map])
@@ -152,6 +159,7 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 		if !a.Retail {
 			a.TeamBreak = TeamBreakAt(r, a.Level)
 		}
+		a.normalizeSkins(r)
 		for id, rule := range r.Tasks {
 			if _, ok := a.Tasks[id]; !ok {
 				a.Tasks[id] = model.Task{Status: 2}

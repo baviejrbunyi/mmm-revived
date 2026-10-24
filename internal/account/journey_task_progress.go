@@ -84,7 +84,7 @@ func (a *Account) refreshJourneyTaskValuesAt(r *Rules, now int64) {
 	if r == nil {
 		return
 	}
-	day, week := LogicDay(now), shopPeriod(2, now)
+	day, week := LogicDay(now), LogicWeek(now)
 	for id, rule := range r.Tasks {
 		if !a.journeyTaskEnabled(r, id, rule, now) {
 			continue
@@ -279,11 +279,60 @@ func (a *Account) refreshJourneyTaskValuesAt(r *Rules, now int64) {
 					break
 				}
 			}
+		case 10, 53:
+			if pvpRuleTask(r, id) {
+				continue
+			}
+			for _, activity := range a.Activities {
+				if rule.Type == 10 {
+					value = max(value, int64(max(activity.Wins, activity.MaxWins)))
+				} else {
+					value += max(0, activity.Points)
+				}
+			}
+		case 27, 59, 83, 84, 85:
+			if rule.Achievement == 0 {
+				continue
+			}
+			value = a.journeyTaskBackfill(rule)
+		case 52:
+			for _, mission := range rule.Lists[0] {
+				value = max(value, a.Events.Boss.Best[mission])
+			}
+		case 61, 62, 93:
+			value = a.journeyDrawValue(r, rule)
+		case 64:
+			value = int64(a.Events.Season.Level)
+		case 80:
+			minimum := taskNumber(rule, 0, 5)
+			for _, hero := range a.Heroes {
+				if hero.Trial == 0 && hero.ProficiencyLevel >= minimum {
+					value++
+				}
+			}
+		case 81:
+			if a.Profile.Signature != "" {
+				value = 1
+			}
+		case 82:
+			value = a.rogueLevelValue(taskNumber(rule, 0, 1))
+		case 88:
+			value = a.rogueFavorValue(rule.Targets)
+		case 130:
+			if !a.journeyConditionTaskOpen(r, id, now) {
+				continue
+			}
+			for _, activity := range a.Journey.Activities {
+				if activity.Open && activity.RetailPVP != nil {
+					value = max(value, activity.RetailPVP.Point)
+				}
+			}
 		default:
 			continue
 		}
 		a.UpdateTask(id, int(min(value, math.MaxInt32)), rule.Target)
 	}
+	a.recordAchievementTimes(r, now)
 }
 
 func (a *Account) journeyChallengeCleared(r *Rules, battles []int, stars int) bool {
@@ -303,13 +352,13 @@ func (a *Account) RecordJourneyTaskEvent(r *Rules, kind, amount, parameter int) 
 	}
 	now := time.Now().Unix()
 	for id, rule := range r.Tasks {
-		if rule.Type != kind || !a.journeyTaskEnabled(r, id, rule, now) {
+		if rule.Type != kind || !a.journeyTaskEnabled(r, id, rule, now) || journeyActivityTaskType(kind) && !a.journeyConditionTaskOpen(r, id, now) {
 			continue
 		}
 		if filter := rule.Lists[0]; (kind == 2 || kind == 7) && len(filter) > 0 && !slices.Contains(filter, 0) && !slices.Contains(filter, parameter) {
 			continue
 		}
-		if kind == 31 && (len(rule.Params) < 2 || rule.Params[1] != parameter) {
+		if kind == 31 && (len(rule.Params) < 2 || rule.Params[1] != parameter) || kind == 59 && id == DailyShareTask {
 			continue
 		}
 		task := a.Tasks[id]

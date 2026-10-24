@@ -3,6 +3,7 @@ package account
 import (
 	"maps"
 	"math"
+	"math/bits"
 	"slices"
 
 	"mmm-revived/internal/model"
@@ -132,6 +133,7 @@ func (a *Account) FinishJourneyActivityBattle(r *Rules, id model.ActivityID, mis
 				state.Rewarded |= 1 << star
 			}
 		}
+		state.RewardedStars = bits.OnesCount(uint(state.Rewarded))
 		if current&1 != 0 {
 			unlock = entry.Next
 		}

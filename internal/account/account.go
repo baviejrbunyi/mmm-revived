@@ -42,4 +42,9 @@ type Account struct {
 	Highlights     map[model.InstanceID]model.Highlight      `json:"highlights"`
 	Artifacts      map[model.InstanceID]model.Artifact       `json:"artifacts"`
 	LimitedHeroes  map[model.ItemID][]model.HeroID           `json:"limited_heroes"`
+	DayScheme      int                                       `json:"day_scheme"`
+	Manual         model.ManualState                         `json:"manual"`
+	Calendar       CalendarState                             `json:"calendar"`
+	TimedCosmetics map[model.ItemID]int64                    `json:"timed_cosmetics,omitempty"`
+	RogueTriggers  []model.RogueTrigger                      `json:"-"`
 }

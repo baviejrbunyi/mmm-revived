@@ -55,7 +55,8 @@ func (c *connection) Receive(message gate.EntityMessage) error {
 	for _, call := range calls {
 		handler, public, err := c.service.routes.Resolve(call)
 		if err != nil {
-			return err
+			malformed := fmt.Errorf("%w: %w", account.ErrProgression, err)
+			handler = func(*Player) error { return malformed }
 		}
 		if err = c.service.invoke(c.player, call.Name, handler, public); err != nil {
 			return err
@@ -72,6 +73,7 @@ func (s *Service) invoke(p *Player, method string, handler rpc.Handler[*Player],
 		err := handler(p)
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		s.flushLive()
 		return s.invocationResult(p, method, err)
 	}
 	s.mu.Lock()
@@ -87,6 +89,7 @@ func (s *Service) invoke(p *Player, method string, handler rpc.Handler[*Player],
 	if public || p.Account != nil {
 		err = handler(p)
 	}
+	s.flushLive()
 	return s.invocationResult(p, method, err)
 }
 

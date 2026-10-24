@@ -14,9 +14,11 @@ const (
 )
 
 type PVPHero struct {
-	ID    HeroID `json:"id" wire:"heroId"`
-	Level int    `json:"level" wire:"lv"`
-	Star  int    `json:"star" wire:"star"`
+	ID       HeroID      `json:"id" wire:"heroId"`
+	Level    int         `json:"level" wire:"lv"`
+	Star     int         `json:"star" wire:"star"`
+	Talents  map[int]int `json:"-" wire:"talents"`
+	AwakeIDs []int       `json:"-" wire:"awakeIds"`
 }
 
 type PVPActivity struct {

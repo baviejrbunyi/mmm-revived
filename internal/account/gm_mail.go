@@ -43,5 +43,5 @@ func (s *Store) DeliverGMMail(tx *sql.Tx, uid model.UserID, template int, now in
 	if len(values) > 0 {
 		hasReward = 1
 	}
-	return q.DeliverMail(ctx, database.DeliverMailParams{Owner: uid, Title: payloads[0], Content: payloads[1], Sender: payloads[2], Template: int64(template), Created: now, Expires: now + 30*86400, RewardID: rule.Reward, Items: payloads[3], HasReward: hasReward})
+	return s.deliverMail(q, ctx, database.DeliverMailParams{Owner: uid, Title: payloads[0], Content: payloads[1], Sender: payloads[2], Template: int64(template), Created: now, Expires: now + 30*86400, RewardID: rule.Reward, Items: payloads[3], HasReward: hasReward})
 }

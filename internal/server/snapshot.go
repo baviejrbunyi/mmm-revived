@@ -10,6 +10,9 @@ import (
 
 func (s *Service) clientSnapshot(a *account.Account) model.Avatar {
 	profile := a.Snapshot(s.Store.Catalog)
+	s.Store.Rules.EconomySnapshot(&profile.Draw)
+	a.DoubleMaterialSnapshot(s.Store.Rules, &profile.Challenges)
+	profile.Achievement = a.AchievementSnapshot(s.Store.Rules)
 	sets := s.catalogSets()
 	items, heroes, skins, artifacts, highlights := sets.items, sets.heroes, sets.skins, sets.artifacts, sets.highlights
 	profile.Items.Normal = clientEntries(profile.Items.Normal, func(id model.ItemID, _ int64) bool { return clientHas(items, id) })
@@ -19,22 +22,24 @@ func (s *Service) clientSnapshot(a *account.Account) model.Avatar {
 	profile.Heroes.Artifacts = clientEntries(profile.Heroes.Artifacts, func(_ model.InstanceID, value model.Artifact) bool { return clientHas(artifacts, value.ID) })
 	profile.Heroes.Highlights = clientEntries(profile.Heroes.Highlights, func(_ model.InstanceID, value model.Highlight) bool { return clientHas(highlights, value.ID) })
 	profile.Heroes.Skins = clientEntries(profile.Heroes.Skins, func(id model.SkinID, _ int) bool { return clientHas(skins, id) })
+	profile.Heroes.SkinCollection = a.SkinCollectionLevel(s.Store.Rules)
 	profile.Heroes.ArtifactCounts = make(map[model.ArtifactID]int, len(profile.Heroes.Artifacts))
 	profile.Heroes.HighlightCounts = make(map[model.HighlightID]int, len(profile.Heroes.Highlights))
 	for id, value := range profile.Heroes.Artifacts {
 		if _, visible := profile.Heroes.Heroes[value.Install]; !visible {
 			value.Install = 0
 		}
-		profile.Heroes.Artifacts[id] = value
+		profile.Heroes.Artifacts[id] = value.ForClient(id, a.CreatedAt)
 		profile.Heroes.ArtifactCounts[value.ID]++
 	}
 	for id, value := range profile.Heroes.Highlights {
 		if _, visible := profile.Heroes.Heroes[value.Install]; !visible {
 			value.Install = 0
 		}
-		profile.Heroes.Highlights[id] = value
+		profile.Heroes.Highlights[id] = value.ForClient(id, a.CreatedAt)
 		profile.Heroes.HighlightCounts[value.ID]++
 	}
+	a.MergeCollectionCounts(&profile.Heroes)
 	for id, hero := range profile.Heroes.Heroes {
 		if !clientHas(skins, hero.Skin) {
 			hero.Skin = 0

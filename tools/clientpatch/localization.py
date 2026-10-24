@@ -10,7 +10,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from client_modules import REPO, Toolchain, literal, parse, serialize
+from client_modules import REPO, Toolchain, literal, parse, rebuild_constants, serialize
 
 LOCALIZATION = 'localization'
 PATCH_STRINGS = 'PatchStringsData'
@@ -50,28 +50,6 @@ def unambiguous(pairs):
 
 def text_pairs(old_cn, old_en):
     return [(value, old_en[path]) for path, value in old_cn.items() if isinstance(value, str) and isinstance(old_en.get(path), str)]
-
-
-def rebuild_constants(original, replacements):
-    header, root = parse(original)
-    assert serialize(header, root) == original
-    count = 0
-
-    def replace(node):
-        nonlocal count
-        for position, (tag, value) in enumerate(node['constants']):
-            if tag not in (4, 20) or value is None:
-                continue
-            source = value.decode('utf8', errors='surrogateescape')
-            if source in replacements:
-                encoded = replacements[source].encode('utf8')
-                node['constants'][position] = (20 if len(encoded) > 40 else 4, encoded)
-                count += 1
-        for child in node['children']:
-            replace(child)
-
-    replace(root)
-    return serialize(header, root), count
 
 
 def localize(tools, name, old_cn, old_en, target_original, english, shared):

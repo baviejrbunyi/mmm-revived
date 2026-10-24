@@ -11,6 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/model"
 )
 
@@ -234,7 +235,10 @@ func (a *Account) ExecuteGM(r *Rules, catalog Catalog, command model.GMCommand, 
 		}
 		result.Text = "Daily limits reset"
 	case model.GMGetTime:
-		result.Text = time.Unix(now+r.Journey.CalendarOffset, 0).UTC().Format(time.RFC3339)
+		result.Text = time.Unix(calendar.ContentTime(now), 0).UTC().Format(time.RFC3339)
+		if cycle := calendar.Cycle(); cycle > 0 {
+			result.Text += " (calendar loop " + strconv.FormatInt(cycle, 10) + ", date " + time.Unix(calendar.Monotonic(now), 0).UTC().Format(time.RFC3339) + ")"
+		}
 	case model.GMSetTime:
 		offset := int64(0)
 		if command.Value != 0 {
@@ -242,6 +246,17 @@ func (a *Account) ExecuteGM(r *Rules, catalog Catalog, command model.GMCommand, 
 		}
 		if offset < -315576000 || offset > 315576000 {
 			return result, rejected("calendar offset exceeds ten years")
+		}
+		if delta := offset - calendar.BaseOffset(); delta > 0 {
+			if a.Energy.Refreshed > 0 {
+				a.Energy.Refreshed -= delta
+			}
+			for id, mission := range a.Dispatch.Missions {
+				if mission.Started != 0 {
+					mission.Started, mission.Ends = mission.Started-delta, mission.Ends-delta
+					a.Dispatch.Missions[id] = mission
+				}
+			}
 		}
 		a.GM.ClockOffset = &offset
 		result.Clock = &offset
@@ -334,7 +349,7 @@ func (a *Account) gmUnlockEquipment(r *Rules, catalog Catalog) error {
 		if !known || len(rule.Templates) == 0 {
 			continue
 		}
-		value := model.Artifact{ID: id, Level: 1, Template: rule.Templates[0], PendingGrowth: map[string][]int64{}}
+		value := model.Artifact{ID: id, Level: 1, Template: rule.Templates[0], PendingGrowth: map[string][]int64{}, Obtained: time.Now().Unix()}
 		if err := initializeArtifactGrowth(r, &value); err != nil {
 			return err
 		}
@@ -348,7 +363,7 @@ func (a *Account) gmUnlockEquipment(r *Rules, catalog Catalog) error {
 		if _, known := r.HighlightTemplates[id]; !known {
 			continue
 		}
-		a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1}
+		a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1, Obtained: time.Now().Unix()}
 		highlights[id] = true
 	}
 	return nil

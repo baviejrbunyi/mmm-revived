@@ -53,10 +53,25 @@ func executeRogueEvent(selected int) rogueAction {
 }
 
 func Sync(p *server.Player) error {
+	if run := p.Account.RogueProgress.Run; run.Status == model.RogueSettle && !run.Claimed {
+		if err := p.Send("onRogueRankScoreChange", run.RankChange); err != nil {
+			return err
+		}
+	}
 	if err := p.Update([]string{"rogueComp"}, p.Account.RogueComponent(false)); err != nil {
 		return err
 	}
-	return p.Update([]string{"roguePveComp"}, p.Account.RogueComponent(true))
+	if err := p.Update([]string{"roguePveComp"}, p.Account.RogueComponent(true)); err != nil {
+		return err
+	}
+	triggers := p.Account.RogueTriggers
+	p.Account.RogueTriggers = nil
+	for _, trigger := range triggers {
+		if err := p.Send("relicSkillTrigged", string(trigger.Relic), trigger.Skill, trigger.Targets); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s service) rogue(p *server.Player, action rogueAction) error {

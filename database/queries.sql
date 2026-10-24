@@ -436,3 +436,18 @@ LEFT JOIN account_records t1 ON t1.uid=l.invitee AND t1.category='task' AND t1.i
 LEFT JOIN account_records t2 ON t2.uid=l.invitee AND t2.category='task' AND t2.id='3712'
 LEFT JOIN account_records t3 ON t3.uid=l.invitee AND t3.category='task' AND t3.id='3713'
 WHERE l.inviter=? ORDER BY l.invitee LIMIT 5;
+
+-- name: AddGuildContribution :exec
+INSERT INTO guild_contributions(guild_id,uid,week,score) VALUES (?,?,?,?) ON CONFLICT(guild_id,week,uid) DO UPDATE SET score=score+excluded.score;
+
+-- name: AddGuildHistoryScore :exec
+UPDATE guild_members SET history_score=history_score+sqlc.arg(score) WHERE uid=sqlc.arg(uid);
+
+-- name: DeleteGuildContributions :exec
+DELETE FROM guild_contributions WHERE guild_id=? AND week<?;
+
+-- name: ListGuildContributions :many
+SELECT uid,week,score FROM guild_contributions WHERE guild_id=sqlc.arg(guild_id) AND week>=sqlc.arg(from_week) AND week<sqlc.arg(to_week) ORDER BY week,uid;
+
+-- name: SetGuildProgress :exec
+UPDATE guilds SET level=?,experience=? WHERE id=?;

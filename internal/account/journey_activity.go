@@ -244,7 +244,7 @@ func (a *Account) FinishJourneyMiniGame(r *Rules, id model.ActivityID, level int
 	return quantities, nil
 }
 
-func (a *Account) StartJourneyMissionNode(r *Rules, id model.ActivityID, mission, node int, now int64) error {
+func (a *Account) PrepareJourneyMission(r *Rules, id model.ActivityID, mission int, now int64) error {
 	if _, err := a.JourneyActivityRule(r, id, 20, now); err != nil {
 		return err
 	}
@@ -253,22 +253,33 @@ func (a *Account) StartJourneyMissionNode(r *Rules, id model.ActivityID, mission
 		return rejected("limited mission unavailable")
 	}
 	activity := a.Journey.Activities[id]
-	state, started := activity.Missions[mission]
-	if !started {
-		for _, previous := range rule.Predecessors {
-			if activity.Missions[previous].Finished != 1 {
-				return rejected("limited mission predecessor is incomplete")
-			}
-		}
-		state = model.JourneyMission{Node: rule.FirstNode}
+	if _, started := activity.Missions[mission]; started {
+		return nil
 	}
+	for _, previous := range rule.Predecessors {
+		if activity.Missions[previous].Finished != 1 {
+			return rejected("limited mission predecessor is incomplete")
+		}
+	}
+	if activity.Missions == nil {
+		activity.Missions = map[int]model.JourneyMission{}
+	}
+	activity.Missions[mission] = model.JourneyMission{Nodes: map[int]model.MissionNode{}, Passed: map[int]int{}}
+	a.Journey.Activities[id] = activity
+	return nil
+}
+
+func (a *Account) StartJourneyMissionNode(r *Rules, id model.ActivityID, mission, node int, now int64) error {
+	if err := a.PrepareJourneyMission(r, id, mission, now); err != nil {
+		return err
+	}
+	rule := r.Journey.Missions[mission]
+	activity := a.Journey.Activities[id]
+	state := activity.Missions[mission]
 	if node != state.Node && node != rule.FirstNode {
 		return rejected("invalid limited mission node")
 	}
 	enterJourneyMissionNode(&state, node)
-	if activity.Missions == nil {
-		activity.Missions = map[int]model.JourneyMission{}
-	}
 	activity.Missions[mission] = state
 	a.Journey.Activities[id] = activity
 	return nil
@@ -384,4 +395,71 @@ func (a *Account) AddLimitedJourneyPassExperience(r *Rules, amount int64, now in
 		a.Journey.Activities[id] = activity
 	}
 	return nil
+}
+
+func (r *Rules) limitedBoss(calendar int64) (int, int64) {
+	groups := slices.Sorted(maps.Keys(r.Journey.LimitedBosses))
+	for index, group := range groups {
+		rule := r.Journey.LimitedBosses[group]
+		if calendar < rule.Open || calendar > rule.End {
+			continue
+		}
+		start := rule.Open
+		for previous := index - 1; previous >= 0; previous-- {
+			earlier := r.Journey.LimitedBosses[groups[previous]]
+			if earlier.End+1 < start {
+				break
+			}
+			start = earlier.Open
+		}
+		return group, LogicDay(calendar) - LogicDay(start) + 1
+	}
+	return 0, 0
+}
+
+func (a *Account) BeginLimitedBoss(r *Rules, id model.ActivityID, group, difficulty int, battle model.BattleID, now int64) error {
+	if _, err := a.JourneyActivityRule(r, id, 20, now); err != nil {
+		return err
+	}
+	activity := a.Journey.Activities[id]
+	rule, known := r.Journey.LimitedBosses[group]
+	if !known || activity.BossGroup != group || difficulty < 1 || difficulty > len(rule.Battles) || rule.Battles[difficulty-1] != battle || len(rule.Cost) < 2 {
+		return rejected("limited boss battle unavailable")
+	}
+	if activity.BossTickets-activity.BossUsed < rule.Cost[1] {
+		return rejected("limited boss tickets are exhausted")
+	}
+	return nil
+}
+
+func (a *Account) FinishLimitedBoss(r *Rules, id model.ActivityID, group, difficulty int, win bool) (map[model.ItemID]int64, error) {
+	if !win {
+		return nil, nil
+	}
+	activity := a.Journey.Activities[id]
+	rule, known := r.Journey.LimitedBosses[group]
+	if !known || difficulty < 1 || difficulty > len(rule.Rewards) || len(rule.Cost) < 2 {
+		return nil, rejected("limited boss battle unavailable")
+	}
+	activity.BossUsed += rule.Cost[1]
+	a.Journey.Activities[id] = activity
+	rewards := []model.RewardID{rule.Rewards[difficulty-1]}
+	for _, key := range slices.Sorted(maps.Keys(r.Journey.LimitedBossRewards)) {
+		entry := r.Journey.LimitedBossRewards[key]
+		if entry.Tag == rule.LevelReward && len(entry.Levels) == 2 && a.Level >= entry.Levels[0] && a.Level <= entry.Levels[1] {
+			rewards = append(rewards, entry.Reward)
+		}
+	}
+	items := map[model.ItemID]int64{}
+	for _, reward := range rewards {
+		quantities, err := rewardItems(r, reward, 1)
+		if err != nil {
+			return nil, err
+		}
+		addItems(items, quantities)
+	}
+	if err := a.GrantItems(r, items); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

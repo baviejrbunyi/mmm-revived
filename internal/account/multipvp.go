@@ -1,22 +1,34 @@
 package account
 
 import (
+	"maps"
 	"math"
 	"slices"
 	"strconv"
 
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/model"
 )
 
+const retailCurrency model.ItemID = 71
+
 func (a *Account) InitializeRetailPVP(r *Rules, now int64) {
+	if r == nil {
+		return
+	}
+	a.PrepareRealtimePVP(r, now)
+	a.PrepareAsyncPVP(r, now)
 	if a.Journey.Activities == nil {
 		a.Journey.Activities = map[model.ActivityID]model.JourneyActivity{}
 	}
-	for id, rule := range r.RetailPVP.Activities {
-		if rule.Type != 31 || !a.journeyActivityAvailable(rule, now, r.Journey.CalendarOffset) {
+	for _, id := range slices.Sorted(maps.Keys(r.RetailPVP.Activities)) {
+		rule := r.RetailPVP.Activities[id]
+		main, configured := r.RetailPVP.Main[rule.Parameter]
+		if rule.Type != 31 || !configured {
 			continue
 		}
-		if _, ok := r.RetailPVP.Main[rule.Parameter]; !ok {
+		if !a.journeyActivityAvailable(rule, now, r.Journey.CalendarOffset) {
+			a.closeRetailPVP(r, id, rule, main, now)
 			continue
 		}
 		activity := a.Journey.Activities[id]
@@ -26,18 +38,6 @@ func (a *Account) InitializeRetailPVP(r *Rules, now int64) {
 		}
 		activity.Open = true
 		state := activity.RetailPVP
-		if state.Day != now/86400 {
-			state.Day = now / 86400
-			state.Refreshed = 0
-			state.DailyDefenses = 0
-			state.Enemies = map[int]model.RetailPVPTarget{}
-			state.Attacked = []int64{}
-			state.DailyUsed = map[model.HeroID]int{}
-			for uid, revenge := range state.Revenges {
-				revenge.DailyAttacks = 0
-				state.Revenges[uid] = revenge
-			}
-		}
 		if state.Mines == nil {
 			state.Mines = map[string]model.RetailPVPMine{}
 		}
@@ -57,6 +57,96 @@ func (a *Account) InitializeRetailPVP(r *Rules, now int64) {
 			state.Records = []model.RetailPVPRecord{}
 		}
 		a.Journey.Activities[id] = activity
+		if moment, due := a.retailSettlement(r, id, rule, now); due {
+			a.finishRetailPVP(r, id, main, moment)
+		}
+		if day := LogicDay(now); state.Day != day {
+			if state.Day > 0 && state.Day < day && state.SettleStatus == 0 {
+				a.growRetailMines(r, id, int(min(day-state.Day, 366)), now)
+			}
+			state.Day = day
+			state.Refreshed = 0
+			state.DailyDefenses = 0
+			state.Enemies = map[int]model.RetailPVPTarget{}
+			state.Attacked = []int64{}
+			state.DailyUsed = map[model.HeroID]int{}
+			for uid, revenge := range state.Revenges {
+				revenge.DailyAttacks = 0
+				state.Revenges[uid] = revenge
+			}
+		}
+	}
+}
+
+func (a *Account) retailSettlement(r *Rules, id model.ActivityID, rule JourneyActivityRule, now int64) (int64, bool) {
+	days := r.RetailPVP.SettleDays[id]
+	if days <= 0 {
+		return 0, false
+	}
+	offset := r.Journey.CalendarOffset
+	day := (rule.Start-calendar.RefreshSeconds)/DaySeconds + int64(days)
+	if (now+offset-calendar.RefreshSeconds)/DaySeconds < day {
+		return 0, false
+	}
+	return min(now, day*DaySeconds+calendar.RefreshSeconds-offset), true
+}
+
+func (a *Account) finishRetailPVP(r *Rules, id model.ActivityID, main RetailPVPMainRule, moment int64) {
+	state := a.Journey.Activities[id].RetailPVP
+	if state == nil || state.SettleStatus != 0 {
+		return
+	}
+	if moment > state.LastBoxRequest {
+		_ = a.RefreshRetailPVPBox(r, id, moment)
+	}
+	if state.BoxMineCoin > 0 && a.grantItems(r, map[model.ItemID]int64{retailCurrency: state.BoxMineCoin}, 0) == nil {
+		state.BoxMineCoin = 0
+	}
+	state.Point += max(0, state.BoxPoint)
+	state.BoxPoint, state.MineRemainder, state.PointRemainder = 0, 0, 0
+	state.SettleStatus = 1
+	if state.Point > 0 && main.RankingReward != 0 && main.RankingLimit > 0 {
+		a.queueSeasonMail(model.SeasonMail{Title: "Mad Carnival Ranking Reward", Content: "Mad Carnival has ended. You finished at rank {1}. Here is your ranking reward.", Reward: main.RankingReward, Mode: model.RankRetailPVP, Rank: int(id), Score: state.Point, Limit: main.RankingLimit})
+	}
+}
+
+func (a *Account) closeRetailPVP(r *Rules, id model.ActivityID, rule JourneyActivityRule, main RetailPVPMainRule, now int64) {
+	activity, exists := a.Journey.Activities[id]
+	if !exists || !activity.Open || activity.RetailPVP == nil {
+		return
+	}
+	if activity.RetailPVP.SettleStatus == 0 {
+		moment := now
+		if rule.End > 0 {
+			moment = min(now, rule.End-r.Journey.CalendarOffset)
+		}
+		if settle, due := a.retailSettlement(r, id, rule, now); due {
+			moment = min(moment, settle)
+		}
+		a.finishRetailPVP(r, id, main, moment)
+	}
+	activity.Open = false
+	a.Journey.Activities[id] = activity
+	for _, other := range a.Journey.Activities {
+		if other.Open && other.RetailPVP != nil {
+			return
+		}
+	}
+	a.Items[retailCurrency] = 0
+}
+
+func (a *Account) growRetailMines(r *Rules, id model.ActivityID, days int, now int64) {
+	if days <= 0 || a.RefreshRetailPVPBox(r, id, now) != nil {
+		return
+	}
+	state := a.Journey.Activities[id].RetailPVP
+	for key, mine := range state.Mines {
+		row, known := r.RetailPVP.Mines[mine.Mine]
+		if !known || len(mine.Defense) == 0 || row.AutoGrow <= 0 || mine.Efficiency >= row.MaximumEfficiency {
+			continue
+		}
+		mine.Efficiency = min(row.MaximumEfficiency, mine.Efficiency+row.AutoGrow*days)
+		state.Mines[key] = mine
 	}
 }
 
@@ -184,11 +274,12 @@ func (a *Account) ReapRetailPVPBox(r *Rules, id model.ActivityID, now int64) (in
 	if coin < 0 || point < 0 || state.Point > math.MaxInt64-point {
 		return 0, 0, rejected("invalid Halloween mining balance")
 	}
-	if err = a.grantItems(r, map[model.ItemID]int64{71: coin}, 0); err != nil {
+	if err = a.grantItems(r, map[model.ItemID]int64{retailCurrency: coin}, 0); err != nil {
 		return 0, 0, err
 	}
 	state.Point += point
 	state.BoxMineCoin, state.BoxPoint = 0, 0
+	a.RecordJourneyTaskEvent(r, 128, 1, 0)
 	return coin, point, nil
 }
 
@@ -212,4 +303,30 @@ func (a *Account) RetailPVPMineDefense(activityID model.ActivityID, index string
 	}
 	slices.Sort(copy.Network.DefenseOrder)
 	return copy.NetworkDefense(r), true
+}
+
+func (a *Account) settlePVPCycle(r *Rules) {
+	if a.Network.Initialized && a.Network.Activity != 0 {
+		a.settleAsyncSeason(r, a.Network.Activity, a.Network.Activity)
+	}
+	if id := a.RealtimeActivity(); a.Activities[id].InitializedAt > 0 {
+		rule := r.PVP[id]
+		a.settleRealtimeSeason(r, rule, rule)
+		activity := a.Activities[id]
+		activity.InitializedAt = 0
+		a.Activities[id] = activity
+	}
+	closed := false
+	for _, id := range slices.Sorted(maps.Keys(a.Journey.Activities)) {
+		activity := a.Journey.Activities[id]
+		rule, known := r.RetailPVP.Activities[id]
+		if !known || !activity.Open || activity.RetailPVP == nil {
+			continue
+		}
+		a.finishRetailPVP(r, id, r.RetailPVP.Main[rule.Parameter], activity.RetailPVP.LastBoxRequest)
+		closed = true
+	}
+	if closed {
+		a.Items[retailCurrency] = 0
+	}
 }

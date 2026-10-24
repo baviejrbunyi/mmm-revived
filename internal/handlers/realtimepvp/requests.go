@@ -96,10 +96,10 @@ func DecodeMatchReport(c protocol.Call) (model.MatchReport, error) {
 		return model.MatchReport{Player: model.UserID(uid)}, nil
 	}
 	var report struct {
-		GID      string       `json:"gid"`
-		Winner   model.UserID `json:"winner"`
-		Opponent model.UserID `json:"oppo"`
-		Frame    int          `json:"frame"`
+		GID      string `json:"gid"`
+		Winner   int64  `json:"winner"`
+		Opponent int64  `json:"oppo"`
+		Frame    int    `json:"frame"`
 	}
 	if err = c.Record(1, &report); err != nil {
 		return model.MatchReport{}, err
@@ -107,7 +107,7 @@ func DecodeMatchReport(c protocol.Call) (model.MatchReport, error) {
 	if len(report.GID) == 0 || len(report.GID) > 128 || report.Frame < 0 || report.Frame > 18000 {
 		return model.MatchReport{}, errors.New("invalid battle report")
 	}
-	return model.MatchReport{Player: model.UserID(uid), GID: report.GID, Winner: report.Winner, Opponent: report.Opponent, Frame: report.Frame}, nil
+	return model.MatchReport{Player: model.UserID(uid), GID: report.GID, Winner: model.UserID(report.Winner), Opponent: model.UserID(report.Opponent), Frame: report.Frame}, nil
 }
 
 type PVPHeroPlacement struct {

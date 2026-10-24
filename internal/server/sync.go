@@ -11,7 +11,7 @@ import (
 
 var automaticComponents = []string{"taskComp", "itemComp", "heroComp", "battlepassComp", "monthlyPassComp", "activityComp", "basicComp", "energyComp"}
 
-var itemDependents = []string{"seasonComp", "battlepassComp", "monthlyPassComp", "basicComp", "energyComp"}
+var itemDependents = []string{"seasonComp", "battlepassComp", "monthlyPassComp", "basicComp", "energyComp", "manualComp", "benefitsSummaryComp", "makeupComp"}
 
 type component func(*Service, *Player, *model.Avatar) (any, error)
 
@@ -46,6 +46,7 @@ var components = map[string]component{
 	"dreamlandComp":   field(func(a *model.Avatar) model.DreamlandComponent { return a.Dreamland }),
 	"matchComp":       field(func(a *model.Avatar) model.MatchComponent { return a.Match }),
 	"activityComp":    field(func(a *model.Avatar) model.ActivityComponent { return a.Activities }),
+	"achieveComp":     field(func(a *model.Avatar) model.AchievementComponent { return a.Achievement }),
 }
 
 var ErrProgressionRules = errors.New("progression rules are unavailable")
@@ -92,6 +93,9 @@ func (s *Service) Sync(p *Player, names ...string) error {
 	if automatic {
 		p.Account.Journey.AutomaticPending = false
 	}
+	if err := s.notifyAchievements(p, names, &profile); err != nil {
+		return err
+	}
 	return s.notifyLevel(p)
 }
 
@@ -102,5 +106,8 @@ func (s *Service) notifyLevel(p *Player) error {
 		return nil
 	}
 	energy := p.Account.Items[6] - account.LevelEnergyRecovery(s.Store.Rules, previous, current)
-	return p.Send("upLv", previous, current, max(0, energy))
+	if err := p.Send("upLv", previous, current, max(0, energy)); err != nil {
+		return err
+	}
+	return p.Update([]string{"activityComp"}, s.clientSnapshot(p.Account).Activities)
 }

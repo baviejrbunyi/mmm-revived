@@ -8,7 +8,7 @@ import (
 
 func (a *Account) Snapshot(c Catalog) model.Avatar {
 	now := time.Now().Unix()
-	day := now / 86400
+	day := LogicDay(now)
 	energyBought := 0
 	if a.Energy.Day == LogicDay(now) {
 		energyBought = a.Energy.Bought
@@ -40,7 +40,7 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 			ArtifactCounts:  map[model.ArtifactID]int{},
 			Highlights:      a.Highlights,
 			HighlightCounts: map[model.HighlightID]int{},
-			Skins:           make(map[model.SkinID]int, len(c.Skins)),
+			Skins:           a.OwnedSkins(c),
 			ShowHero:        a.Profile.ShownHeroes,
 		},
 		Items: model.ItemComponent{Normal: a.Items, Limited: limitedItems(a.LimitedHeroes), Crafts: a.CraftRecipes},
@@ -95,7 +95,7 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 			profile.Shop.Counts[id] = purchase.Count
 		}
 	}
-	profile.Activities = model.ActivityComponent{Info: make(map[model.ActivityID]model.ActivityInfo, len(a.Activities)+2), Status: map[model.ActivityID]int{DefaultPVPActivity: 1}}
+	profile.Activities = model.ActivityComponent{Info: make(map[model.ActivityID]model.ActivityInfo, len(a.Activities)+2), Status: map[model.ActivityID]int{a.RealtimeActivity(): 1}}
 	for id, state := range a.Activities {
 		profile.Activities.Info[id] = state
 	}
@@ -108,6 +108,7 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 		profile.Appearance.Frames = a.retailCosmetics(c, 1023, DefaultHeadFrame)
 		profile.Appearance.Backgrounds = a.retailCosmetics(c, 1045, DefaultBackground)
 	}
+	a.timedCosmeticSnapshot(c, &profile.Appearance)
 	for _, id := range c.Cosmetics[1035] {
 		if !a.Retail || a.Items[id] > 0 {
 			profile.Appearance.BadgeInfo[int(id)] = 1
@@ -115,13 +116,6 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 	}
 	for id, hero := range a.Heroes {
 		profile.Heroes.History[id] = model.HeroHistory{MaxLevel: hero.Level}
-	}
-	if a.Retail {
-		profile.Heroes.Skins = a.retailSkins(c)
-	} else {
-		for _, id := range c.Skins {
-			profile.Heroes.Skins[id] = 1
-		}
 	}
 	for _, artifact := range a.Artifacts {
 		profile.Heroes.ArtifactCounts[artifact.ID]++
@@ -132,6 +126,7 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 	profile.Draw = a.DrawSnapshot()
 	a.JourneySnapshot(&profile, now)
 	a.EventsSnapshot(&profile)
+	a.manualSnapshot(&profile)
 	a.ApplySystemSnapshot(&profile, now)
 	profile.PVP = a.NetworkSnapshot(now)
 	profile.Battle.SupportUses = a.Network.Support.Used

@@ -23,6 +23,20 @@ type NetworkState struct {
 	RewardedTasks []TaskID               `json:"rewarded_tasks"`
 	Support       SupportSelection       `json:"support"`
 	Pending       *NetworkBattle         `json:"pending,omitempty"`
+	RealtimeDay   int64                  `json:"realtime_day,omitempty"`
+	SeasonMail    []SeasonMail           `json:"season_mail,omitempty"`
+}
+
+type SeasonMail struct {
+	Template int64            `json:"template,omitempty"`
+	Title    string           `json:"title"`
+	Content  string           `json:"content"`
+	Items    map[ItemID]int64 `json:"items,omitempty"`
+	Reward   RewardID         `json:"reward,omitempty"`
+	Mode     RankMode         `json:"mode,omitempty"`
+	Rank     int              `json:"rank,omitempty"`
+	Score    int64            `json:"score,omitempty"`
+	Limit    int64            `json:"limit,omitempty"`
 }
 
 type SupportSelection struct {
@@ -84,10 +98,11 @@ type AsyncDefense struct {
 }
 
 type AsyncBattleInfo struct {
-	TeamLevel int              `wire:"teamLv"`
-	Attacker  AsyncDefense     `wire:"attacker"`
-	Defender  AsyncDefense     `wire:"defender"`
-	Bonds     map[string]int64 `wire:"bondAttr"`
+	TeamLevel      int              `wire:"teamLv"`
+	SkinCollection int              `wire:"skinCollectionLv"`
+	Attacker       AsyncDefense     `wire:"attacker"`
+	Defender       AsyncDefense     `wire:"defender"`
+	Bonds          map[string]int64 `wire:"bondAttr"`
 }
 
 type GuildWarState struct {
@@ -96,6 +111,7 @@ type GuildWarState struct {
 	Endurance map[int]int               `json:"endurance"`
 	Killed    int64                     `json:"killed"`
 	Members   map[UserID]GuildWarMember `json:"members"`
+	DayScheme int                       `json:"day_scheme"`
 }
 
 type GuildWarMember struct {

@@ -1,11 +1,15 @@
 package server
 
 import (
+	"math"
 	"time"
 
+	"mmm-revived/internal/account"
 	"mmm-revived/internal/matchmaking"
 	"mmm-revived/internal/model"
 )
+
+const BotUID model.UserID = math.MaxUint64
 
 type Room struct {
 	ID          string
@@ -31,6 +35,40 @@ type Room struct {
 	Battle      int
 	Environment int
 	Expire      func(*Room) error
+	Plan        []model.Selection
+}
+
+func NewBot() *Player {
+	return &Player{Account: &account.Account{UID: BotUID}, State: PVPDeployment}
+}
+
+func (p *Player) Bot() bool { return p.Session == nil }
+
+func (r *Room) Bot() *Player {
+	for _, member := range r.Players {
+		if member.Bot() {
+			return member
+		}
+	}
+	return nil
+}
+
+func WireUID(uid model.UserID) int64 { return int64(uid) }
+
+func (s *Service) After(delay time.Duration, run func()) {
+	time.AfterFunc(delay, func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		run()
+		s.flushLive()
+	})
+}
+
+func (s *Service) DeliverSeasonMail(p *Player) error {
+	if p.Bot() || len(p.Account.Network.SeasonMail) == 0 {
+		return nil
+	}
+	return s.Store.Save(p.Account)
 }
 
 func (s *Service) MatchStatus(p *Player, kind int) error {
@@ -53,6 +91,9 @@ func (s *Service) FinishMatch(match *Room, winner model.UserID) error {
 	var firstError error
 	for _, member := range match.Players {
 		member.Room, member.State = nil, Lobby
+		if member.Bot() {
+			continue
+		}
 		if err := s.settleMatch(match, member, winner); err != nil && firstError == nil {
 			firstError = err
 		}
@@ -73,6 +114,9 @@ func (s *Service) AnnounceMatch(match *Room, winner model.UserID, confirm time.D
 	match.Announced, match.Claim, match.Deadline = true, winner, time.Now().Add(confirm)
 	var firstError error
 	for _, member := range match.Players {
+		if member.Bot() {
+			continue
+		}
 		if err := member.Send("pvpBattleFinish", winner == member.Account.UID); err != nil && firstError == nil {
 			firstError = err
 		}
@@ -81,8 +125,9 @@ func (s *Service) AnnounceMatch(match *Room, winner model.UserID, confirm time.D
 }
 
 func (s *Service) settleMatch(match *Room, member *Player, winner model.UserID) error {
-	activity := member.Account.Activities[match.Activity]
-	rule := s.Store.Rules.PVP[match.Activity]
+	id := member.Account.RealtimeActivity()
+	activity := member.Account.Activities[id]
+	rule := s.Store.Rules.PVP[id]
 	draft := match.Mode.UsesDraft()
 	var firstError error
 	if winner != 0 {
@@ -111,14 +156,14 @@ func (s *Service) settleMatch(match *Room, member *Player, winner model.UserID) 
 	}
 	switch {
 	case draft && winner != 0:
-		if err := member.Account.BeginPVPEnhancement(s.Store.Rules, match.Activity, activity); err != nil && firstError == nil {
+		if err := member.Account.BeginPVPEnhancement(s.Store.Rules, id, activity); err != nil && firstError == nil {
 			firstError = err
 		}
 	case draft:
 		activity.Status = model.PVPMatching
-		member.Account.Activities[match.Activity] = activity
+		member.Account.Activities[id] = activity
 	case winner != 0:
-		member.Account.Activities[match.Activity] = activity
+		member.Account.Activities[id] = activity
 	}
 	if err := s.SaveAndSync(member, "activityComp", "itemComp", "taskComp"); err != nil && firstError == nil {
 		firstError = err

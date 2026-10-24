@@ -30,6 +30,7 @@ type BattleExtra struct {
 	Monster      model.HeroID         `json:"monster" wire:"monster,omitempty"`
 	Mode         int                  `json:"mode" wire:"mode,omitempty"`
 	Activity     model.ActivityID     `json:"activityId" wire:"activityId,omitempty"`
+	OpenID       int                  `json:"openId" wire:"openId,omitempty"`
 	Target       *model.AsyncTarget   `json:"target" wire:"target,omitempty"`
 	FriendUID    model.UserID         `json:"friend_uid_pvp" wire:"friend_uid_pvp,omitempty"`
 	AreaID       int                  `json:"areaId" wire:"areaId,omitempty"`

@@ -75,7 +75,7 @@ func (b BossRankRule) Matches(position, total int64) bool {
 
 func (a *Account) InitializeEvents(r *Rules, now int64) {
 	state := &a.Events
-	week, day := shopPeriod(2, now), now/86400
+	week, day := LogicWeek(now), LogicDay(now)
 	if !state.Season.Initialized {
 		state.Season = model.SeasonProgress{Initialized: true, ID: 1, Nodes: []int{}, Resets: 1, Week: week}
 	}
@@ -108,6 +108,9 @@ func (a *Account) InitializeEvents(r *Rules, now int64) {
 		active = state.Boss.Open
 	}
 	if state.Boss.Open != active {
+		if _, known := r.Events.BossOpens[state.Boss.Open]; known {
+			a.settleBossScores(r)
+		}
 		state.Boss.Open = active
 		state.Boss.TotalScore = 0
 		state.Boss.Rewards = []int{}
@@ -318,6 +321,7 @@ func (a *Account) ClaimBossRank(r *Rules, position, total, now int64) (map[model
 		return nil, err
 	}
 	state.RankClaimed = append(state.RankClaimed, state.Open)
+	a.RecordBenefits("boss_rank", "openId", int64(state.Open), quantities)
 	return quantities, nil
 }
 
@@ -332,5 +336,5 @@ func (a *Account) EventsSnapshot(profile *model.Avatar) {
 	if slices.Contains(boss.RankClaimed, boss.Open) {
 		settled = boss.Open
 	}
-	profile.Boss = model.BossComponent{Passed: best, Daily: boss.Daily, Rewards: boss.Rewards, TotalScore: boss.TotalScore, DailyCount: boss.Count, OpenID: boss.Open, Settled: settled, Records: []model.Empty{}}
+	profile.Boss = model.BossComponent{Passed: best, Daily: boss.Daily, Rewards: boss.Rewards, TotalScore: boss.TotalScore, DailyCount: boss.Count, OpenID: boss.Open, Settled: settled, Records: []model.BossRecord{}}
 }

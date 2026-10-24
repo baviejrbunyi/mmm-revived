@@ -92,6 +92,12 @@ func Register(srv *server.Service, r *server.Router) {
 		return nil, a.MakeDreamguardPermanent(rules, activity, now)
 	}))
 	r.Handle("lteMissionNodeStart", rpc.Bind(DecodeActivityNode, func(p *server.Player, v ActivityNode) error {
+		err := s.journey(p, func(a *account.Account, rules *account.Rules, now int64) (map[model.ItemID]int64, error) {
+			return nil, a.PrepareJourneyMission(rules, v.Activity, v.ID, now)
+		}, func([]model.ItemReward) error { return nil })
+		if err != nil {
+			return err
+		}
 		return s.journey(p, func(a *account.Account, rules *account.Rules, now int64) (map[model.ItemID]int64, error) {
 			return nil, a.StartJourneyMissionNode(rules, v.Activity, v.ID, v.Node, now)
 		}, RewardsOrAcknowledge(p))

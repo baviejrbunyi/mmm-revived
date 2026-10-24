@@ -293,6 +293,9 @@ func (s service) leaveGuild(p *server.Player) error {
 		return err
 	}
 	if !departure.Disbands {
+		if err = s.guildBroadcast(departure.ID, "onGuildMemberLeave", p.Account.UID); err != nil {
+			return err
+		}
 		if err = s.broadcastNews(departure.ID, departure.News); err != nil {
 			return err
 		}
@@ -312,6 +315,9 @@ func (s service) kickGuildMember(p *server.Player, target model.UserID) error {
 		return err
 	}
 	s.notify(target, "onRemoveFromGuild", 1)
+	if err = s.guildBroadcast(id, "onGuildMemberLeave", target); err != nil {
+		return err
+	}
 	if err = s.broadcastNews(id, news); err != nil {
 		return err
 	}
@@ -357,6 +363,22 @@ func (s service) transferGuild(p *server.Player, target model.UserID) error {
 		return err
 	}
 	return p.Send("onResponseTransferBoss", target, 0)
+}
+
+func (s service) guildMembers(p *server.Player) error {
+	now := time.Now().Unix()
+	if snapshot, err := s.Store.Social.GuildSnapshot(p.Account.UID); err != nil {
+		return err
+	} else if snapshot.ID != 0 {
+		if err = s.SettleGuildWeek(snapshot.ID, now); err != nil {
+			return err
+		}
+		if err = p.Update([]string{"guildComp"}, snapshot); err != nil {
+			return err
+		}
+	}
+	members, err := s.Store.Social.GuildMembers(p.Account.UID)
+	return sendResult(p, "onResponseGuildMembersInfo", members, err)
 }
 
 func (s service) reportGuild(p *server.Player, r GuildReport) error {

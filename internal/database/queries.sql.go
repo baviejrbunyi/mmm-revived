@@ -55,6 +55,41 @@ func (q *Queries) AcknowledgePeerMessages(ctx context.Context, arg AcknowledgePe
 	return err
 }
 
+const AddGuildContribution = `
+INSERT INTO guild_contributions(guild_id,uid,week,score) VALUES (?,?,?,?) ON CONFLICT(guild_id,week,uid) DO UPDATE SET score=score+excluded.score
+`
+
+type AddGuildContributionParams struct {
+	GuildID model.GuildID
+	UID     model.UserID
+	Week    int64
+	Score   int64
+}
+
+func (q *Queries) AddGuildContribution(ctx context.Context, arg AddGuildContributionParams) error {
+	_, err := q.exec(ctx, q.addGuildContributionStmt, AddGuildContribution,
+		arg.GuildID,
+		arg.UID,
+		arg.Week,
+		arg.Score,
+	)
+	return err
+}
+
+const AddGuildHistoryScore = `
+UPDATE guild_members SET history_score=history_score+?1 WHERE uid=?2
+`
+
+type AddGuildHistoryScoreParams struct {
+	Score int64
+	UID   model.UserID
+}
+
+func (q *Queries) AddGuildHistoryScore(ctx context.Context, arg AddGuildHistoryScoreParams) error {
+	_, err := q.exec(ctx, q.addGuildHistoryScoreStmt, AddGuildHistoryScore, arg.Score, arg.UID)
+	return err
+}
+
 const AddGuildWarProgress = `
 INSERT INTO guild_war_progress(guild_id,war,uid,area,score,assist,score_time,assist_time) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(guild_id,war,uid,area) DO UPDATE SET score=score+excluded.score, assist=assist+excluded.assist, score_time=max(score_time,excluded.score_time), assist_time=max(assist_time,excluded.assist_time)
 `
@@ -331,6 +366,20 @@ type DeleteGuildApplicationParams struct {
 
 func (q *Queries) DeleteGuildApplication(ctx context.Context, arg DeleteGuildApplicationParams) error {
 	_, err := q.exec(ctx, q.deleteGuildApplicationStmt, DeleteGuildApplication, arg.GuildID, arg.Applicant)
+	return err
+}
+
+const DeleteGuildContributions = `
+DELETE FROM guild_contributions WHERE guild_id=? AND week<?
+`
+
+type DeleteGuildContributionsParams struct {
+	GuildID model.GuildID
+	Week    int64
+}
+
+func (q *Queries) DeleteGuildContributions(ctx context.Context, arg DeleteGuildContributionsParams) error {
+	_, err := q.exec(ctx, q.deleteGuildContributionsStmt, DeleteGuildContributions, arg.GuildID, arg.Week)
 	return err
 }
 
@@ -1582,6 +1631,45 @@ func (q *Queries) ListGuildApplications(ctx context.Context, arg ListGuildApplic
 	for rows.Next() {
 		var i ListGuildApplicationsRow
 		if err := rows.Scan(&i.Applicant, &i.Created); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListGuildContributions = `
+SELECT uid,week,score FROM guild_contributions WHERE guild_id=?1 AND week>=?2 AND week<?3 ORDER BY week,uid
+`
+
+type ListGuildContributionsParams struct {
+	GuildID  model.GuildID
+	FromWeek int64
+	ToWeek   int64
+}
+
+type ListGuildContributionsRow struct {
+	UID   model.UserID
+	Week  int64
+	Score int64
+}
+
+func (q *Queries) ListGuildContributions(ctx context.Context, arg ListGuildContributionsParams) ([]ListGuildContributionsRow, error) {
+	rows, err := q.query(ctx, q.listGuildContributionsStmt, ListGuildContributions, arg.GuildID, arg.FromWeek, arg.ToWeek)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListGuildContributionsRow{}
+	for rows.Next() {
+		var i ListGuildContributionsRow
+		if err := rows.Scan(&i.UID, &i.Week, &i.Score); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -2852,6 +2940,21 @@ type SetGuildLeftParams struct {
 
 func (q *Queries) SetGuildLeft(ctx context.Context, arg SetGuildLeftParams) error {
 	_, err := q.exec(ctx, q.setGuildLeftStmt, SetGuildLeft, arg.UID, arg.Time)
+	return err
+}
+
+const SetGuildProgress = `
+UPDATE guilds SET level=?,experience=? WHERE id=?
+`
+
+type SetGuildProgressParams struct {
+	Level      int64
+	Experience int64
+	ID         model.GuildID
+}
+
+func (q *Queries) SetGuildProgress(ctx context.Context, arg SetGuildProgressParams) error {
+	_, err := q.exec(ctx, q.setGuildProgressStmt, SetGuildProgress, arg.Level, arg.Experience, arg.ID)
 	return err
 }
 

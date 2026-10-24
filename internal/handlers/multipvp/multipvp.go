@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand/v2"
 	"slices"
 	"strconv"
 	"time"
@@ -56,6 +57,9 @@ func (s service) updateActivity(p *server.Player, action func(int64) error, call
 		names = append(names, "historyComp")
 	}
 	if err := s.Sync(p, names...); err != nil {
+		return err
+	}
+	if err := s.DeliverSeasonMail(p); err != nil {
 		return err
 	}
 	if callback != "" {
@@ -112,7 +116,7 @@ func (s service) refreshEnemies(p *server.Player, id model.ActivityID, refresh b
 		return err
 	}
 	var targets []model.RetailPVPTarget
-	if refresh || state.Day != now/86400 || len(state.Enemies) == 0 {
+	if refresh || state.Day != account.LogicDay(now) || len(state.Enemies) == 0 {
 		if targets, err = s.enemyTargets(p, id, state); err != nil {
 			return err
 		}
@@ -154,7 +158,7 @@ func (s service) enemyTargets(p *server.Player, id model.ActivityID, state *mode
 	if err != nil {
 		return nil, err
 	}
-	targets := []model.RetailPVPTarget{}
+	players := []model.RetailPVPTarget{}
 	for _, uid := range ids {
 		a := profiles[uid].Account
 		for index := range 3 {
@@ -163,7 +167,7 @@ func (s service) enemyTargets(p *server.Player, id model.ActivityID, state *mode
 				return nil, err
 			}
 			if okay {
-				targets = append(targets, target)
+				players = append(players, target)
 				break
 			}
 		}
@@ -175,12 +179,20 @@ func (s service) enemyTargets(p *server.Player, id model.ActivityID, state *mode
 		}
 	}
 	slices.Sort(bots)
-	for _, bot := range bots {
-		target, _, err := s.botTarget(bot, max(1, p.Account.Level+point.AILevel))
-		if err != nil {
-			return nil, err
+	rand.Shuffle(len(players), func(i, j int) { players[i], players[j] = players[j], players[i] })
+	rand.Shuffle(len(bots), func(i, j int) { bots[i], bots[j] = bots[j], bots[i] })
+	targets := []model.RetailPVPTarget{}
+	for len(targets) < 3 && len(players)+len(bots) > 0 {
+		if len(bots) > 0 && (len(players) == 0 || rand.Int64N(10000) < point.AIWeight) {
+			level := max(1, p.Account.Level+point.AILevel+rand.IntN(max(0, point.AIRange)+1))
+			target, _, err := s.botTarget(bots[0], level)
+			if err != nil {
+				return nil, err
+			}
+			targets, bots = append(targets, target), bots[1:]
+			continue
 		}
-		targets = append(targets, target)
+		targets, players = append(targets, players[0]), players[1:]
 	}
 	return targets, nil
 }
