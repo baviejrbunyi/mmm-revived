@@ -42,6 +42,12 @@ type JourneyRules struct {
 	MiniGames              map[int]JourneyMiniGameRule              `json:"minigames"`
 	Missions               map[int]JourneyMissionRule               `json:"missions"`
 	MissionNodes           map[int]JourneyMissionNode               `json:"mission_nodes"`
+	SevenDay               JourneySevenDayRule                      `json:"seven_day"`
+}
+
+type JourneySevenDayRule struct {
+	Mark  model.ItemID   `json:"mark"`
+	Tasks []model.TaskID `json:"tasks"`
 }
 
 type JourneyNoviceRule struct {

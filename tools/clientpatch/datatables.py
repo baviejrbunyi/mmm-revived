@@ -311,7 +311,14 @@ def journey(t):
         'minigames': {key: {'predecessor': row.get('pre_level', 0), 'start': row.get('unlock_time', 0), 'level': row.get('unlock_lv', 0), 'reward': row['first_reward']} for key, row in load('limited_time_event_minigame_data_cn').items()},
         'missions': {key: {'level': row.get('unlockLv', 0), 'predecessors': sequence(row.get('befMission')), 'first_node': row['firstInitNode'], 'reward': row.get('firstReward', 0)} for key, row in load('limited_time_event_mission_data').items()},
         'mission_nodes': {key: {'next': row.get('nextNode', 0), 'type': row['nodeType'], 'parameter': row.get('param', 0) if isinstance(row.get('param'), int) else 0} for key, row in load('limited_time_event_node_data').items()},
+        'seven_day': seven_day(t),
     }
+
+
+def seven_day(t):
+    rows, tasks = list(t.module('newbie_task_data_cn').values()), t.module('task_data')
+    marks = {ints(tasks[str(row['taskId'])].get('param'))[0] for row in rows if 'day' not in row}
+    return {'mark': marks.pop() if len(marks) == 1 else 0, 'tasks': sorted(row['taskId'] for row in rows if 'day' in row)}
 
 
 def rogue(t):

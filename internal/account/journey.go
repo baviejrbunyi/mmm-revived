@@ -89,6 +89,7 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 	if r == nil {
 		return
 	}
+	a.backfillSevenDayMarks(r)
 	calendar := now + r.Journey.CalendarOffset
 	for _, id := range slices.Sorted(maps.Keys(r.Journey.Passes)) {
 		rule := r.Journey.Passes[id]

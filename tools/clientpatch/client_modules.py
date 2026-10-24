@@ -36,7 +36,7 @@ MODULES = [
     ('PanelLimitDrawUpInvincible.lua', 'scripts/PanelLimitDrawUpInvincible.luac', {('PanelLimitDrawUpInvincible', 'SetInfo'): 'economy/PanelLimitDrawUpInvincible.SetInfo.lua'}),
     ('PanelDrawPaiLianAnimator.lua', 'scripts/PanelDrawPaiLianAnimator.luac', {('PanelDrawPaiLianAnimator', 'Show'): 'economy/PanelDrawPaiLianAnimator.Show.lua'}),
     ('PanelDrawPaiLianAnimatorInvincible.lua', 'scripts/PanelDrawPaiLianAnimatorInvincible.luac', {('PanelDrawPaiLianAnimatorInvincible', 'Show'): 'economy/PanelDrawPaiLianAnimatorInvincible.Show.lua'}),
-    ('ResourceHelper.lua', 'scripts/ResourceHelper.luac', {('ResourceHelper', 'GetExpSprite'): 'localization/ResourceHelper.GetExpSprite.lua'}),
+    ('ResourceHelper.lua', 'scripts/ResourceHelper.luac', {('ResourceHelper', 'GetExpSprite'): 'localization/ResourceHelper.GetExpSprite.lua', ('ResourceHelper', 'CheckResVersion'): 'heroes/ResourceHelper.CheckResVersion.lua'}),
     ('BasicComp.lua', 'scripts/BasicComp.luac', {('BasicComp', 'GetRandomName'): 'localization/BasicComp.GetRandomName.lua'}),
     ('I18NHelper.lua', 'scripts/I18NHelper.luac', {('I18NHelper', 'GetNumFormat'): 'localization/I18NHelper.GetNumFormat.lua'}),
     ('PanelBooks.lua', 'scripts/PanelBooks.luac', {('BookSkinLvGo', 'CalculateSkinLv'): 'gallery/BookSkinLvGo.CalculateSkinLv.lua'}),

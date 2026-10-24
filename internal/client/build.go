@@ -98,13 +98,13 @@ var Supported = BuildProfile{
 	DrawAnimatorSHA256:           "3347bb2484e6a40ef5fd51a213450b247d830b98edbab96834d88276ccf3b27c",
 	DrawAnimatorInvincibleSHA256: "267b26d9a5fa91d70a34a00415513db45311b9a07e99172e7cdb7f4e5f3dceba",
 	NovelSHA256:                  "5dac569e22c4b3a68af466469192f65cfbb1d3c98bad03901ce888d1ff57519c",
-	ExpSpriteSHA256:              "4930c2291b272f2d37077e2b41cde002c7054bbdfe66ee747bfa587a7baaea42",
+	ExpSpriteSHA256:              "66ff844ae1de3784e653a6706c64c7643fce70599d387a082a6354e797c9a11a",
 	GallerySHA256:                "0769e5dbc6744edfd357f281ced834a1af736b5adada21733a0b54eb1be8c6b6",
 	ManualSHA256:                 "665878fdc59d431470671d1bacb4aa01e171cf33dd112f307a2c001118da2e4d",
 	UniMatrixHelperSHA256:        "6320379d9a9fa12f1f65b07760f60ef96e86fa590e57a8b06fdc04c3e96ca667",
 	RandomNameSHA256:             "372f986d47291f040010501c535c3b28ac2655451eacc96636d90056d8498a77",
 	NumFormatSHA256:              "4afa806ae6c2273b7319f8aa752c28e19fc790c2e8ca7d977b5ed11b30b7f885",
-	PatchedScriptsSHA256:         "fe0eb1735c8f0c383e0c7b766b8d789527928ae389ac3348f0e2ecba04a1d09d",
+	PatchedScriptsSHA256:         "d182d0f3468eb69a3248ace0fdc88fa8fd8e7484f5ca985dac59f4441e64ecc1",
 }
 
 const PatchListPath = "/native/patchlist_win32.json"

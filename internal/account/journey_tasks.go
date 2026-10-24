@@ -44,6 +44,9 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 			regularXP += experience
 		}
 		delete(reward, 37)
+		if marks := r.Journey.SevenDay.Marks(id); marks > 0 {
+			reward[r.Journey.SevenDay.Mark] += marks
+		}
 		for item, count := range reward {
 			if quantities[item] > math.MaxInt64-count {
 				return rejected("task reward overflow")
