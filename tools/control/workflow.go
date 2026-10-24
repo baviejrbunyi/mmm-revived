@@ -100,6 +100,9 @@ func (w workflow) configure(ctx context.Context, directory, content string, rota
 		}
 		return err
 	}
+	if err = client.EnablePlayerLog(absolute, backup); err != nil {
+		return err
+	}
 	if err = writeJSON(filepath.Join(w.root, "build", "setup.json"), setupState{Client: absolute}); err != nil {
 		return err
 	}

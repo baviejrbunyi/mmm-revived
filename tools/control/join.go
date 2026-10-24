@@ -101,6 +101,9 @@ func (w workflow) join(ctx context.Context, directory, server string) error {
 		}
 		return err
 	}
+	if err = client.EnablePlayerLog(absolute, backup); err != nil {
+		return err
+	}
 	fmt.Fprintf(w.output, "Configured %s to play on %s.\nOpen the game and accept its download and restart prompts.\n", absolute, origin)
 	fmt.Fprintln(w.output, "Configuration backup:", backup)
 	return nil
