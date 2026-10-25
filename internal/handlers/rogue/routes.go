@@ -85,8 +85,8 @@ func Register(srv *server.Service, r *server.Router) {
 	none("getRogueWeekScoreRwd", func(a *account.Account, rules *account.Rules, now int64, _ *server.Outbox) (map[model.ItemID]int64, error) {
 		return a.ClaimRogueWeekly(rules, false, now)
 	})
-	none("settleRogue", func(a *account.Account, _ *account.Rules, _ int64, _ *server.Outbox) (map[model.ItemID]int64, error) {
-		return nil, a.SettleRogue()
+	none("settleRogue", func(a *account.Account, rules *account.Rules, _ int64, _ *server.Outbox) (map[model.ItemID]int64, error) {
+		return nil, a.SettleRogue(rules)
 	})
 	index("tryRoguePve", func(a *account.Account, rules *account.Rules, now int64, _ *server.Outbox, i int) (map[model.ItemID]int64, error) {
 		return nil, a.TryRoguePVE(rules, i, now)
@@ -117,8 +117,8 @@ func Register(srv *server.Service, r *server.Router) {
 	none("finishBuyBuff", func(a *account.Account, rules *account.Rules, _ int64, replies *server.Outbox) (map[model.ItemID]int64, error) {
 		return nil, advanceRogueEvent(a, rules, replies, a.FinishRogueBuffShopping(rules))
 	})
-	none("settleRoguePve", func(a *account.Account, _ *account.Rules, _ int64, _ *server.Outbox) (map[model.ItemID]int64, error) {
-		return nil, a.SettleRoguePVE()
+	none("settleRoguePve", func(a *account.Account, rules *account.Rules, _ int64, _ *server.Outbox) (map[model.ItemID]int64, error) {
+		return nil, a.SettleRoguePVE(rules)
 	})
 	none("endRoguePve", func(a *account.Account, rules *account.Rules, now int64, _ *server.Outbox) (map[model.ItemID]int64, error) {
 		return a.ClaimRogue(rules, true, now)

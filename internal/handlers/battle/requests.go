@@ -66,7 +66,10 @@ type BattleResult struct {
 type CreateBattle struct {
 	Battle model.BattleID
 	Extra  BattleExtra
+	raw    any
 }
+
+func (r CreateBattle) RetailCard() (*model.RetailPVPCard, error) { return decodeMultiPVPCard(r.raw) }
 
 type VerifyBattle struct {
 	Record  string
@@ -83,9 +86,7 @@ func DecodeCreateBattle(c protocol.Call) (CreateBattle, error) {
 	r := CreateBattle{Battle: id}
 	if err == nil && len(c.Args) >= 3 {
 		err = c.Record(2, &r.Extra)
-		if err == nil && id >= 62001 && id <= 62010 {
-			r.Extra.RetailTarget, err = decodeMultiPVPCard(c.Args[2])
-		}
+		r.raw = c.Args[2]
 	}
 	return r, err
 }
@@ -274,6 +275,7 @@ func (r *BattleResultExtra) UnmarshalJSON(data []byte) error {
 		DiedCreatures json.RawMessage `json:"dieCreatures"`
 		Inherit       json.RawMessage `json:"inherit"`
 		RogueLevelUp  json.RawMessage `json:"rogueLvUp"`
+		Mana          *float64        `json:"mana"`
 	}{plain: &result}
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err
@@ -283,14 +285,30 @@ func (r *BattleResultExtra) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("dieCreatures: %w", err)
 	}
 	result.DiedCreatures = values
-	if result.Inherit, err = decodeBattleDictionary[model.HeroID, model.RogueHeroStatus](fields.Inherit); err != nil {
+	inherit, err := decodeBattleDictionary[model.HeroID, inheritedHero](fields.Inherit)
+	if err != nil {
 		return fmt.Errorf("inherit: %w", err)
+	}
+	if inherit != nil {
+		result.Inherit = make(map[model.HeroID]model.RogueHeroStatus, len(inherit))
+		for id, hero := range inherit {
+			result.Inherit[id] = model.RogueHeroStatus{Energy: int64(math.Floor(hero.Energy)), HP: int64(math.Floor(hero.HP)), MaximumHP: int64(math.Floor(hero.MaximumHP))}
+		}
+	}
+	if fields.Mana != nil {
+		result.Mana = int64(math.Floor(*fields.Mana))
 	}
 	if result.RogueLevelUp, err = decodeBattleDictionary[model.HeroID, int](fields.RogueLevelUp); err != nil {
 		return fmt.Errorf("rogueLvUp: %w", err)
 	}
 	*r = BattleResultExtra(result)
 	return nil
+}
+
+type inheritedHero struct {
+	Energy    float64 `json:"energy"`
+	HP        float64 `json:"hp"`
+	MaximumHP float64 `json:"maxhp"`
 }
 
 func decodeBattleDictionary[K comparable, V any](data json.RawMessage) (map[K]V, error) {

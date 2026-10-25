@@ -184,6 +184,7 @@ func (s *Store) write(a *Account, tx *sql.Tx) (map[recordKey][]byte, error) {
 		}
 		a.applyEconomy(s.Rules)
 		a.ObserveManual(s.Rules, time.Now().Unix())
+		a.OfferTriggeredGifts(s.Rules, time.Now().Unix())
 	}
 	if err := s.creditGuildContribution(tx, a); err != nil {
 		return nil, err

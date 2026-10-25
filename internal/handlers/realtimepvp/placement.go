@@ -46,7 +46,7 @@ func (s service) movePVPHero(p *server.Player, r PVPHeroPlacement) error {
 	if placement.Round != r.Round {
 		placement = server.Placement{Round: r.Round, Heroes: map[model.HeroID]int{}}
 	}
-	if _, exists := placement.Heroes[r.Hero]; !exists && len(placement.Heroes)+len(match.Choices[p.Account.UID]) >= match.Round*roundActors {
+	if _, exists := placement.Heroes[r.Hero]; !exists && len(placement.Heroes)+len(match.Choices[p.Account.UID]) >= match.Round*s.Store.Rules.Settings.Realtime.HeroesPerRound {
 		return fmt.Errorf("%w: round deployment is full", account.ErrProgression)
 	}
 	placement.Heroes[r.Hero] = r.Born

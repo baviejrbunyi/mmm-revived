@@ -15,6 +15,7 @@ import (
 )
 
 type GuildLimits struct {
+	CreationItem       model.ItemID
 	CreationCost       int64
 	Members            int
 	Admins             int
@@ -25,9 +26,12 @@ type GuildLimits struct {
 	RequestLifetime    int64
 	RenameCooldown     int64
 	MaximumLevel       int
+	ExperienceRate     int64
+	NameMinimum        int
+	NameMaximum        int
+	Signature          int
+	Announcement       int
 }
-
-var DefaultGuildLimits = GuildLimits{CreationCost: 1000, Members: 30, Admins: 5, Applications: 99, PlayerApplications: 5, Invites: 5, LeaveCooldown: 21600, RequestLifetime: 86400, RenameCooldown: 604800, MaximumLevel: 80}
 
 const (
 	newsCreated int64 = iota
@@ -45,8 +49,8 @@ func validGuildText(text string, maximum int) bool {
 	return utf8.ValidString(text) && !strings.ContainsRune(text, 0) && utf8.RuneCountInString(text) <= maximum
 }
 
-func validGuildName(name string) bool {
-	return validGuildText(name, 14) && utf8.RuneCountInString(name) >= 2 && strings.ContainsFunc(name, func(r rune) bool { return !unicode.IsDigit(r) })
+func (r *Repository) validGuildName(name string) bool {
+	return validGuildText(name, r.GuildLimits.NameMaximum) && utf8.RuneCountInString(name) >= r.GuildLimits.NameMinimum && strings.ContainsFunc(name, func(r rune) bool { return !unicode.IsDigit(r) })
 }
 
 func (r *Repository) mergeGuildSettings(info model.GuildInfo, edit model.GuildSettings) (model.GuildInfo, error) {
@@ -72,11 +76,11 @@ func (r *Repository) mergeGuildSettings(info model.GuildInfo, edit model.GuildSe
 		info.Frame = *edit.Frame
 	}
 	switch {
-	case !validGuildName(info.Name):
+	case !r.validGuildName(info.Name):
 		return info, reject(CodeInvalidGuildName, "invalid guild name")
-	case !validGuildText(info.Signature, 100):
+	case !validGuildText(info.Signature, r.GuildLimits.Signature):
 		return info, reject(CodeInvalidSignature, "invalid guild signature")
-	case !validGuildText(info.Announcement, 500):
+	case !validGuildText(info.Announcement, r.GuildLimits.Announcement):
 		return info, reject(CodeInvalidAnnounce, "invalid guild announcement")
 	case info.Approval < 0 || info.Approval > 2 || info.MinimumLevel < 0 || info.MinimumLevel > r.GuildLimits.MaximumLevel || info.Head < 0 || info.Frame < 0:
 		return info, reject(CodeCommon, "invalid guild settings")

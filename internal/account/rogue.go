@@ -44,6 +44,9 @@ func (a *Account) InitializeRogue(r *Rules, now int64) {
 	if !p.Initialized {
 		p.Initialized, p.ChestLevel = true, 1
 	}
+	if r != nil {
+		p.RogueID, p.RankVersion, p.NewbiePassed = r.RogueRunID(now), r.Rogue.RankVersion, r.Rogue.NewbiePassed
+	}
 	if p.WeeklyRewards == nil || p.Week != week {
 		p.Week, p.WeeklyScore, p.WeeklyCoin, p.WeeklyRewards = week, 0, 0, map[int]int{}
 	}
@@ -65,6 +68,14 @@ func (a *Account) InitializeRogue(r *Rules, now int64) {
 	if p.Records == nil {
 		p.Records = []model.RogueRecord{}
 	}
+	if !p.FinalWinsCounted && r != nil {
+		for _, record := range p.Records {
+			if record.Wins >= r.Rogue.MaximumWins {
+				p.FinalWins++
+			}
+		}
+		p.FinalWinsCounted = true
+	}
 	if p.PVERecords == nil {
 		p.PVERecords = []model.RoguePVERecord{}
 	}
@@ -73,7 +84,13 @@ func (a *Account) InitializeRogue(r *Rules, now int64) {
 func (a *Account) RogueComponent(pve bool) model.RogueComponent {
 	p := &a.RogueProgress
 	run := &p.Run
-	result := model.RogueComponent{Status: int(run.Status), Battles: run.Battles, WeeklyCoin: p.WeeklyCoin, WeeklyScore: p.WeeklyScore, WeeklyRewards: p.WeeklyRewards, Heroes: run.Heroes, Shop: run.Shop, Objects: run.Objects, AddHeroPool: run.HeroPool, Banned: run.Banned, RogueID: 1, Version: 1, PVEVersion: 1, Index: run.Index, Life: run.Life, ChestLevel: max(1, p.ChestLevel), TotalWins: p.TotalWins, FinalWins: run.Wins, RankScore: p.RankScore, TutorialPassed: 1, Difficulty: p.Difficulties, MaxDifficulty: p.MaxDifficulty, Coin: run.Coin, FreeRefresh: run.FreeRefresh, RefreshCount: run.RefreshCount, SaleCount: run.SaleCount, MergeCount: run.MergeCount, LastDeaths: run.LastDeaths, Records: rogueHistory(p.Records), PVERecords: rogueHistory(p.PVERecords)}
+	result := model.RogueComponent{Status: int(run.Status), Battles: run.Battles, WeeklyCoin: p.WeeklyCoin, WeeklyScore: p.WeeklyScore, WeeklyRewards: p.WeeklyRewards, Heroes: run.Heroes, Shop: run.Shop, Objects: run.Objects, AddHeroPool: run.HeroPool, Banned: run.Banned, RogueID: p.RogueID, Version: p.RankVersion, PVEVersion: p.RankVersion, Index: run.Index, Life: run.Life, ChestLevel: max(1, p.ChestLevel), TotalWins: p.TotalWins, FinalWins: p.FinalWins, RankScore: p.RankScore, Difficulty: p.Difficulties, MaxDifficulty: p.MaxDifficulty, Coin: run.Coin, FreeRefresh: run.FreeRefresh, RefreshCount: run.RefreshCount, SaleCount: run.SaleCount, MergeCount: run.MergeCount, LastDeaths: run.LastDeaths, Records: rogueHistory(p.Records), PVERecords: rogueHistory(p.PVERecords)}
+	if run.Status != model.RogueIdle && run.ID != 0 {
+		result.RogueID = run.ID
+	}
+	if p.NewbiePassed {
+		result.TutorialPassed = 1
+	}
 	if p.FirstRewardsDone {
 		result.AllFirstRewards = 1
 	} else {
@@ -103,8 +120,8 @@ func rogueObject(run *model.RogueRun, prefix string, value model.RogueObject) mo
 	return id
 }
 
-func rogueHero(id model.HeroID, level, index int) model.RogueObject {
-	return model.RogueObject{ID: int(id), Level: level, Index: index, Star: 4, Talents: map[int]int{1: 1, 2: 1, 3: 1, 4: 1, 5: 1}, Awake: []int{}, Highlights: map[int]model.InstanceID{}}
+func rogueHero(r *Rules, id model.HeroID, level, index int) model.RogueObject {
+	return model.RogueObject{ID: int(id), Level: level, Index: index, Star: r.Rogue.HeroStar, Talents: map[int]int{1: 1, 2: 1, 3: 1, 4: 1, 5: 1}, Awake: []int{}, Highlights: map[int]model.InstanceID{}}
 }
 
 func rogueHeroCandidates(r *Rules, run *model.RogueRun) []model.HeroID {
@@ -125,10 +142,14 @@ func rogueHeroCandidates(r *Rules, run *model.RogueRun) []model.HeroID {
 
 func (a *Account) InitRogue(r *Rules, now int64) error {
 	a.InitializeRogue(r, now)
-	if a.Level < 11 || a.RogueProgress.Run.Status != model.RogueIdle || a.RogueProgress.PVE.Status != model.RoguePVEIdle {
-		return rejected("another rogue run is active or level is too low")
+	if !a.rogueUnlocked(r, rogueSystem, now) || a.RogueProgress.Run.Status != model.RogueIdle {
+		return rejected("rogue run is active or locked")
 	}
-	rule, known := r.Rogue.Runs[1]
+	if _, open := r.RogueAlternation(rogueKind, now); !open {
+		return rejected("rogue is closed")
+	}
+	id := a.RogueProgress.RogueID
+	rule, known := r.Rogue.Runs[id]
 	if !known || len(rule.HeroPool) == 0 {
 		return rejected("rogue rules unavailable")
 	}
@@ -136,8 +157,8 @@ func (a *Account) InitRogue(r *Rules, now int64) error {
 	if err != nil {
 		return err
 	}
-	run := model.RogueRun{Status: model.RogueChooseHero, ID: 1, Life: r.Rogue.Life, Heroes: map[int]model.InstanceID{}, Objects: map[model.InstanceID]model.RogueObject{}, Shop: map[int]model.RogueShopEntry{}, HeroPool: []model.HeroID{}, Banned: []model.HeroID{}, Started: now}
-	run.Heroes[0] = rogueObject(&run, rogueHeroPrefix, rogueHero(hero, max(1, r.Rogue.HeroLevel), 0))
+	run := model.RogueRun{Status: model.RogueChooseHero, ID: id, Life: r.Rogue.Life, Heroes: map[int]model.InstanceID{}, Objects: map[model.InstanceID]model.RogueObject{}, Shop: map[int]model.RogueShopEntry{}, HeroPool: []model.HeroID{}, Banned: []model.HeroID{}, Started: now}
+	run.Heroes[0] = rogueObject(&run, rogueHeroPrefix, rogueHero(r, hero, max(1, r.Rogue.HeroLevel), 0))
 	for _, value := range rule.BattleSequence {
 		var id model.BattleID
 		if value == "b" {
@@ -150,7 +171,7 @@ func (a *Account) InitRogue(r *Rules, now int64) error {
 		if err != nil {
 			return err
 		}
-		if _, known := r.BattleModes[id]; !known {
+		if !r.RogueRunBattle(id) {
 			return rejected("rogue battle is unavailable")
 		}
 		run.Battles = append(run.Battles, id)
@@ -253,7 +274,7 @@ func (a *Account) SelectRogueHero(r *Rules, index int) error {
 	if shop := r.Rogue.Shops[r.Rogue.Runs[run.ID].Shops[run.Index]]; len(shop.AddHero) > 1 {
 		level = shop.AddHero[1]
 	}
-	run.Heroes[slot] = rogueObject(run, rogueHeroPrefix, rogueHero(id, level, slot))
+	run.Heroes[slot] = rogueObject(run, rogueHeroPrefix, rogueHero(r, id, level, slot))
 	run.HeroPool = []model.HeroID{}
 	run.Status = model.RogueShopping
 	return nil
@@ -446,26 +467,37 @@ func (a *Account) FinishRogueShopping(r *Rules) error {
 	return nil
 }
 
-func (a *Account) SettleRogue() error {
+func (a *Account) SettleRogue(r *Rules) error {
 	run := &a.RogueProgress.Run
 	if run.Status == model.RogueIdle {
 		return rejected("rogue has not started")
 	}
 	if run.Status != model.RogueSettle && run.Status != model.RogueChooseHero {
-		a.RogueProgress.Records = appendRecent(a.RogueProgress.Records, a.rogueRecord(), 10)
+		a.RogueProgress.Records = appendRecent(a.RogueProgress.Records, a.rogueRecord(), r.Rogue.RecordLimit)
+		if rogueRunOver(r, run) {
+			if run.Wins >= r.Rogue.MaximumWins {
+				a.RogueProgress.FinalWins++
+			}
+			a.RecordJourneyRogueFinish(r, 1, run.Wins)
+		}
 	}
 	run.Status = model.RogueSettle
 	return nil
 }
 
-func (a *Account) rogueLimitedReward(r *Rules, pve bool, values map[model.ItemID]int64) error {
+func rogueRunOver(r *Rules, run *model.RogueRun) bool {
+	return run.Life <= 0 || run.Index >= len(run.Battles) || run.Wins >= r.Rogue.MaximumWins
+}
+
+func (a *Account) rogueLimitedReward(r *Rules, pve bool, values map[model.ItemID]int64, now int64) error {
 	progress := &a.RogueProgress
-	coin, weekly := model.ItemID(44), &progress.WeeklyCoin
+	coin, weekly, kind := r.Rogue.Currency, &progress.WeeklyCoin, rogueKind
 	if pve {
-		coin, weekly = 48, &progress.PVEWeeklyCoin
+		coin, weekly, kind = r.Rogue.PVECurrency, &progress.PVEWeeklyCoin, roguePVEKind
 	}
+	alternation, _ := r.RogueAlternation(kind, now)
 	if amount, exists := values[coin]; exists {
-		if amount = min(amount, max(0, r.Rogue.CoinLimit-*weekly)); amount > 0 {
+		if amount = min(amount, max(0, alternation.CoinLimit-*weekly)); amount > 0 {
 			values[coin] = amount
 		} else {
 			delete(values, coin)
@@ -501,7 +533,7 @@ func (a *Account) ClaimRogue(r *Rules, pve bool, now int64) (map[model.ItemID]in
 			return nil, err
 		}
 	}
-	if err := a.rogueLimitedReward(r, pve, values); err != nil {
+	if err := a.rogueLimitedReward(r, pve, values, now); err != nil {
 		return nil, err
 	}
 	if pve {
@@ -517,9 +549,17 @@ func (a *Account) ClaimRogueWeekly(r *Rules, pve bool, now int64) (map[model.Ite
 	a.InitializeRogue(r, now)
 	p := &a.RogueProgress
 	score, claimed, done := p.WeeklyScore, p.WeeklyRewards, &p.FirstRewardsDone
+	kind := rogueKind
+	if pve {
+		kind = roguePVEKind
+	}
+	alternation, open := r.RogueAlternation(kind, now)
+	if !open {
+		return nil, rejected("rogue is closed")
+	}
 	rewards := r.Rogue.FirstRewards
 	if p.FirstRewardsDone {
-		rewards = r.Rogue.WeekRewards
+		rewards = alternation.Rewards
 	} else {
 		claimed = p.FirstClaimed
 	}
@@ -527,7 +567,7 @@ func (a *Account) ClaimRogueWeekly(r *Rules, pve bool, now int64) (map[model.Ite
 		score, claimed, done = p.PVEWeeklyScore, p.PVEWeeklyRewards, &p.PVEFirstRewardsDone
 		rewards = r.Rogue.PVEFirstRewards
 		if *done {
-			rewards = r.Rogue.PVEWeekRewards
+			rewards = alternation.Rewards
 		} else {
 			claimed = p.PVEFirstClaimed
 		}
@@ -548,7 +588,7 @@ func (a *Account) ClaimRogueWeekly(r *Rules, pve bool, now int64) (map[model.Ite
 	if len(thresholds) == 0 {
 		return nil, rejected("no rogue weekly rewards available")
 	}
-	if err := a.rogueLimitedReward(r, pve, values); err != nil {
+	if err := a.rogueLimitedReward(r, pve, values, now); err != nil {
 		return nil, err
 	}
 	for _, threshold := range thresholds {
@@ -567,7 +607,7 @@ func (a *Account) ClaimRogueWeekly(r *Rules, pve bool, now int64) (map[model.Ite
 
 func (a *Account) OpenRogueChest(r *Rules, count, index int) (map[model.ItemID]int64, error) {
 	p := &a.RogueProgress
-	run := r.Rogue.Runs[1]
+	run := r.Rogue.Runs[p.RogueID]
 	if count < 1 || count > 9999 || p.ChestLevel < 1 || p.ChestLevel > len(run.Chests) {
 		return nil, rejected("invalid rogue chest")
 	}
@@ -578,7 +618,7 @@ func (a *Account) OpenRogueChest(r *Rules, count, index int) (map[model.ItemID]i
 	var values map[model.ItemID]int64
 	var err error
 	if index >= 0 {
-		values, err = rewardItems(r, rule.Rewards[index], int64(count))
+		values, err = droppedRewardItems(r, rule.Rewards[index:index+1], int64(count))
 	} else {
 		picks := make([]model.RewardID, count)
 		for i := range picks {
@@ -586,7 +626,7 @@ func (a *Account) OpenRogueChest(r *Rules, count, index int) (map[model.ItemID]i
 				return nil, err
 			}
 		}
-		values, err = mergeJourneyRewards(r, picks)
+		values, err = droppedRewardItems(r, picks, 1)
 	}
 	if err != nil {
 		return nil, err
@@ -595,7 +635,7 @@ func (a *Account) OpenRogueChest(r *Rules, count, index int) (map[model.ItemID]i
 	if err != nil {
 		return nil, err
 	}
-	cost[6] += rule.Energy * int64(count)
+	cost[r.Constants.Items.Energy] += rule.Energy * int64(count)
 	if err = a.Spend(cost); err != nil {
 		return nil, err
 	}
@@ -605,26 +645,20 @@ func (a *Account) OpenRogueChest(r *Rules, count, index int) (map[model.ItemID]i
 	return values, nil
 }
 
-const (
-	rogueRunMode   = 14
-	rogueChestMode = 15
-	roguePVEMode   = 22
-)
-
 func (a *Account) ValidateRogueBattle(r *Rules, id model.BattleID) error {
 	p := &a.RogueProgress
 	run, v := &p.Run, &p.PVE
-	switch r.BattleModes[id] {
-	case rogueRunMode:
-		if run.Status == model.RogueBattle && run.Index < len(run.Battles) && run.Battles[run.Index] == id {
+	switch {
+	case r.RogueRunBattle(id):
+		if run.Status == model.RogueBattle && !rogueRunOver(r, run) && run.Battles[run.Index] == id {
 			return nil
 		}
-	case roguePVEMode:
+	case r.RoguePVEBattle(id):
 		if (v.Status == model.RoguePVEPrepare || v.Status == model.RoguePVEBattle) && v.Round < len(v.Battles) && v.Battles[v.Round] == id {
 			return nil
 		}
-	case rogueChestMode:
-		chests := r.Rogue.Runs[1].Chests
+	case r.RogueChestBattle(id):
+		chests := r.Rogue.Runs[p.RogueID].Chests
 		if run.Status == model.RogueIdle && p.ChestLevel >= 1 && p.ChestLevel < len(chests) {
 			if rule := r.Rogue.Chests[chests[p.ChestLevel]]; rule.Battle == id && a.Level >= rule.Level {
 				return nil
@@ -639,10 +673,10 @@ func (a *Account) FinishRogueBattle(r *Rules, id model.BattleID, win bool, durat
 		return err
 	}
 	p := &a.RogueProgress
-	switch r.BattleModes[id] {
-	case rogueRunMode:
+	switch {
+	case r.RogueRunBattle(id):
 		return a.finishRogueRunBattle(r, win)
-	case roguePVEMode:
+	case r.RoguePVEBattle(id):
 		return a.finishRoguePVEBattle(r, win, duration)
 	}
 	if win {
@@ -659,17 +693,14 @@ func (a *Account) finishRogueRunBattle(r *Rules, win bool) error {
 	if win {
 		run.Wins++
 		p.TotalWins++
-		p.WeeklyScore++
-		p.RankScore += 100
+		p.WeeklyScore += r.Rogue.Score
+		p.RankScore += r.Rogue.RankWinScore
 	} else {
 		run.Life--
-		p.RankScore = max(0, p.RankScore-50)
+		p.RankScore = max(0, p.RankScore-r.Rogue.RankLossScore)
 	}
 	run.RankChange += p.RankScore - previous
-	if run.Life <= 0 || run.Index >= len(run.Battles) || run.Wins >= r.Rogue.MaximumWins {
-		run.Status = model.RogueSettle
-		p.Records = appendRecent(p.Records, a.rogueRecord(), 10)
-		a.RecordJourneyRogueFinish(r, 1, run.Wins)
+	if rogueRunOver(r, run) {
 		return nil
 	}
 	shop := r.Rogue.Shops[r.Rogue.Runs[run.ID].Shops[run.Index]]
@@ -699,23 +730,23 @@ func (a *Account) finishRogueRunBattle(r *Rules, win bool) error {
 func (a *Account) finishRoguePVEBattle(r *Rules, win bool, duration int64) error {
 	p := &a.RogueProgress
 	v := &p.PVE
-	v.Duration += max(0, min(duration, 36000))
+	v.Duration += max(0, duration)
 	if !win {
 		v.Status = model.RoguePVESettle
-		p.PVERecords = appendRecent(p.PVERecords, a.roguePVERecord(), 10)
+		p.PVERecords = appendRecent(p.PVERecords, a.roguePVERecord(), r.Rogue.RecordLimit)
 		a.RecordJourneyRogueFinish(r, 2, v.Round)
 		return nil
 	}
 	v.Round++
-	p.PVEWeeklyScore++
+	p.PVEWeeklyScore += r.Rogue.PVEScore
 	if v.Round >= len(v.Battles) {
 		v.Status = model.RoguePVESettle
 		info := p.Difficulties[v.ID]
 		info.Wins++
-		info.Score = max(info.Score, 10000000-v.Duration)
+		info.Score = max(info.Score, r.Rogue.MaxTimeScore-v.Duration)
 		p.Difficulties[v.ID] = info
 		p.MaxDifficulty = max(p.MaxDifficulty, r.Rogue.PVE[v.ID].Difficulty)
-		p.PVERecords = appendRecent(p.PVERecords, a.roguePVERecord(), 10)
+		p.PVERecords = appendRecent(p.PVERecords, a.roguePVERecord(), r.Rogue.RecordLimit)
 		a.RecordJourneyRogueFinish(r, 2, v.Round)
 		return nil
 	}

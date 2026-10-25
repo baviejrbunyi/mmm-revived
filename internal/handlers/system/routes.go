@@ -56,7 +56,7 @@ func Register(srv *server.Service, r *server.Router) {
 	}))
 	r.Handle("forgetChildrenProtectPwd", rpc.Bind(protocol.DecodeNone, func(p *server.Player, _ struct{}) error {
 		return s.protection(p, func(a *account.Account, now int64) error {
-			a.ForgetProtectionPIN(now)
+			a.ForgetProtectionPIN(s.Store.Rules, now)
 			return nil
 		})
 	}))
@@ -71,7 +71,7 @@ func Register(srv *server.Service, r *server.Router) {
 		if err != nil {
 			return err
 		}
-		return p.Update([]string{"jingLingComp"}, p.Account.Snapshot(s.Store.Catalog).Questions)
+		return p.Update([]string{"jingLingComp"}, p.Account.Snapshot(s.Store.Catalog, s.Store.Rules).Questions)
 	}))
 	r.Handle("changeGameSetting", rpc.Bind(DecodeSetting, func(p *server.Player, setting Setting) error {
 		if setting.Missing {
@@ -112,7 +112,7 @@ func Register(srv *server.Service, r *server.Router) {
 		if err != nil {
 			return err
 		}
-		return p.Update([]string{"popupPackComp"}, p.Account.Snapshot(s.Store.Catalog).PopupPacks)
+		return p.Update([]string{"popupPackComp"}, p.Account.Snapshot(s.Store.Catalog, s.Store.Rules).PopupPacks)
 	}))
 	r.Handle("sweepLastShipMark", rpc.Bind(DecodeFlag, func(p *server.Player, _ bool) error {
 		if p.Account.System.LastReceipt == nil {

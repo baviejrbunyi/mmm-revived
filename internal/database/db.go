@@ -173,6 +173,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getPublicHeroesStmt, err = db.PrepareContext(ctx, GetPublicHeroes); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPublicHeroes: %w", err)
 	}
+	if q.getPublicPassedStmt, err = db.PrepareContext(ctx, GetPublicPassed); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPublicPassed: %w", err)
+	}
 	if q.getPublicProfilesStmt, err = db.PrepareContext(ctx, GetPublicProfiles); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPublicProfiles: %w", err)
 	}
@@ -713,6 +716,11 @@ func (q *Queries) Close() error {
 	if q.getPublicHeroesStmt != nil {
 		if cerr := q.getPublicHeroesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPublicHeroesStmt: %w", cerr)
+		}
+	}
+	if q.getPublicPassedStmt != nil {
+		if cerr := q.getPublicPassedStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPublicPassedStmt: %w", cerr)
 		}
 	}
 	if q.getPublicProfilesStmt != nil {
@@ -1275,6 +1283,7 @@ type Queries struct {
 	getMigrationStmt                  *sql.Stmt
 	getPublicEquipmentStmt            *sql.Stmt
 	getPublicHeroesStmt               *sql.Stmt
+	getPublicPassedStmt               *sql.Stmt
 	getPublicProfilesStmt             *sql.Stmt
 	getRankEntryStmt                  *sql.Stmt
 	getSocialTimesStmt                *sql.Stmt
@@ -1426,6 +1435,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getMigrationStmt:                  q.getMigrationStmt,
 		getPublicEquipmentStmt:            q.getPublicEquipmentStmt,
 		getPublicHeroesStmt:               q.getPublicHeroesStmt,
+		getPublicPassedStmt:               q.getPublicPassedStmt,
 		getPublicProfilesStmt:             q.getPublicProfilesStmt,
 		getRankEntryStmt:                  q.getRankEntryStmt,
 		getSocialTimesStmt:                q.getSocialTimesStmt,

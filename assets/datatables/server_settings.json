@@ -1,0 +1,61 @@
+{
+  "mail_templates": {
+    "boss_rank": 8001,
+    "boss_score": 8002,
+    "guild_settlement": 8011,
+    "bifrost_reward": 8014,
+    "bifrost_ranking": 8015,
+    "retail_ranking": 8023,
+    "limited_pass_settlement": 60001,
+    "pass_settlement": 60002
+  },
+  "special_items": {
+    "team_experience": 4,
+    "season_experience": 7,
+    "pass_activation": 35,
+    "premium_pass_activation": 36,
+    "pass_experience": 37,
+    "monthly_pass": 38,
+    "limited_pass_experience": 57,
+    "hyperflow_points": 61
+  },
+  "pass_level_bonus_item": 40,
+  "battle_achievements": {
+    "ESCAPE_NVWU_FAZHEN": {
+      "task_type": 100,
+      "battle": 110
+    },
+    "YUEGUANG_0_SCORE": {
+      "task_type": 101,
+      "battle": 208
+    },
+    "CONTROL_BLACK_QISHI": {
+      "task_type": 102,
+      "battle": 303
+    },
+    "NOT_KILL_MEDIC": {
+      "task_type": 103,
+      "battle": 504
+    },
+    "USE_ONE_HERO_IN_208": {
+      "task_type": 104,
+      "battle": 208
+    },
+    "EACAPE_JIUTOUSHE_JIGUANG": {
+      "task_type": 105,
+      "battle": 506
+    }
+  },
+  "double_material_multiplier": 2,
+  "boss": {
+    "settle_delay": 600,
+    "rank_display": 100,
+    "rank_board_minimum": 2500
+  },
+  "support_level_gap": 10,
+  "realtime": {
+    "rounds": 3,
+    "heroes_per_round": 1
+  },
+  "protection_forget_delay": 7200
+}

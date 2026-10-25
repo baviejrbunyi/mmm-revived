@@ -87,22 +87,42 @@ type Limits struct {
 	SentGifts     int
 	ReceivedGifts int
 	GiftEnergy    int64
+	GiftItem      model.ItemID
 	History       int
 	Blocked       int
 	Message       int
 }
 
-var DefaultLimits = Limits{Friends: 99, Applications: 20, SentGifts: 150, ReceivedGifts: 10, GiftEnergy: 3, History: 200, Blocked: 10, Message: 200}
+const messageHistory = 200
+
+type Config struct {
+	Limits          Limits
+	GuildLimits     GuildLimits
+	GuildLevels     []GuildLevel
+	Wars            []WarPeriod
+	SettlementTexts [3]string
+	SettlementMail  int64
+}
 
 type Repository struct {
 	GuildLimits GuildLimits
 	db          *storage.Database
 	Limits      Limits
 	progress    guildProgress
+	levels      []GuildLevel
+	wars        []WarPeriod
+	settlement  [3]string
+	settleMail  int64
 }
 
 func Open(db *storage.Database) (*Repository, error) {
-	return &Repository{db: db, Limits: DefaultLimits, GuildLimits: DefaultGuildLimits}, nil
+	return &Repository{db: db, Limits: Limits{History: messageHistory}, levels: []GuildLevel{{}}}, nil
+}
+
+func (r *Repository) Configure(c Config) {
+	r.Limits, r.GuildLimits, r.wars, r.settlement, r.settleMail = c.Limits, c.GuildLimits, c.Wars, c.SettlementTexts, c.SettlementMail
+	r.Limits.History = messageHistory
+	r.levels = append([]GuildLevel{{}}, c.GuildLevels...)
 }
 
 var patternEscaper = strings.NewReplacer("[", "[[]", "*", "[*]", "?", "[?]")

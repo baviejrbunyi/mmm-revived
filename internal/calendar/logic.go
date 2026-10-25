@@ -3,10 +3,13 @@ package calendar
 import "time"
 
 const (
-	DaySeconds     int64 = 86400
-	RefreshSeconds int64 = 18000
-	epochWeekday   int64 = 3
+	DaySeconds   int64 = 86400
+	epochWeekday int64 = 3
 )
+
+var RefreshSeconds int64
+
+func ConfigureRefresh(seconds int64) { RefreshSeconds = seconds }
 
 func LogicDay(now int64) int64 {
 	return floorDiv(Monotonic(now)-RefreshSeconds, DaySeconds)

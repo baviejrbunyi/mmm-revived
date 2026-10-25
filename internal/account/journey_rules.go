@@ -5,16 +5,18 @@ import (
 )
 
 type JourneyRules struct {
-	ChallengeEarlyLevelMargin int                                   `json:"challenge_early_level_margin"`
-	LocalRewardDefaults       map[model.RewardID]JourneyLocalReward `json:"local_reward_defaults"`
-	MiniGameUnlockMission     int                                   `json:"minigame_unlock_mission"`
-	Challenges                map[int]JourneyChallengeRule          `json:"challenges"`
-	ChallengeTypes            map[int][]int                         `json:"challenge_types"`
-	SpiralGroups              map[int]JourneySpiralGroupRule        `json:"spiral_groups"`
-	SpiralMissions            map[int]JourneySpiralRule             `json:"spiral_missions"`
-	InviteRewards             map[int]model.RewardID                `json:"invite_rewards"`
-	InviteCountTasks          map[int]model.TaskID                  `json:"invite_count_tasks"`
-	InviteBindReward          model.RewardID                        `json:"invite_bind_reward"`
+	ChallengeEarlyLevelMargin int                            `json:"challenge_early_level_margin"`
+	InviteTasks               map[int]model.TaskID           `json:"invite_tasks"`
+	LimitedEventPasses        []int                          `json:"limited_event_passes"`
+	InviteShareTask           model.TaskID                   `json:"invite_share_task"`
+	MiniGameUnlockMission     int                            `json:"minigame_unlock_mission"`
+	Challenges                map[int]JourneyChallengeRule   `json:"challenges"`
+	ChallengeTypes            map[int][]int                  `json:"challenge_types"`
+	SpiralGroups              map[int]JourneySpiralGroupRule `json:"spiral_groups"`
+	SpiralMissions            map[int]JourneySpiralRule      `json:"spiral_missions"`
+	InviteRewards             map[int]model.RewardID         `json:"invite_rewards"`
+	InviteCountTasks          map[int]model.TaskID           `json:"invite_count_tasks"`
+	InviteBindReward          model.RewardID                 `json:"invite_bind_reward"`
 
 	Hyperflows   map[int]JourneyHyperRule       `json:"hyperflows"`
 	HyperBuffs   map[int]JourneyHyperBuffRule   `json:"hyper_buffs"`
@@ -79,24 +81,25 @@ type JourneyPassRule struct {
 }
 
 type JourneyActivityRule struct {
-	PassID     int                    `json:"pass_id"`
-	Type       int                    `json:"type"`
-	Level      int                    `json:"level"`
-	Start      int64                  `json:"start"`
-	End        int64                  `json:"end"`
-	Duration   int                    `json:"duration"`
-	Parameter  int                    `json:"parameter"`
-	Rewards    map[int]model.RewardID `json:"rewards"`
-	Thresholds map[int]int            `json:"thresholds"`
-	Battles    []model.BattleID       `json:"battles"`
-	LoginDay   int                    `json:"login_day"`
-	LoginLevel int                    `json:"login_level"`
-	Tasks      []model.TaskID         `json:"tasks"`
-	Conditions []JourneyConditionRule `json:"conditions"`
-	Rotation   []int                  `json:"rotation"`
-	Permanent  []model.TaskID         `json:"permanent"`
-	Coin       model.ItemID           `json:"coin"`
-	WeeklyCap  int                    `json:"weekly_cap"`
+	PassID       int                    `json:"pass_id"`
+	Type         int                    `json:"type"`
+	Level        int                    `json:"level"`
+	Start        int64                  `json:"start"`
+	End          int64                  `json:"end"`
+	Duration     int                    `json:"duration"`
+	Parameter    int                    `json:"parameter"`
+	Rewards      map[int]model.RewardID `json:"rewards"`
+	Thresholds   map[int]int            `json:"thresholds"`
+	Battles      []model.BattleID       `json:"battles"`
+	Environments []int                  `json:"environments"`
+	LoginDay     int                    `json:"login_day"`
+	LoginLevel   int                    `json:"login_level"`
+	Tasks        []model.TaskID         `json:"tasks"`
+	Conditions   []JourneyConditionRule `json:"conditions"`
+	Rotation     []int                  `json:"rotation"`
+	Permanent    []model.TaskID         `json:"permanent"`
+	Coin         model.ItemID           `json:"coin"`
+	WeeklyCap    int                    `json:"weekly_cap"`
 }
 
 type JourneyConditionRule struct {
@@ -190,9 +193,4 @@ type JourneySpiralRule struct {
 	Battle      model.BattleID   `json:"battle"`
 	Predecessor int              `json:"predecessor"`
 	Rewards     []model.RewardID `json:"rewards"`
-}
-
-type JourneyLocalReward struct {
-	Items  map[model.ItemID]int64 `json:"items"`
-	Reason string                 `json:"reason"`
 }

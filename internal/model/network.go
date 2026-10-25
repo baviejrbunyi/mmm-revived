@@ -31,6 +31,7 @@ type SeasonMail struct {
 	Template int64            `json:"template,omitempty"`
 	Title    string           `json:"title"`
 	Content  string           `json:"content"`
+	Sender   string           `json:"sender,omitempty"`
 	Items    map[ItemID]int64 `json:"items,omitempty"`
 	Reward   RewardID         `json:"reward,omitempty"`
 	Mode     RankMode         `json:"mode,omitempty"`

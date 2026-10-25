@@ -783,26 +783,15 @@ func (q *Queries) GetGuilds(ctx context.Context, ids string) ([]Guild, error) {
 }
 
 const GetInviteProgress = `
-SELECT l.invitee,l.bound,a.level,
-CAST(EXISTS(SELECT 1 FROM account_records p WHERE p.uid=l.invitee AND p.category='passed' AND p.id='100109' AND coalesce(json_extract(p.payload,'$.stars'),0)>0) AS INTEGER) AS story,
-CAST(coalesce(json_extract(t1.payload,'$.status'),0) AS INTEGER) AS purchase1,
-CAST(coalesce(json_extract(t2.payload,'$.status'),0) AS INTEGER) AS purchase2,
-CAST(coalesce(json_extract(t3.payload,'$.status'),0) AS INTEGER) AS purchase3
+SELECT l.invitee,l.bound,a.level
 FROM invite_links l JOIN accounts a ON a.uid=l.invitee
-LEFT JOIN account_records t1 ON t1.uid=l.invitee AND t1.category='task' AND t1.id='3711'
-LEFT JOIN account_records t2 ON t2.uid=l.invitee AND t2.category='task' AND t2.id='3712'
-LEFT JOIN account_records t3 ON t3.uid=l.invitee AND t3.category='task' AND t3.id='3713'
-WHERE l.inviter=? ORDER BY l.invitee LIMIT 5
+WHERE l.inviter=? ORDER BY l.invitee
 `
 
 type GetInviteProgressRow struct {
-	Invitee   model.UserID
-	Bound     int64
-	Level     int64
-	Story     int64
-	Purchase1 int64
-	Purchase2 int64
-	Purchase3 int64
+	Invitee model.UserID
+	Bound   int64
+	Level   int64
 }
 
 func (q *Queries) GetInviteProgress(ctx context.Context, inviter model.UserID) ([]GetInviteProgressRow, error) {
@@ -818,10 +807,6 @@ func (q *Queries) GetInviteProgress(ctx context.Context, inviter model.UserID) (
 			&i.Invitee,
 			&i.Bound,
 			&i.Level,
-			&i.Story,
-			&i.Purchase1,
-			&i.Purchase2,
-			&i.Purchase3,
 		); err != nil {
 			return nil, err
 		}
@@ -950,6 +935,39 @@ func (q *Queries) GetPublicHeroes(ctx context.Context, uids string) ([]GetPublic
 	items := []GetPublicHeroesRow{}
 	for rows.Next() {
 		var i GetPublicHeroesRow
+		if err := rows.Scan(&i.UID, &i.ID, &i.Payload); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const GetPublicPassed = `
+SELECT uid,id,payload FROM account_records WHERE category='passed' AND uid IN (SELECT CAST(value AS INTEGER) FROM json_each(CAST(?1 AS TEXT)))
+`
+
+type GetPublicPassedRow struct {
+	UID     model.UserID
+	ID      string
+	Payload []byte
+}
+
+func (q *Queries) GetPublicPassed(ctx context.Context, uids string) ([]GetPublicPassedRow, error) {
+	rows, err := q.query(ctx, q.getPublicPassedStmt, GetPublicPassed, uids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPublicPassedRow{}
+	for rows.Next() {
+		var i GetPublicPassedRow
 		if err := rows.Scan(&i.UID, &i.ID, &i.Payload); err != nil {
 			return nil, err
 		}

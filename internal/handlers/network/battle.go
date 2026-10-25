@@ -27,6 +27,12 @@ type AsyncOutcome struct {
 	Packet     string              `json:"packet"`
 }
 
+func (s service) botLevel(p *server.Player) int {
+	score, _ := p.Account.NetworkScores(s.Store.Rules)
+	_, rank := s.Store.Rules.Network.Rank(score)
+	return max(1, rank.AILevel)
+}
+
 func (s service) botAccount(id int, level int) (account.Account, error) {
 	rule, ok := s.Store.Rules.Network.Bots[id]
 	if !ok {
@@ -40,7 +46,8 @@ func (s service) botAccount(id int, level int) (account.Account, error) {
 		if !exists {
 			continue
 		}
-		hero.Level = max(1, min(level, 30))
+		hero.Level = max(1, level)
+		hero.Break = s.Store.Rules.Levels[hero.Level].Break
 		a.Heroes[id] = hero
 		a.Network.Defense[id] = slot
 		a.Network.DefenseOrder = append(a.Network.DefenseOrder, id)
@@ -72,15 +79,16 @@ func (s service) refreshAsyncTargets(p *server.Player, refresh bool, now int64) 
 		if err != nil {
 			return err
 		}
-		targets = append(targets, model.AsyncTarget{UID: int64(uid), Score: max(1000, a.Network.Score), Level: a.Level, Defense: encoded, Shown: encoded})
+		targets = append(targets, model.AsyncTarget{UID: int64(uid), Score: max(s.Store.Rules.Network.Initial, a.Network.Score), Level: a.Level, Defense: encoded, Shown: encoded})
 	}
 	bots := make([]int, 0, len(s.Store.Rules.Network.Bots))
 	for id := range s.Store.Rules.Network.Bots {
 		bots = append(bots, id)
 	}
 	slices.Sort(bots)
+	level := s.botLevel(p)
 	for _, id := range bots {
-		a, err := s.botAccount(id, p.Account.Level)
+		a, err := s.botAccount(id, level)
 		if err != nil {
 			continue
 		}
@@ -88,7 +96,6 @@ func (s service) refreshAsyncTargets(p *server.Player, refresh bool, now int64) 
 		if err != nil {
 			return err
 		}
-		level := min(p.Account.Level, 30)
 		targets = append(targets, model.AsyncTarget{UID: int64(a.UID), Score: p.Account.Network.Score, Level: level, Defense: encoded, Shown: encoded, AI: id, AILevel: level})
 		if len(targets) >= 6 {
 			break
@@ -209,7 +216,7 @@ func (s service) prepareNetworkBattle(p *server.Player, r battle.CreateBattle) (
 
 func (s service) asyncOpponent(p *server.Player, uid int64) (model.AsyncDefense, error) {
 	if uid < 0 {
-		a, err := s.botAccount(int(-uid), p.Account.Level)
+		a, err := s.botAccount(int(-uid), s.botLevel(p))
 		if err != nil {
 			return model.AsyncDefense{}, err
 		}

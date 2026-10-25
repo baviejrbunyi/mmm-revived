@@ -10,6 +10,7 @@ type SystemRules struct {
 	HeroPacks        map[int]SystemHeroPackRule      `json:"hero_packs"`
 	MirageActivities []model.ActivityID              `json:"mirage_activities"`
 	Recharges        map[string]int                  `json:"recharges"`
+	ReofferGifts     bool                            `json:"reoffer_gifts"`
 }
 
 type SystemProductRule struct {
@@ -40,9 +41,17 @@ type SystemPassRule struct {
 }
 
 type SystemGiftRule struct {
-	Product  int            `json:"product"`
-	Reward   model.RewardID `json:"reward"`
-	Duration int64          `json:"duration"`
+	Product    int                   `json:"product"`
+	Reward     model.RewardID        `json:"reward"`
+	Duration   int64                 `json:"duration"`
+	Triggers   []SystemGiftCondition `json:"triggers"`
+	Retriggers []SystemGiftCondition `json:"retriggers"`
+}
+
+type SystemGiftCondition struct {
+	Level    int              `json:"level"`
+	Gift     int              `json:"gift"`
+	Activity model.ActivityID `json:"activity"`
 }
 
 type SystemHeroPackRule struct {

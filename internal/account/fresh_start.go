@@ -9,10 +9,7 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const (
-	DaySeconds          = calendar.DaySeconds
-	DailyRefreshSeconds = calendar.RefreshSeconds
-)
+const DaySeconds = calendar.DaySeconds
 
 func LogicDay(now int64) int64 { return calendar.LogicDay(now) }
 
@@ -30,7 +27,7 @@ func NewRetailAccount(uid model.UserID, name string, createdAt int64, r *Rules, 
 		CreatedAt:  createdAt,
 		LastLogin:  createdAt,
 		Level:      max(1, start.Level),
-		Items:      map[model.ItemID]int64{6: start.Energy},
+		Items:      map[model.ItemID]int64{r.Constants.Items.Energy: start.Energy},
 		Heroes:     map[model.HeroID]model.Hero{},
 		Guides:     map[string]string{},
 		Artifacts:  map[model.InstanceID]model.Artifact{},
@@ -80,17 +77,17 @@ func (a *Account) RegenerateEnergy(r *Rules, now int64) bool {
 	if start.EnergySeconds <= 0 {
 		return false
 	}
-	energy, bank, refreshed := a.Items[6], a.Energy.Bank, a.Energy.Refreshed
+	energy, bank, refreshed := a.Items[r.Constants.Items.Energy], a.Energy.Bank, a.Energy.Refreshed
 	if a.Energy.Refreshed <= 0 || a.Energy.Refreshed > now {
 		a.Energy.Refreshed = now
 	}
 	limit := r.TeamLevels[a.Level].EnergyLimit
-	if a.Items[6] < limit {
-		gained := min((now-a.Energy.Refreshed)/start.EnergySeconds, limit-a.Items[6])
-		a.Items[6] += gained
+	if a.Items[r.Constants.Items.Energy] < limit {
+		gained := min((now-a.Energy.Refreshed)/start.EnergySeconds, limit-a.Items[r.Constants.Items.Energy])
+		a.Items[r.Constants.Items.Energy] += gained
 		a.Energy.Refreshed += gained * start.EnergySeconds
 	}
-	if a.Items[6] >= limit {
+	if a.Items[r.Constants.Items.Energy] >= limit {
 		if start.BankSeconds > 0 && a.Energy.Bank < start.BankLimit {
 			gained := min((now-a.Energy.Refreshed)/start.BankSeconds, start.BankLimit-a.Energy.Bank)
 			a.Energy.Bank += gained
@@ -100,7 +97,7 @@ func (a *Account) RegenerateEnergy(r *Rules, now int64) bool {
 			a.Energy.Refreshed = now
 		}
 	}
-	return energy != a.Items[6] || bank != a.Energy.Bank || refreshed != a.Energy.Refreshed
+	return energy != a.Items[r.Constants.Items.Energy] || bank != a.Energy.Bank || refreshed != a.Energy.Refreshed
 }
 
 func (a *Account) levelTeam(r *Rules) {
@@ -122,7 +119,7 @@ func (a *Account) levelTeam(r *Rules) {
 	}
 	if a.Retail {
 		for level := from + 1; level <= a.Level; level++ {
-			a.Items[6] += r.TeamLevels[level].EnergyRecover
+			a.Items[r.Constants.Items.Energy] += r.TeamLevels[level].EnergyRecover
 		}
 	} else {
 		a.TeamBreak = TeamBreakAt(r, a.Level)

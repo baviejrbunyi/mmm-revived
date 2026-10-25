@@ -10,8 +10,6 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const retailCurrency model.ItemID = 71
-
 func (a *Account) InitializeRetailPVP(r *Rules, now int64) {
 	if r == nil {
 		return
@@ -99,14 +97,14 @@ func (a *Account) finishRetailPVP(r *Rules, id model.ActivityID, main RetailPVPM
 	if moment > state.LastBoxRequest {
 		_ = a.RefreshRetailPVPBox(r, id, moment)
 	}
-	if state.BoxMineCoin > 0 && a.grantItems(r, map[model.ItemID]int64{retailCurrency: state.BoxMineCoin}, 0) == nil {
+	if state.BoxMineCoin > 0 && a.grantItems(r, map[model.ItemID]int64{r.Constants.Items.HalloweenCurrency: state.BoxMineCoin}, 0) == nil {
 		state.BoxMineCoin = 0
 	}
 	state.Point += max(0, state.BoxPoint)
 	state.BoxPoint, state.MineRemainder, state.PointRemainder = 0, 0, 0
 	state.SettleStatus = 1
 	if state.Point > 0 && main.RankingReward != 0 && main.RankingLimit > 0 {
-		a.queueSeasonMail(model.SeasonMail{Title: "Mad Carnival Ranking Reward", Content: "Mad Carnival has ended. You finished at rank {1}. Here is your ranking reward.", Reward: main.RankingReward, Mode: model.RankRetailPVP, Rank: int(id), Score: state.Point, Limit: main.RankingLimit})
+		a.queueSeasonMail(r.seasonMail(r.Settings.Mail.RetailRanking, model.SeasonMail{Reward: main.RankingReward, Mode: model.RankRetailPVP, Rank: int(id), Score: state.Point, Limit: main.RankingLimit}))
 	}
 }
 
@@ -132,7 +130,7 @@ func (a *Account) closeRetailPVP(r *Rules, id model.ActivityID, rule JourneyActi
 			return
 		}
 	}
-	a.Items[retailCurrency] = 0
+	a.Items[r.Constants.Items.HalloweenCurrency] = 0
 }
 
 func (a *Account) growRetailMines(r *Rules, id model.ActivityID, days int, now int64) {
@@ -274,7 +272,7 @@ func (a *Account) ReapRetailPVPBox(r *Rules, id model.ActivityID, now int64) (in
 	if coin < 0 || point < 0 || state.Point > math.MaxInt64-point {
 		return 0, 0, rejected("invalid Halloween mining balance")
 	}
-	if err = a.grantItems(r, map[model.ItemID]int64{retailCurrency: coin}, 0); err != nil {
+	if err = a.grantItems(r, map[model.ItemID]int64{r.Constants.Items.HalloweenCurrency: coin}, 0); err != nil {
 		return 0, 0, err
 	}
 	state.Point += point
@@ -309,7 +307,7 @@ func (a *Account) settlePVPCycle(r *Rules) {
 	if a.Network.Initialized && a.Network.Activity != 0 {
 		a.settleAsyncSeason(r, a.Network.Activity, a.Network.Activity)
 	}
-	if id := a.RealtimeActivity(); a.Activities[id].InitializedAt > 0 {
+	if id := a.RealtimeActivity(r); a.Activities[id].InitializedAt > 0 {
 		rule := r.PVP[id]
 		a.settleRealtimeSeason(r, rule, rule)
 		activity := a.Activities[id]
@@ -327,6 +325,6 @@ func (a *Account) settlePVPCycle(r *Rules) {
 		closed = true
 	}
 	if closed {
-		a.Items[retailCurrency] = 0
+		a.Items[r.Constants.Items.HalloweenCurrency] = 0
 	}
 }

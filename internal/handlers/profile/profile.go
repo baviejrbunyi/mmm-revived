@@ -12,12 +12,6 @@ import (
 	"mmm-revived/internal/server"
 )
 
-const (
-	renameItem     model.ItemID = 100004
-	renameCurrency model.ItemID = 2
-	renamePrice    int64        = 200
-)
-
 func (s service) edit(p *server.Player, apply func(*account.Account)) (bool, error) {
 	before, name := p.Account.Profile, p.Account.TeamName
 	before.RedDots = maps.Clone(before.RedDots)
@@ -55,12 +49,13 @@ func (s service) cosmetic(kind int, field func(*model.ProfileCustomization) *mod
 }
 
 func (s service) changeTeamName(p *server.Player, name string) error {
-	code := teamNameCode(name)
+	limits := s.Store.Rules.Constants.Constants
+	code := teamNameCode(name, limits)
 	a := p.Account
 	if code == 0 && name != a.TeamName && a.TeamName != "" && a.TeamName != a.Name {
-		cost := map[model.ItemID]int64{renameItem: 1}
-		if a.Items[renameItem] < 1 {
-			cost = map[model.ItemID]int64{renameCurrency: renamePrice}
+		cost := map[model.ItemID]int64{limits.RenameItem: 1}
+		if a.Items[limits.RenameItem] < 1 && len(limits.RenameCurrency) > 1 {
+			cost = map[model.ItemID]int64{model.ItemID(limits.RenameCurrency[0]): limits.RenameCurrency[1]}
 		}
 		if err := a.Spend(cost); errors.Is(err, account.ErrProgression) {
 			code = codeItemsMissing
@@ -81,7 +76,7 @@ func (s service) changeTeamName(p *server.Player, name string) error {
 }
 
 func (s service) changeSignature(p *server.Player, signature string) error {
-	if code := signatureCode(signature); code != 0 {
+	if code := signatureCode(signature, s.Store.Rules.Constants.Constants); code != 0 {
 		return p.Send("onSignatureChange", code)
 	}
 	if _, err := s.edit(p, func(a *account.Account) { a.Profile.Signature = signature }); err != nil {
@@ -115,7 +110,7 @@ func (s service) makeLineup(p *server.Player, r Lineup) error {
 }
 
 func (s service) changeLineupName(p *server.Player, r Lineup) error {
-	code := lineupNameCode(r.Name)
+	code := lineupNameCode(r.Name, s.Store.Rules.Constants.Constants)
 	if !validSlot(r.Slot) {
 		code = codeCommon
 	}

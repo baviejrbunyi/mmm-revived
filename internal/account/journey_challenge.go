@@ -14,8 +14,8 @@ func (a *Account) journeyChallengeRule(r *Rules, id, count int, sweep bool) (Jou
 	rule, known := r.Journey.Challenges[id]
 	record := a.Journey.Challenges[id]
 	maximum := 1
-	if record.Stars > 0 {
-		maximum = min(record.Stars, 3) * 2
+	if multipliers := r.Constants.Constants.ChallengeStarMultipliers; record.Stars > 0 && len(multipliers) > 0 {
+		maximum = multipliers[min(record.Stars, len(multipliers))-1]
 	}
 	unlocked := rule.Difficulty == 1 || a.Level >= rule.Level
 	if !unlocked && rule.Predecessor > 0 && a.Journey.Challenges[rule.Predecessor].Stars >= 3 {
@@ -43,7 +43,7 @@ func (a *Account) BeginJourneyChallenge(r *Rules, id int, battle model.BattleID,
 			return err
 		}
 	}
-	if err = a.Spend(map[model.ItemID]int64{6: rule.Energy * int64(count)}); err != nil {
+	if err = a.Spend(map[model.ItemID]int64{r.Constants.Items.Energy: rule.Energy * int64(count)}); err != nil {
 		return err
 	}
 	a.Journey.ChallengeRun = &model.JourneyChallengeRun{ID: id, Battle: battle, Count: count}
@@ -59,7 +59,7 @@ func (a *Account) energyExperience(energy int64) int64 {
 
 func (a *Account) grantEnergyExperience(r *Rules, energy int64) error {
 	if experience := a.energyExperience(energy); experience > 0 {
-		return a.GrantItems(r, map[model.ItemID]int64{4: experience})
+		return a.GrantItems(r, map[model.ItemID]int64{r.Settings.Items.TeamExperience: experience})
 	}
 	return nil
 }
@@ -81,11 +81,7 @@ func (a *Account) FinishJourneyChallenge(r *Rules, id int, battle model.BattleID
 		return map[model.ItemID]int64{}, nil
 	}
 	record := a.Journey.Challenges[id]
-	rewards, err := mergeJourneyRewards(r, rule.Rewards)
-	if err != nil {
-		return nil, err
-	}
-	rewards, err = multiplied(rewards, int64(run.Count))
+	rewards, err := droppedRewardItems(r, rule.Rewards, int64(run.Count))
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +96,12 @@ func (a *Account) FinishJourneyChallenge(r *Rules, id int, battle model.BattleID
 			record.StarRewards |= 1 << index
 		}
 	}
-	extra, err := mergeJourneyRewards(r, first)
+	extra, err := droppedRewardItems(r, first, 1)
 	if err != nil {
 		return nil, err
 	}
 	if experience := a.energyExperience(rule.Energy * int64(run.Count)); experience > 0 {
-		extra[4] += experience
+		extra[r.Settings.Items.TeamExperience] += experience
 	}
 	for item, count := range extra {
 		if rewards[item] > math.MaxInt64-count {
@@ -132,25 +128,22 @@ func (a *Account) SweepJourneyChallenge(r *Rules, id, count int) (map[model.Item
 	if err != nil {
 		return nil, err
 	}
-	quantities, err := mergeJourneyRewards(r, rule.Rewards)
-	if err != nil {
-		return nil, err
-	}
-	quantities, err = multiplied(quantities, int64(count))
+	quantities, err := droppedRewardItems(r, rule.Rewards, int64(count))
 	if err != nil {
 		return nil, err
 	}
 	if quantities, err = a.consumeDoubleMaterial(r, rule.Group, count, quantities); err != nil {
 		return nil, err
 	}
-	cost := map[model.ItemID]int64{6: rule.Energy * int64(count), 40: int64(count)}
+	energy := r.Constants.Items.Energy
+	cost := map[model.ItemID]int64{energy: rule.Energy * int64(count), r.Constants.Constants.SweepChallengeItem: int64(count)}
 	next := *a
 	next.Items = maps.Clone(a.Items)
 	if err = next.Spend(cost); err != nil {
 		return nil, err
 	}
-	if experience := a.energyExperience(cost[6]); experience > 0 {
-		quantities[4] += experience
+	if experience := a.energyExperience(cost[energy]); experience > 0 {
+		quantities[r.Settings.Items.TeamExperience] += experience
 	}
 	if err = next.GrantItems(r, quantities); err != nil {
 		return nil, err

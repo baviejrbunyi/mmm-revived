@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"mmm-revived/internal/account"
+	"mmm-revived/internal/calendar"
 )
 
 func (s *Service) Run(ctx context.Context) {
@@ -101,7 +102,7 @@ func (s *Service) refreshDispatches(now int64) {
 		return
 	}
 	for _, p := range s.byUID {
-		if p.Account.Level < 12 || p.Account.Dispatch.Initialized && p.Account.Dispatch.Day == account.LogicDay(now) {
+		if !p.Account.DispatchUnlocked(s.Store.Rules) || p.Account.Dispatch.Initialized && p.Account.Dispatch.Day == account.LogicDay(now) {
 			continue
 		}
 		err := s.Store.Update(p.Account, func(*sql.Tx) error { return p.Account.PrepareDispatch(s.Store.Rules, now) })
@@ -173,7 +174,7 @@ func (s *Service) rollDay(p *Player, now int64) error {
 	if err = s.guildWeek(p, guild, now); err != nil {
 		return err
 	}
-	if err = p.Send("dailyTimer", account.DailyRefreshSeconds); err != nil {
+	if err = p.Send("dailyTimer", calendar.RefreshSeconds); err != nil {
 		return err
 	}
 	if err = p.Send("resetDailyTasks"); err != nil {

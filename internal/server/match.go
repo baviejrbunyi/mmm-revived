@@ -125,7 +125,7 @@ func (s *Service) AnnounceMatch(match *Room, winner model.UserID, confirm time.D
 }
 
 func (s *Service) settleMatch(match *Room, member *Player, winner model.UserID) error {
-	id := member.Account.RealtimeActivity()
+	id := member.Account.RealtimeActivity(s.Store.Rules)
 	activity := member.Account.Activities[id]
 	rule := s.Store.Rules.PVP[id]
 	draft := match.Mode.UsesDraft()
@@ -144,9 +144,9 @@ func (s *Service) settleMatch(match *Room, member *Player, winner model.UserID) 
 			}
 			activity.History = append(activity.History, outcome)
 		}
-		before := member.Account.Items[28]
+		before := member.Account.Items[s.Store.Rules.Constants.Items.PVPScore]
 		firstError = member.Account.Grant(s.Store.Rules, reward)
-		activity.Points += member.Account.Items[28] - before
+		activity.Points += member.Account.Items[s.Store.Rules.Constants.Items.PVPScore] - before
 		for _, id := range rule.PointTasks {
 			member.Account.UpdateTask(id, int(activity.Points), s.Store.Rules.Tasks[id].Target)
 		}

@@ -1,4 +1,5 @@
 import argparse
+import ctypes
 import json
 import struct
 import sys
@@ -46,6 +47,35 @@ class Tables:
             raw = (self.folder / self.index[name + '.lua']['file']).read_bytes()
             self.cache[name] = {str(key): plain(value) for key, value in self.tools.module_data(raw, name + '.lua').items()}
         return self.cache[name]
+
+    def code_module(self, name):
+        if not hasattr(self, 'shim'):
+            lib, state = self.tools.lib, self.tools.state
+            function = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p)
+
+            def identity(pointer):
+                lib.lua_settop(pointer, 1)
+                return 1
+
+            self.shim = function(identity)
+            lib.lua_getglobal.argtypes = lib.lua_setglobal.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+            lib.lua_pushcclosure.argtypes = [ctypes.c_void_p, function, ctypes.c_int]
+            lib.lua_setfield.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_char_p]
+            lib.lua_createtable.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
+            lib.lua_setmetatable.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            lib.lua_getglobal(state, b'table')
+            lib.lua_pushcclosure(state, self.shim, 0)
+            lib.lua_setfield(state, -2, b'const')
+            lib.lua_settop(state, 0)
+            lib.lua_createtable(state, 0, 0)
+            lib.lua_createtable(state, 0, 0)
+            lib.lua_createtable(state, 0, 0)
+            lib.lua_pushcclosure(state, self.shim, 0)
+            lib.lua_setfield(state, -2, b'__call')
+            lib.lua_setmetatable(state, -2)
+            lib.lua_setfield(state, -2, b'Color')
+            lib.lua_setglobal(state, b'u3d')
+        return self.module(name)
 
     def data_tables(self):
         for name in sorted(self.index):
@@ -127,6 +157,7 @@ def rules(t):
         'breaks': {key: {str(index + 1): ({str(position): item for position, item in enumerate(cost, 1)} if isinstance(cost, list) else cost) for index, cost in enumerate(value)} if isinstance(value, list) else value for key, value in load('character_break_data').items()},
         'hero_break_sets': {key: row.get('break_set', 0) for key, row in heroes.items()},
         'rewards': {key: [value[:2] for value in sequence(row.get('preview')) if isinstance(value, list) and len(value) >= 2 and isinstance(value[1], (int, float)) and not (len(value) > 2 and all(items.get(str(entry), {}).get('type') == 1002 for entry in value))] for key, row in load('reward_data').items()},
+        'drop_details': {key: {str(entry[0]): entry[1] for entry in sequence(row.get('dropdetail')) if isinstance(entry, list) and len(entry) >= 2} for key, row in load('reward_details_data').items()},
         'tasks': tasks(t),
         'battle_settings': {key: {'heroes': row.get('heroNum', 3), 'fixed_heroes': row.get('hero') or [], 'trial_heroes': row.get('trialHero') or [], 'cards': row.get('commonCard') or [], 'card_count': row.get('commonCardNum', 0)} for key, row in load('battle_mode_new_data_cn').items()},
         'battle_modes': {key: row.get('group', 0) for key, row in load('battle_mode_new_data_cn').items()},
@@ -141,10 +172,12 @@ def rules(t):
         'artifact_levels': {key: {str(index + 1): {'experience': row.get('exp_need', 0), 'money': row.get('money', 0)} for index, row in enumerate(value)} if isinstance(value, list) else value for key, value in load('artifact_up_data').items()},
         'hero_stars': {key: row.get('item', {}) for key, row in load('character_star_data').items()},
         'hero_talents': {key: {'break': row.get('break_need', 0), 'cost': row.get('item') or {}} for key, row in load('character_talent_data_cn').items()},
+        'hero_talent_sets': {key: row['talent_set'] for key, row in heroes.items() if row.get('talent_set')},
         'hero_awake': {key: {'prerequisites': row.get('pre_id') or [], 'cost': row.get('item') or []} for key, row in load('character_awake_data_cn').items()},
         'energy': load('buy_energy_data'),
         'chapters': {key: {'missions': row.get('mission') or [], 'rewards': row.get('missionReward') or {}} for key, row in chapters.items()},
         'pvp_rounds': load('realtimePVP_round_data'),
+        'pvp_battle_maps': {key: sequence(row.get('battleMap'))[0] for key, row in load('real_time_pvp_battle_data').items() if sequence(row.get('battleMap'))},
         'hero_traits': {key: {'career': row.get('career', 0), 'camp': row.get('camp', 0), 'star': row.get('star') or 1} for key, row in heroes.items()},
         'pvp': {key: dict(pvp[str(row['act_param'][0])]) for key, row in activities.items() if row.get('act_type') == 2 and sequence(row.get('act_param')) and str(row['act_param'][0]) in pvp},
         'item_types': {key: row.get('type', 0) for key, row in items.items()},
@@ -284,10 +317,12 @@ def journey(t):
             value['thresholds'] = {str(index): star for index, star in enumerate(brawl['starNum'])}
             value['rewards'] = {str(index): reward for index, reward in enumerate(brawl['reward'])}
             value['battles'] = brawl['battleId']
+            value['environments'] = sequence(brawl.get('environment'))
         activities[key] = value
     return {
         'challenge_early_level_margin': constants['challenge_less_lv'],
-        'minigame_unlock_mission': load('limited_time_event')['1004']['unlock_mission'],
+        'minigame_unlock_mission': min(row['unlock_mission'] for row in load('limited_time_event').values() if row.get('event_type') == 4),
+        'limited_event_passes': sorted(value for row in load('limited_time_event').values() if row.get('event_type') == 2 for value in ints(row.get('event_param'))),
         'novice_tasks': {key: {'nodes': sequence(row.get('initNodes')), 'next': sequence(row.get('nextId'))} for key, row in load('mainplot_task_data').items()},
         'novice_nodes': {key: {'type': row['eventType'], 'parameters': sequence(row.get('params')) if all(isinstance(value, int) for value in sequence(row.get('params'))) else []} for key, row in load('mainplot_node_data_cn').items()},
         'passes': passes('battlepass_data', 'battlepass_reward_data'),
@@ -302,6 +337,13 @@ def journey(t):
         'invite_rewards': {key: row['reward'] for key, row in load('referral_growth_task_data_cn').items()},
         'invite_count_tasks': {key: row['taskId'] for key, row in load('referral_invitation_task_data_cn').items()},
         'invite_bind_reward': constants['bind_pull_system_reward'],
+        'invite_tasks': {str(row['index']): row['taskId'] for row in load('referral_newplayer_task_data_cn').values() if 'index' in row},
+        'invite_share_task': min(row['taskId'] for row in load('referral_newplayer_task_data_cn').values() if 'index' not in row),
+        'monthly_purchase_reward': constants['monthly_pass_purchase_reward'],
+        'monthly_daily_reward': constants['monthly_pass_daily_reward'],
+        'monthly_duration': constants['monthly_pass_duration_obtained'],
+        'monthly_maximum_duration': constants['monthly_pass_max_duration'],
+        **dreamguard(t),
         'challenge_types': {key: sequence(row.get('group')) for key, row in load('challenge_type_data_cn').items()},
         'challenges': {key: {'difficulty': row['lv'], 'group': row['group'], 'battle': row['battle_mode'], 'level': row.get('unlock_level', 0), 'predecessor': row.get('befId', 0), 'energy': row.get('energy', 0), 'active': row.get('active', 0), 'rewards': sequence(row.get('reward_once')), 'star_rewards': [row.get('reward_1', 0), row.get('reward_2', 0), row.get('reward_3', 0)]} for key, row in load('challenge_data').items()},
         'spiral_groups': {key: {'missions': row['mission_group'], 'rewards': row.get('star_reward') or {}} for key, row in load('spiral_group_data').items()},
@@ -315,10 +357,43 @@ def journey(t):
     }
 
 
+def dreamguard(t):
+    task, duration, _, reward = sequence(t.module('constant_data')['rallying_cry_hero_task_params'])
+    pays = [sequence(row.get('pay')) for row in t.module('rallying_cry_data_cn').values() if str(task) in [str(value) for value in sequence(row.get('access_param'))]]
+    return {'dreamguard_task': task, 'dreamguard_duration': duration, 'dreamguard_price': {str(pay[0]): pay[1] for pay in pays if len(pay) > 1}, 'dreamguard_reward': reward}
+
+
 def seven_day(t):
     rows, tasks = list(t.module('newbie_task_data_cn').values()), t.module('task_data')
     marks = {ints(tasks[str(row['taskId'])].get('param'))[0] for row in rows if 'day' not in row}
     return {'mark': marks.pop() if len(marks) == 1 else 0, 'tasks': sorted(row['taskId'] for row in rows if 'day' in row)}
+
+
+def code_field(t, module, field):
+    def walk(node):
+        yield node
+        for child in node['children']:
+            yield from walk(child)
+
+    root = parse((t.folder / t.index[module + '.lua']['file']).read_bytes())[1]
+    for node in walk(root):
+        constants, loads = node['constants'], {}
+        for instruction in node['code']:
+            op, register = t.tools.opcodes[instruction & 63], instruction >> 6 & 255
+            if op == 'LOADK':
+                loads[register] = instruction >> 14
+                continue
+            if op != 'SETTABLE':
+                loads.pop(register, None)
+                continue
+            key, value = instruction >> 23 & 511, instruction >> 14 & 511
+            key = key - 256 if key >= 256 else loads.get(key)
+            value = value - 256 if value >= 256 else loads.get(value)
+            if key is None or value is None:
+                continue
+            if constants[key][0] in (4, 20) and constants[key][1] == field.encode() and constants[value][0] == 19:
+                return struct.unpack('<q', constants[value][1])[0]
+    raise ValueError(module + '.' + field)
 
 
 def rogue(t):
@@ -339,12 +414,24 @@ def rogue(t):
     for row in relics.values():
         for key in ['skill', 'shopSkill']:
             row[key] = [sequence(value) for value in row.get(key, [])]
+    battle = load('battle_constant_data')
+    unlock = load('system_unlock_data')
     return {
+        'alternations': {key: {'type': row['type'], 'start': row['start_time'], 'coin_limit': row.get('coins_limit', 0), 'levels': ints(row.get('include_levelid')), 'rewards': row.get('reward') or {}} for key, row in load('rogue_alternation_data').items()},
+        'unlock': {key: {'level': unlock[key].get('lv', 0), 'login_day': unlock[key].get('loginday', 0), 'login_level': unlock[key].get('loginlv', 0)} for key in ['roguelike', 'roguelikePve']},
+        'score': constants['rogue_score'],
+        'pve_score': constants['rogue_pve_score'],
+        'record_limit': constants['rogue_record_len'],
+        'hero_star': battle['rogue_hero_star'],
+        'max_hero_level': battle['rogue_max_hero_lv'],
+        'max_time_score': code_field(t, 'Const', 'REDIS_MAX_FLOAT'),
+        'currency': code_field(t, 'Const', 'ROGUE_CURRENCY'),
+        'pve_currency': code_field(t, 'Const', 'ROGUE_PVE_CURRENCY'),
         'runs': rows('rogue_data', ['battle_seq', 'battle_pool', 'hero_pool', 'relic_pool', 'shop_lv_seq', 'chest', 'battle_lv_seq']),
         'shops': shops,
         'relics': relics,
         'chests': rows('rogue_chest_data_cn', ['energy_cost', 'coin_cost', 'limitLv', 'unlock_battle', 'reward']),
-        'pve': rows('rogue_pve_data', ['battle_seq', 'battle_lv_seq', 'evt_group_seq', 'evt_group_pool', 'buff_pool', 'enemy_buff_seq', 'unlock_lv', 'difficulty', 'posList', 'posSwitch']),
+        'pve': rows('rogue_pve_data', ['battle_seq', 'battle_lv_seq', 'evt_group_seq', 'evt_group_pool', 'buff_pool', 'enemy_buff_seq', 'unlock_lv', 'difficulty', 'opening_time', 'posList', 'posSwitch']),
         'events': events,
         'event_groups': {key: value['event'] for key, value in load('rogue_pve_event_group_data').items()},
         'buffs': rows('rogue_pve_buff_data_cn', ['tier', 'cost', 'buffid']),
@@ -366,9 +453,11 @@ def rogue(t):
 
 def draw(t):
     load = t.module
+    sets = load('draw_prizeset_data')
+    levels = sorted({int(field[7:]) for row in sets.values() for field in row if field.startswith('weight_') and field[7:].isdigit()})
     return {
         'pools': {key: {'ticket': row['ticket'], 'price': row.get('pricePerDraw', 0), 'level': row.get('unlockLv', 1), 'start': row.get('beginTime', 0), 'end': row.get('endTime', 0), 'sets': row.get('prizeSet') or [], 'strategies': row.get('strategy') or [], 'weight_strategy': row.get('weight_fix_strategy', 0), 'point': row.get('pointType', 0)} for key, row in load('draw_pool_data').items()},
-        'sets': {key: {'items': row.get('items') or [], 'up': row.get('ups') or [], 'weight': row.get('weight', 0), 'soft_weights': {str(level): row.get('weight_' + str(level), row.get('weight', 0)) for level in [40, 50, 60, 65, 70, 75]}} for key, row in load('draw_prizeset_data').items()},
+        'sets': {key: {'items': row.get('items') or [], 'up': row.get('ups') or [], 'weight': row.get('weight', 0), 'soft_weights': {str(level): row.get('weight_' + str(level), row.get('weight', 0)) for level in levels}} for key, row in sets.items()},
         'strategies': {key: {'counter': row.get('counter', 0), 'number': row.get('num', 0), 'sets': row.get('set') or [], 'prizes': row.get('prize') or [], 'trigger_sets': row.get('trigger_set') or [], 'trigger_prizes': row.get('trigger_prize') or [], 'advance_prizes': row.get('advance_prize') or [], 'advance_number': row.get('advance_num', 0), 'advance_trigger': row.get('advance_trigger_prize') or [], 'created': row.get('create_time', 0)} for key, row in load('draw_strategy_data').items()},
     }
 
@@ -386,6 +475,39 @@ def events(t):
     }
 
 
+RALLYING_CRY = 18
+
+
+def gift_triggers(tasks, ids):
+    result = []
+    for task in ints(ids):
+        row = tasks.get(str(task), {})
+        if row.get('complete_type') == 3:
+            result.append({'level': row.get('target', 0)})
+        elif row.get('complete_type') == 65 and ints(row.get('param')):
+            result.append({'gift': ints(row.get('param'))[0]})
+    return result
+
+
+def gifts(t):
+    load = t.module
+    tasks = load('task_data')
+    rallies = sorted(int(key) for key, row in load('activity_data').items() if row.get('act_type') == RALLYING_CRY)
+    offered = {int(value) for row in load('rallying_cry_data_cn').values() if row.get('access') == 'gift' for value in sequence(row.get('access_param')) if str(value).isdigit()}
+    result = {}
+    for key, row in load('gift_data').items():
+        entry = {'product': row.get('recharge_id', 0), 'reward': row.get('giftReward', 0), 'duration': row.get('giftLifeTime', 0) * 60}
+        triggers = gift_triggers(tasks, row.get('giftTriggerTask'))
+        if int(key) in offered:
+            triggers += [{'activity': activity} for activity in rallies]
+        if triggers:
+            entry['triggers'] = triggers
+        if retriggers := gift_triggers(tasks, row.get('ReTriggerTask')):
+            entry['retriggers'] = retriggers
+        result[key] = entry
+    return result
+
+
 def system(t):
     load = t.module
     recharges = load('recharge_data')
@@ -397,7 +519,7 @@ def system(t):
         'products': products,
         'shops': {key: {field: row[field] for field in fields if field in row} for key, row in load('shop_data_cn').items() if row.get('recharge_id')},
         'passes': {key: {str(row['recharge_id' + str(index)]): {'kind': index, 'reward': row.get('recharge_reward' + str(index), 0)} for index in range(1, 4) if 'recharge_id' + str(index) in row} for key, row in load('battlepass_data').items()},
-        'gifts': {key: {'product': row.get('recharge_id', 0), 'reward': row.get('giftReward', 0), 'duration': row.get('giftLifeTime', 0) * 60} for key, row in load('gift_data').items()},
+        'gifts': gifts(t),
         'hero_packs': {key: {'product': row.get('recharge_id', 0), 'discount': row.get('discount_recharge_id', 0), 'item': row.get('itemid', 0)} for key, row in load('hero_purchase_pack_data').items()},
         'recharges': {key: row['product_id'] for key, row in recharges.items()},
     }
@@ -446,20 +568,24 @@ def network(t):
         boss = bosses[str(row['boss'])]
         areas = [row['area' + str(index)] for index in range(1, 5) if 'area' + str(index) in row]
         wars[key] = {'areas': areas, 'boss_group': boss['battle_group'], 'boss_hp': boss['hp'], 'boss_reward': row.get('boss_finish_reward', 0), 'area_rewards': {str(row['area' + str(index)]): row.get('area%d_finish_reward' % index, 0) for index in range(1, 5) if 'area' + str(index) in row}}
-    activities = {}
+    activities, rankings = {}, {}
     for key, row in load('activity_data').items():
         parameters = sequence(row.get('act_param'))
         if row['act_type'] != 14 or not parameters or str(parameters[0]) not in mains:
             continue
         main = mains[str(parameters[0])]
+        rankings[key] = {'reward': main.get('ranking_reward', 0), 'limit': main.get('request_ranking', 0)}
         activities[key] = {'battles': sequence(main.get('battle')), 'attempts': main.get('day_recover', 0), 'refreshes': main.get('day_refresh', 0), 'tasks': sequence(main.get('point_task')), 'environments': sequence(main.get('environment')), 'camps': sequence(main.get('camp_environment'))}
     return {
-        'ranks': {key: {'minimum': row['point_min'], 'maximum': row['point_max'], 'reward': row.get('rank_reward', 0), 'win': row.get('battle_win_point', 0), 'lose': row.get('battle_lose_point', 0), 'kill': row.get('atk_hero_kill_point', 0), 'killed': row.get('atk_hero_killed_point', 0), 'all_kill': row.get('atk_allkill_point', 0), 'all_killed': row.get('atk_allkilled_point', 0)} for key, row in load('pvp_data_cn').items()},
+        'ranks': {key: {'minimum': row['point_min'], 'maximum': row['point_max'], 'reward': row.get('rank_reward', 0), 'win': row.get('battle_win_point', 0), 'lose': row.get('battle_lose_point', 0), 'kill': row.get('atk_hero_kill_point', 0), 'killed': row.get('atk_hero_killed_point', 0), 'all_kill': row.get('atk_allkill_point', 0), 'all_killed': row.get('atk_allkilled_point', 0), 'ai_level': row.get('ai_level', 0)} for key, row in load('pvp_data_cn').items()},
         'activities': activities,
         'wars': wars,
         'areas': {key: {'hp': row['hp'], 'sets': [row['set' + str(index)] for index in range(1, 4) if 'set' + str(index) in row]} for key, row in load('alliance_war_area_data_cn').items()},
         'war_levels': {key: {'group': row['group'], 'battle': row['battle_id'], 'minimum_level': row['lv_limit'][0], 'maximum_level': row['lv_limit'][1], 'reduction': row.get('hp_reduce', 0), 'medals': row.get('medal', 0), 'assist': row.get('assist', 0), 'reward': row.get('battle_reward', 0)} for key, row in load('alliance_war_battle_group_data').items()},
         'bots': {key: {'heroes': {str(int(template) // 100): level for template, level in row['lineup'].items()}, 'environment': row.get('ai_env', 0), 'camp': row.get('ai_camp_env', 0)} for key, row in load('pvp_ai_lineup_data').items()},
+        'rank_seasons': {key: {'reset': row['reset_point'], 'environments': row['env_num']} for key, row in load('pvp_data_cn').items()},
+        'initial_score': load('constant_data')['PVP_init_point'],
+        'season_rankings': rankings,
     }
 
 
@@ -485,6 +611,7 @@ def retail_pvp(t):
         'daily_hero_attacks': constants['multi_pvp_daily_hero_attack'],
         'maximum_revenge': constants['multi_pvp_max_revenge_times'],
         'daily_defenses': constants['multi_pvp_daily_defend'],
+        'settle_days': {key: row['act_param'][1] for key, row in load('activity_data').items() if row['act_type'] == 31 and len(sequence(row.get('act_param'))) > 1},
     }
 
 
@@ -515,7 +642,10 @@ def retail(t):
     items = {}
     for item in sequence(constants['init_artifact']) + sequence(constants['init_highlight']):
         items[str(item)] = items.get(str(item), 0) + 1
+    points = load('daily_task_progress_data')
+    point_items = {ints(load('task_data')[str(row['taskId'])].get('param'))[0] for row in points.values()}
     return {
+        'level': min(int(key) for key in load('player_level_data')),
         'energy': constants['init_energy'],
         'items': items,
         'head': sequence(constants['init_head'])[0],
@@ -531,8 +661,22 @@ def retail(t):
             'newbie_tasks': sequence(constants['newbie_daily_tasks']),
             'counts': {str(key): value for key, value in (mapping(constants['daily_task_type_num']) or {}).items()},
             'tasks': [{'task': row['taskId'], 'type': row['dailyType'], 'level': row.get('teamLv', 1), 'weight': row.get('weight', 0)} for _, row in sorted(load('daily_task_data_cn').items(), key=lambda pair: int(pair[0]))],
-            'point_tasks': sorted(row['taskId'] for row in load('daily_task_progress_data').values()),
+            'point_tasks': sorted(row['taskId'] for row in points.values()),
+            'point_item': point_items.pop() if len(point_items) == 1 else 0,
         },
+    }
+
+
+def constants(t):
+    load = t.module
+    return {
+        'constants': load('constant_data'),
+        'system_unlocks': {key: {'level': row.get('lv', 0), 'login_day': row.get('loginday', 0), 'login_level': row.get('loginlv', 0), 'mission': row.get('missionId', 0), 'task': row.get('task_id', 0)} for key, row in load('system_unlock_data').items() if isinstance(row, dict)},
+        'hero_star_rewards': {key: row['star3_reward'] for key, row in load('hero_star_reward_data').items() if row.get('star3_reward')},
+        'guild_levels': {key: {'experience': row.get('exp', 0), 'members': row['members'], 'reward': row['reward'], 'minimum': row.get('reward_min', 0), 'per_reward': row.get('contri_to_reward', 0), 'reward_limit': row.get('reward_limit', 0)} for key, row in load('alliance_level_data').items()},
+        'item_ids': t.code_module('Const')['ItemId'],
+        'honor_tags': sorted(t.code_module('UIConst')['ServerHonorType'], key=t.code_module('UIConst')['ServerHonorType'].get),
+        'guild_wars': {key: {'prepare': row['prepare_time'], 'battle': row['battle_time'], 'end': row['end_time'], 'phases': sequence(row.get('phase_change'))} for key, row in load('alliance_war_data_cn').items() if row.get('prepare_time') and row.get('battle_time') and row.get('end_time')},
     }
 
 
@@ -598,6 +742,7 @@ def build(arguments):
         'retail_pvp_rules.json': lambda current: retail_pvp(t),
         'retail_activity_rules.json': lambda current: retail_activity(t),
         'gameplay_defaults.json': lambda current: {'retail': retail(t)},
+        'constant_rules.json': lambda current: constants(t),
     }
     report = {}
     try:

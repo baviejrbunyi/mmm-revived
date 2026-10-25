@@ -170,6 +170,11 @@ type RogueProgress struct {
 	Difficulties        map[int]RogueDifficulty `json:"difficulties"`
 	PVE                 RoguePVERun             `json:"pve"`
 	PVERecords          []RoguePVERecord        `json:"pve_records"`
+	FinalWins           int                     `json:"final_wins"`
+	FinalWinsCounted    bool                    `json:"final_wins_counted"`
+	RogueID             int                     `json:"-"`
+	RankVersion         int                     `json:"-"`
+	NewbiePassed        bool                    `json:"-"`
 }
 
 type RogueLimitedHero struct {

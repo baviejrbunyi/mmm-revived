@@ -1,6 +1,7 @@
 package account
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -20,7 +21,7 @@ func (a *Account) PrepareNetwork(r NetworkRules, now int64) {
 	n := &a.Network
 	if !n.Initialized {
 		n.Initialized = true
-		n.Score, n.MaxScore = 1000, 1000
+		n.Score, n.MaxScore = r.Initial, r.Initial
 		n.Activity = r.DefaultActivity()
 		n.Day = -1
 	}
@@ -54,21 +55,25 @@ func (a *Account) PrepareNetwork(r NetworkRules, now int64) {
 	}
 }
 
-func (a *Account) NetworkSnapshot(now int64) model.PVPComponent {
-	n := &a.Network
-	score, maxScore := n.Score, n.MaxScore
-	if !n.Initialized {
-		score, maxScore = 1000, 1000
+func (a *Account) NetworkScores(r *Rules) (int, int) {
+	if !a.Network.Initialized {
+		if r == nil {
+			return 0, 0
+		}
+		return r.Network.Initial, r.Network.Initial
 	}
+	return a.Network.Score, a.Network.MaxScore
+}
+
+func (a *Account) NetworkSnapshot(r *Rules, now int64) model.PVPComponent {
+	n := &a.Network
+	score, maxScore := a.NetworkScores(r)
 	return model.PVPComponent{Score: score, MaxScore: maxScore, Rank: int(n.Activity), Activity: n.Activity, Environment: n.Environment, Camp: n.Camp, Info: networkPositions(n.Defense), InfoList: n.DefenseOrder, Targets: n.Targets, Friends: n.Friends, Rewards: n.Rewarded, Interactions: networkInteractions(n.Interactions), Attempts: n.Attempts, Refreshed: n.Refreshed, LastRequest: n.LastRequest}
 }
 
 func (a *Account) NetworkDefense(r *Rules) model.AsyncDefense {
 	n := &a.Network
-	score := n.Score
-	if !n.Initialized {
-		score = 1000
-	}
+	score, _ := a.NetworkScores(r)
 	level, _ := r.Network.Rank(score)
 	info := model.AsyncHeroInfo{Heroes: make(map[model.HeroID]model.Hero, len(n.Defense)), EquippedGear: make(map[model.HeroID]map[int]model.Artifact, len(n.Defense)), Equipped: make(map[model.HeroID]model.Highlight, len(n.Defense)), Bonds: a.BondAttributes(r), SkinCollection: a.SkinCollectionLevel(r)}
 	for id := range n.Defense {
@@ -216,26 +221,31 @@ func (s *Store) ClaimSupport(a *Account, tx *sql.Tx) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	limits := s.Rules.Constants.Constants
+	if len(limits.FriendSupportReward) < 2 || len(limits.FriendSupportLimit) < 2 || limits.FriendSupportReward[1] <= 0 {
+		return 0, rejected("support reward rules are unavailable")
+	}
+	reward, daily := limits.FriendSupportReward[1], limits.FriendSupportLimit[1]/limits.FriendSupportReward[1]
 	claimed := map[int64]int64{}
 	for _, row := range rows {
 		claimed[row.Day] += row.Claimed
 	}
 	count := int64(0)
 	for _, row := range rows {
-		amount := min(max(0, 100-claimed[row.Day]), row.Uses-row.Claimed)
+		amount := min(max(0, daily-claimed[row.Day]), row.Uses-row.Claimed)
 		count += amount
 		claimed[row.Day] += amount
 	}
 	a.RecordJourneyTaskEvent(s.Rules, 78, int(min(count, 1)), 0)
-	count = min(count, 100) * 300
-	if err = a.GrantItems(s.Rules, map[model.ItemID]int64{1: count}); err != nil {
+	count = min(count, daily) * reward
+	if err = a.GrantItems(s.Rules, map[model.ItemID]int64{model.ItemID(limits.FriendSupportReward[0]): count}); err != nil {
 		return 0, err
 	}
 	_, err = q.ClaimSupportUsage(ctx, a.UID)
 	return count, err
 }
 
-func supportUsage(q *database.Queries, borrower, owner model.UserID, day int64) (int64, error) {
+func supportUsage(q *database.Queries, limits ClientConstants, borrower, owner model.UserID, day int64) (int64, error) {
 	ctx := context.Background()
 	total, err := q.SupportUsageCount(ctx, database.SupportUsageCountParams{Borrower: borrower, Day: day})
 	if err != nil {
@@ -245,14 +255,14 @@ func supportUsage(q *database.Queries, borrower, owner model.UserID, day int64) 
 	if err != nil {
 		return 0, err
 	}
-	if total >= 10 || used >= 3 {
+	if total >= limits.FriendHelpUses || used >= limits.FriendHelpLimit {
 		return total, rejected("daily support limit reached")
 	}
 	return total, nil
 }
 
 func (s *Store) SupportAvailable(a *Account, owner model.UserID, now int64) error {
-	_, err := supportUsage(s.Database.Queries, a.UID, owner, LogicDay(now))
+	_, err := supportUsage(s.Database.Queries, s.Rules.Constants.Constants, a.UID, owner, LogicDay(now))
 	return err
 }
 
@@ -262,7 +272,7 @@ func (s *Store) RecordSupport(a *Account, tx *sql.Tx, now int64) error {
 		return nil
 	}
 	q, day := s.Database.Queries.WithTx(tx), LogicDay(now)
-	total, err := supportUsage(q, a.UID, selected.Owner, day)
+	total, err := supportUsage(q, s.Rules.Constants.Constants, a.UID, selected.Owner, day)
 	if err != nil {
 		return err
 	}
@@ -304,8 +314,7 @@ func (s *Store) AbandonAsyncBattle(a *Account) {
 }
 
 const (
-	seasonMailSender  = "MARVEL Mystic Mayhem Team"
-	bifrostRewardMail = 8014
+	seasonMailSender = "MARVEL Mystic Mayhem Team"
 )
 
 func (r *Rules) AsyncSeason(now int64) model.ActivityID {
@@ -371,10 +380,10 @@ func (a *Account) settleAsyncSeason(r *Rules, previous, next model.ActivityID) {
 				addItems(items, quantities)
 			}
 		}
-		a.queueSeasonMail(model.SeasonMail{Template: bifrostRewardMail, Title: "Battle for the Bifrost Season Rewards", Content: "The last Battle for the Bifrost season has ended. Its unclaimed rank and shard rewards have been sent to you.", Items: items})
+		a.queueSeasonMail(r.seasonMail(r.Settings.Mail.BifrostReward, model.SeasonMail{Template: int64(r.Settings.Mail.BifrostReward), Items: items}))
 	}
 	if ranking := r.Network.Rankings[previous]; n.Points > 0 && ranking.Reward != 0 && ranking.Limit > 0 {
-		a.queueSeasonMail(model.SeasonMail{Title: "Battle for the Bifrost Ranking Reward", Content: "The last Battle for the Bifrost season has ended. You finished at rank {1}. Here is your ranking reward.", Reward: ranking.Reward, Mode: model.RankAsync, Rank: int(previous), Score: int64(n.MaxScore), Limit: ranking.Limit})
+		a.queueSeasonMail(r.seasonMail(r.Settings.Mail.BifrostRanking, model.SeasonMail{Reward: ranking.Reward, Mode: model.RankAsync, Rank: int(previous), Score: int64(n.MaxScore), Limit: ranking.Limit}))
 	}
 	for _, id := range slices.Concat(r.Network.Activities[previous].Tasks, r.Network.Activities[next].Tasks) {
 		a.Tasks[id] = model.Task{Status: 2}
@@ -389,7 +398,7 @@ func (a *Account) NetworkEnvironments(r NetworkRules) []int {
 	random.Shuffle(len(environments), func(i, j int) { environments[i], environments[j] = environments[j], environments[i] })
 	score := n.MaxScore
 	if !n.Initialized {
-		score = 1000
+		score = r.Initial
 	}
 	rank, _ := r.Rank(score)
 	if count := r.Seasons[rank].Environments; count > 0 {
@@ -408,7 +417,7 @@ func (s *Store) DeliverSeasonMail(tx *sql.Tx, a *Account, now int64) (bool, erro
 		return false, err
 	}
 	delivered := false
-	for len(a.Network.SeasonMail) > 0 && count < MailboxLimit {
+	for len(a.Network.SeasonMail) > 0 && count < s.mailboxLimit() {
 		mail := a.Network.SeasonMail[0]
 		items := maps.Clone(mail.Items)
 		if items == nil {
@@ -431,7 +440,7 @@ func (s *Store) DeliverSeasonMail(tx *sql.Tx, a *Account, now int64) (bool, erro
 		}
 		if len(items) > 0 {
 			var payloads [4][]byte
-			for index, value := range [...]any{model.LocalizedText{"cn": mail.Title, "en": mail.Title}, model.LocalizedText{"cn": mail.Content, "en": mail.Content}, model.LocalizedText{"cn": seasonMailSender, "en": seasonMailSender}, items} {
+			for index, value := range [...]any{model.LocalizedText{"cn": mail.Title, "en": mail.Title}, model.LocalizedText{"cn": mail.Content, "en": mail.Content}, model.LocalizedText{"cn": cmp.Or(mail.Sender, seasonMailSender), "en": cmp.Or(mail.Sender, seasonMailSender)}, items} {
 				if payloads[index], err = json.Marshal(value); err != nil {
 					return delivered, err
 				}

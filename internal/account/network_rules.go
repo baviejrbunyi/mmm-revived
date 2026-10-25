@@ -15,6 +15,7 @@ type NetworkRules struct {
 	WarLevels  map[int]GuildWarLevelRule      `json:"war_levels"`
 	Seasons    map[int]AsyncRankSeason        `json:"rank_seasons"`
 	Rankings   map[model.ActivityID]Ranking   `json:"season_rankings"`
+	Initial    int                            `json:"initial_score"`
 }
 
 type AsyncRankSeason struct {
@@ -37,6 +38,7 @@ type AsyncRankRule struct {
 	Killed    int            `json:"killed"`
 	AllKill   int            `json:"all_kill"`
 	AllKilled int            `json:"all_killed"`
+	AILevel   int            `json:"ai_level"`
 }
 
 type AsyncRule struct {

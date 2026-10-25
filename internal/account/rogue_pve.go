@@ -1,7 +1,6 @@
 package account
 
 import (
-	"maps"
 	"slices"
 
 	"mmm-revived/internal/model"
@@ -30,7 +29,7 @@ func rogueEventOptions(ids []int) [][]int {
 func (a *Account) TryRoguePVE(r *Rules, id int, now int64) error {
 	a.InitializeRogue(r, now)
 	rule, exists := r.Rogue.PVE[id]
-	if !exists || a.Level < rule.Level || rule.Difficulty > a.RogueProgress.MaxDifficulty+1 || a.RogueProgress.Run.Status != model.RogueIdle || a.RogueProgress.PVE.Status != model.RoguePVEIdle {
+	if !exists || !a.rogueUnlocked(r, pveSystem, now) || a.Level < rule.Level || rule.Difficulty > a.RogueProgress.MaxDifficulty+1 || a.RogueProgress.PVE.Status != model.RoguePVEIdle || r.RoguePVEOptions(now)[rule.Difficulty] != id {
 		return rejected("rogue pve difficulty is unavailable")
 	}
 	run := model.RoguePVERun{ID: id, Mana: -1, Status: model.RoguePVEChooseHero, Started: now, Battle: model.RoguePVEBattleInfo{Heroes: []model.HeroID{}, HeroStatus: map[model.HeroID]model.RogueHeroStatus{}, Buffs: []int{}}}
@@ -40,7 +39,7 @@ func (a *Account) TryRoguePVE(r *Rules, id int, now int64) error {
 		if err != nil {
 			return err
 		}
-		if _, known := r.BattleModes[battle]; !known {
+		if _, known := r.BattleModes[battle]; !known || !r.RoguePVEBattle(battle) {
 			return rejected("rogue pve battle is unavailable")
 		}
 		run.Battles = append(run.Battles, battle)
@@ -75,9 +74,6 @@ func (a *Account) ChooseRoguePVEHeroes(r *Rules, heroes []model.HeroID) error {
 	}
 	run.Battle.Heroes = slices.Clone(heroes)
 	run.Battle.HeroStatus = make(map[model.HeroID]model.RogueHeroStatus, len(heroes))
-	for _, id := range heroes {
-		run.Battle.HeroStatus[id] = model.RogueHeroStatus{HP: 10000, MaximumHP: 10000}
-	}
 	run.Status = model.RoguePVEEvent
 	return a.prepareRogueEvent(r)
 }
@@ -459,25 +455,29 @@ func (a *Account) FinishRogueBuffShopping(r *Rules) error {
 	return a.advanceRogueEvent(r)
 }
 
-func (a *Account) SettleRoguePVE() error {
+func (a *Account) SettleRoguePVE(r *Rules) error {
 	run := &a.RogueProgress.PVE
 	if run.Status == model.RoguePVEIdle {
 		return rejected("rogue pve has not started")
 	}
 	if run.Status != model.RoguePVESettle && run.Status != model.RoguePVEChooseHero {
-		a.RogueProgress.PVERecords = appendRecent(a.RogueProgress.PVERecords, a.roguePVERecord(), 10)
+		a.RogueProgress.PVERecords = appendRecent(a.RogueProgress.PVERecords, a.roguePVERecord(), r.Rogue.RecordLimit)
 	}
 	run.Status = model.RoguePVESettle
 	return nil
 }
 
-func (a *Account) ApplyRogueHeroStatus(values map[model.HeroID]model.RogueHeroStatus) error {
+func (a *Account) ApplyRogueHeroStatus(values map[model.HeroID]model.RogueHeroStatus) {
 	run := &a.RogueProgress.PVE
-	for id, value := range values {
-		if !slices.Contains(run.Battle.Heroes, id) || value.MaximumHP <= 0 || value.MaximumHP > 1000000000 || value.HP < 0 || value.HP > value.MaximumHP {
-			return rejected("invalid rogue hero health")
-		}
+	if run.Battle.HeroStatus == nil {
+		run.Battle.HeroStatus = map[model.HeroID]model.RogueHeroStatus{}
 	}
-	maps.Copy(run.Battle.HeroStatus, values)
-	return nil
+	for id, value := range values {
+		if !slices.Contains(run.Battle.Heroes, id) || value.MaximumHP <= 0 {
+			continue
+		}
+		value.HP = min(max(value.HP, 0), value.MaximumHP)
+		value.Energy = max(value.Energy, 0)
+		run.Battle.HeroStatus[id] = value
+	}
 }

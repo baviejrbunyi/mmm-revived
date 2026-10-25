@@ -7,6 +7,11 @@ import (
 	"mmm-revived/internal/model"
 )
 
+const (
+	inviterActivityType = 16
+	inviteeActivityType = 17
+)
+
 func JourneyInviteCode(uid model.UserID) string {
 	return "MMM" + strings.ToUpper(strconv.FormatInt(int64(uid), 36))
 }
@@ -24,23 +29,9 @@ func ParseJourneyInviteCode(code string) (model.UserID, error) {
 	return model.UserID(value), nil
 }
 
-func journeyInviteEligible(index int, progress model.InviteProgress) bool {
-	switch index {
-	case 1011:
-		return progress.Story
-	case 1012:
-		return progress.Level >= 15
-	case 1013:
-		return progress.Level >= 30
-	case 1014:
-		return progress.Level >= 40
-	case 1015:
-		return progress.Level >= 50
-	case 1111, 1112, 1113:
-		return progress.Purchases[index+2600]
-	default:
-		return false
-	}
+func journeyInviteEligible(r *Rules, index int, progress model.InviteProgress) bool {
+	task, known := r.Journey.InviteTasks[index]
+	return known && progress.Tasks[task] >= 3
 }
 
 func (s *Store) JourneyInviteSnapshot(a *Account) (model.InviteComponent, error) {
@@ -68,7 +59,7 @@ func (s *Store) JourneyInviteSnapshot(a *Account) (model.InviteComponent, error)
 			switch {
 			case claimed[index]:
 				tasks[index] = 4
-			case journeyInviteEligible(index, row):
+			case journeyInviteEligible(s.Rules, index, row):
 				tasks[index] = 3
 			default:
 				tasks[index] = 2
@@ -87,11 +78,11 @@ func (a *Account) ClaimJourneyInvite(r *Rules, target model.UserID, index int, p
 }
 
 func (a *Account) ShareJourneyInvite(r *Rules) error {
-	if a.Level < 15 {
+	if _, rule, known := r.ActivityOfType(inviterActivityType); !known || a.Level < rule.Level {
 		return nil
 	}
 	a.Journey.SharedInvite = true
-	a.UpdateTask(3701, 1, 1)
+	a.UpdateTask(r.Journey.InviteShareTask, 1, 1)
 	return nil
 }
 

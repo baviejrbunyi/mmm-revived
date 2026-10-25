@@ -31,7 +31,7 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 		if err != nil {
 			return err
 		}
-		experience := reward[37]
+		experience := reward[r.Settings.Items.PassExperience]
 		if slices.Contains(weeklyTasks, id) {
 			if weeklyXP > math.MaxInt64-experience {
 				return rejected("weekly task experience overflow")
@@ -43,7 +43,7 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 			}
 			regularXP += experience
 		}
-		delete(reward, 37)
+		delete(reward, r.Settings.Items.PassExperience)
 		if marks := r.Journey.SevenDay.Marks(id); marks > 0 {
 			reward[r.Journey.SevenDay.Mark] += marks
 		}
@@ -67,7 +67,7 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 	if err := next.AddJourneyPassExperience(r, regularXP, false, now); err != nil {
 		return err
 	}
-	if regularXP > math.MaxInt64-awardedWeekly || next.Items[37] > math.MaxInt64-regularXP-awardedWeekly {
+	if regularXP > math.MaxInt64-awardedWeekly || next.Items[r.Settings.Items.PassExperience] > math.MaxInt64-regularXP-awardedWeekly {
 		return rejected("task reward experience overflow")
 	}
 	for _, id := range ids {
@@ -81,7 +81,7 @@ func (a *Account) claimJourneyTasks(r *Rules, ids []model.TaskID, now int64) err
 	if err := next.GrantItems(r, quantities); err != nil {
 		return err
 	}
-	next.Items[37] += regularXP + awardedWeekly
+	next.Items[r.Settings.Items.PassExperience] += regularXP + awardedWeekly
 	next.Journey.TaskStats.Doubled = maps.Clone(next.Journey.TaskStats.Doubled)
 	for _, id := range ids {
 		task := next.Tasks[id]

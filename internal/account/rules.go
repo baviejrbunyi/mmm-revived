@@ -3,8 +3,10 @@ package account
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"mmm-revived/internal/json"
 	"mmm-revived/internal/model"
@@ -43,10 +45,12 @@ type Rules struct {
 	Artifacts             map[model.ArtifactID]ArtifactRule               `json:"artifacts"`
 	HeroStars             map[int]map[model.ItemID]int64                  `json:"hero_stars"`
 	HeroTalents           map[string]TalentRule                           `json:"hero_talents"`
+	HeroTalentSets        map[model.HeroID]model.HeroID                   `json:"hero_talent_sets"`
 	HeroAwake             map[int]AwakeRule                               `json:"hero_awake"`
 	Energy                map[int]EnergyRule                              `json:"energy"`
 	Chapters              map[model.ChapterID]ChapterRule                 `json:"chapters"`
 	PVPRounds             map[int]PVPRoundRule                            `json:"pvp_rounds"`
+	PVPBattleMaps         map[int]model.BattleID                          `json:"pvp_battle_maps"`
 	HeroTraits            map[model.HeroID]HeroTraits                     `json:"hero_traits"`
 	PVP                   map[model.ActivityID]PVPRule                    `json:"pvp"`
 	Missions              map[model.MissionID]MissionRule                 `json:"missions"`
@@ -55,6 +59,8 @@ type Rules struct {
 	Breaks                map[int]map[int]map[model.ItemID]int64          `json:"breaks"`
 	HeroBreakSets         map[model.HeroID]int                            `json:"hero_break_sets"`
 	Rewards               map[model.RewardID][][2]int64                   `json:"rewards"`
+	DropDetails           map[model.RewardID]map[model.ItemID]int         `json:"drop_details"`
+	DropTierChances       map[int]int64                                   `json:"drop_tier_chances"`
 	Tasks                 map[model.TaskID]TaskRule                       `json:"tasks"`
 	BattleModes           map[model.BattleID]int                          `json:"battle_modes"`
 	TeamLevels            map[int]TeamLevelRule                           `json:"team_levels"`
@@ -64,6 +70,8 @@ type Rules struct {
 	Bonds                 map[int]BondRule                                `json:"bonds"`
 	ExchangeHeroes        []model.HeroID                                  `json:"exchange_heroes"`
 	Manual                ManualRules                                     `json:"manual"`
+	Constants             ConstantRules                                   `json:"-"`
+	Settings              ServerSettings                                  `json:"-"`
 	Economy               Economy                                         `json:"-"`
 }
 
@@ -204,7 +212,7 @@ func LoadRules(path string) (*Rules, error) {
 		name   string
 		target any
 	}{
-		{"gameplay_defaults.json", &r.Defaults}, {"gm_rules.json", &r.GM}, {"system_rules.json", &r.System}, {"progression_events.json", &r.Events}, {"draw_rules.json", &r.Draw}, {"rogue_rules.json", &r.Rogue}, {"journey_rules.json", &r.Journey}, {"network_rules.json", &r.Network}, {"retail_pvp_rules.json", &r.RetailPVP}, {"retail_activity_rules.json", &r.RetailActivity},
+		{"gameplay_defaults.json", &r.Defaults}, {"gm_rules.json", &r.GM}, {"system_rules.json", &r.System}, {"progression_events.json", &r.Events}, {"draw_rules.json", &r.Draw}, {"rogue_rules.json", &r.Rogue}, {"journey_rules.json", &r.Journey}, {"network_rules.json", &r.Network}, {"retail_pvp_rules.json", &r.RetailPVP}, {"retail_activity_rules.json", &r.RetailActivity}, {"constant_rules.json", &r.Constants}, {"server_settings.json", &r.Settings},
 	} {
 		data, err := os.ReadFile(filepath.Join(dir, extension.name))
 		if errors.Is(err, os.ErrNotExist) {
@@ -295,13 +303,11 @@ type TemplateHeroRule struct {
 	Levels  map[int]TemplateHeroState `json:"levels"`
 }
 
-const maxTemplateHeroLevel = 80
-
 func (t TemplateHeroRule) At(teamLevel int) TemplateHeroState {
-	if !t.Dynamic {
+	if !t.Dynamic || len(t.Levels) == 0 {
 		return t.State
 	}
-	return t.Levels[min(max(t.Level+teamLevel, 1), maxTemplateHeroLevel)]
+	return t.Levels[min(max(t.Level+teamLevel, 1), slices.Max(slices.Collect(maps.Keys(t.Levels))))]
 }
 
 type ItemRule struct {

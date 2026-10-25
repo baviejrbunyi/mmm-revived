@@ -11,20 +11,6 @@ import (
 	"mmm-revived/internal/model"
 )
 
-type battleAchievement struct {
-	kind   int
-	battle model.BattleID
-}
-
-var battleAchievements = map[string]battleAchievement{
-	"ESCAPE_NVWU_FAZHEN":       {100, 110},
-	"YUEGUANG_0_SCORE":         {101, 208},
-	"CONTROL_BLACK_QISHI":      {102, 303},
-	"NOT_KILL_MEDIC":           {103, 504},
-	"USE_ONE_HERO_IN_208":      {104, 208},
-	"EACAPE_JIUTOUSHE_JIGUANG": {105, 506},
-}
-
 const packetLimit = 1_000_000_000_000
 
 func packetNumber(value any) int64 {
@@ -180,12 +166,12 @@ func (a *Account) RecordJourneyBattleResult(r *Rules, battle model.BattleID, win
 		a.advanceJourneyTasks(r, 58, kills, false, func(_ model.TaskID, rule TaskRule) bool { return taskNumber(rule, 0, 0) == career })
 	}
 	for name, value := range packetMap(extra["achieve"]) {
-		achievement, known := battleAchievements[packetString(name)]
+		achievement, known := r.Settings.BattleAchievements[packetString(name)]
 		flags := packetMap(value)
-		if !known || achievement.battle != battle || packetNumber(flags["ret"]) == 0 || !win && (packetNumber(flags["needwin"]) != 0 || packetNumber(flags["needWin"]) != 0) {
+		if !known || achievement.Battle != battle || packetNumber(flags["ret"]) == 0 || !win && (packetNumber(flags["needwin"]) != 0 || packetNumber(flags["needWin"]) != 0) {
 			continue
 		}
-		a.advanceJourneyTasks(r, achievement.kind, 1, true, nil)
+		a.advanceJourneyTasks(r, achievement.TaskType, 1, true, nil)
 	}
 	a.advanceJourneyTasks(r, 112, 1, false, func(_ model.TaskID, rule TaskRule) bool { return slices.Contains(rule.Targets, int(battle)) })
 	withHero := func(rule TaskRule) bool {
@@ -212,10 +198,10 @@ func (a *Account) RecordJourneyBattleResult(r *Rules, battle model.BattleID, win
 		a.advanceJourneyTasks(r, 129, 1, false, nil)
 	}
 	mode := 0
-	switch group {
-	case rogueRunMode:
+	switch {
+	case r.RogueRunBattle(battle):
 		mode = 1
-	case roguePVEMode:
+	case r.RoguePVEBattle(battle):
 		mode = 2
 	}
 	if mode != 0 {

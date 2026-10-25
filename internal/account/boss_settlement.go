@@ -15,16 +15,8 @@ import (
 )
 
 const (
-	bossRankMail      = 8001
-	bossScoreMail     = 8002
 	bossRankMigration = "boss-rank-%d-%d"
 )
-
-var bossRankTexts = [3]model.LocalizedText{
-	{"cn": "Nightfall Ranking Reward", "en": "Nightfall Ranking Reward"},
-	{"cn": "The Nightfall event has ended. Here is your ranking reward.", "en": "The Nightfall event has ended. Here is your ranking reward."},
-	{"cn": "MARVEL Mystic Mayhem Team", "en": "MARVEL Mystic Mayhem Team"},
-}
 
 func (a *Account) settleBossScores(r *Rules) {
 	boss := a.Events.Boss
@@ -38,7 +30,7 @@ func (a *Account) settleBossScores(r *Rules) {
 		}
 	}
 	if len(items) > 0 {
-		a.Calendar.Mail = append(a.Calendar.Mail, CalendarMail{Template: bossScoreMail, Items: items})
+		a.Calendar.Mail = append(a.Calendar.Mail, CalendarMail{Template: r.Settings.Mail.BossScore, Items: items})
 	}
 }
 
@@ -125,8 +117,8 @@ func (s *Store) mailBossRank(tx *sql.Tx, open int, now int64) error {
 		return err
 	}
 	var texts [3][]byte
-	for index, text := range bossRankTexts {
-		if texts[index], err = json.Marshal(text); err != nil {
+	for index, text := range s.Rules.MailTexts(s.Rules.Settings.Mail.BossRank) {
+		if texts[index], err = json.Marshal(model.LocalizedText{"cn": text, "en": text}); err != nil {
 			return err
 		}
 	}
@@ -144,7 +136,7 @@ func (s *Store) mailBossRank(tx *sql.Tx, open int, now int64) error {
 		}
 		position, reward := int64(index+1), model.RewardID(0)
 		for _, id := range slices.Sorted(maps.Keys(s.Rules.Events.BossRanks)) {
-			if rule := s.Rules.Events.BossRanks[id]; rule.Matches(position, total) {
+			if rule := s.Rules.Events.BossRanks[id]; rule.Matches(position, total, s.Rules.Settings.Boss) {
 				reward = rule.Reward
 				break
 			}
@@ -160,7 +152,7 @@ func (s *Store) mailBossRank(tx *sql.Tx, open int, now int64) error {
 		if err != nil {
 			return err
 		}
-		if _, err = s.deliverMail(q, ctx, database.DeliverMailParams{Owner: row.uid, Title: texts[0], Content: texts[1], Sender: texts[2], Template: bossRankMail, Created: now, Expires: now + 30*DaySeconds, RewardID: reward, Items: encoded, HasReward: 1}); err != nil {
+		if _, err = s.deliverMail(q, ctx, database.DeliverMailParams{Owner: row.uid, Title: texts[0], Content: texts[1], Sender: texts[2], Template: int64(s.Rules.Settings.Mail.BossRank), Created: now, Expires: now + 30*DaySeconds, RewardID: reward, Items: encoded, HasReward: 1}); err != nil {
 			return err
 		}
 	}

@@ -115,7 +115,7 @@ func (s service) createGuild(p *server.Player, settings model.GuildSettings) err
 		if id, err = repo.CreateGuild(tx, p.Account.UID, settings); err != nil {
 			return err
 		}
-		return p.Account.Spend(map[model.ItemID]int64{2: repo.GuildLimits.CreationCost})
+		return p.Account.Spend(map[model.ItemID]int64{repo.GuildLimits.CreationItem: repo.GuildLimits.CreationCost})
 	})
 	if errors.Is(err, account.ErrProgression) {
 		return p.Send("onCreateGuildResult", social.CodeCreationCost)

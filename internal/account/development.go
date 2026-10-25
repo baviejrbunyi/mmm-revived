@@ -10,7 +10,7 @@ import (
 func (a *Account) StarHero(r *Rules, id model.HeroID) error {
 	hero, ok := a.Heroes[id]
 	cost, known := r.HeroStars[hero.Star]
-	if !ok || !known || hero.Trial == 1 {
+	if !ok || !known || hero.Trial == 1 || hero.Level < r.Constants.Constants.HeroStarUnlockLevel {
 		return rejected("hero cannot gain a star")
 	}
 	next := *a
@@ -20,7 +20,7 @@ func (a *Account) StarHero(r *Rules, id model.HeroID) error {
 	}
 	hero.Star++
 	next.Heroes[id] = hero
-	if reward := heroStarRewards[id]; hero.Star == 3 && reward != 0 {
+	if reward := r.HeroStarReward(id); hero.Star == 3 && reward != 0 {
 		if err := next.Grant(r, reward); err != nil {
 			return err
 		}
@@ -36,7 +36,7 @@ func (a *Account) TalentHero(r *Rules, id model.HeroID, slot int) error {
 	hero, ok := a.Heroes[id]
 	level := hero.Talents[slot] + 1
 	rule, known := r.HeroTalent(id, slot, level)
-	if !ok || !known || hero.Break < rule.Break || hero.Trial == 1 && level > trialHeroMaxTalent {
+	if !ok || !known || hero.Break < rule.Break || hero.Trial == 1 && level > r.Constants.Constants.TrialHeroMaxTalent {
 		return rejected("hero talent cannot be upgraded")
 	}
 	if err := a.Spend(rule.Cost); err != nil {
@@ -53,7 +53,7 @@ func (a *Account) TalentHero(r *Rules, id model.HeroID, slot int) error {
 func (a *Account) AwakeHero(r *Rules, id model.HeroID, awake int) error {
 	hero, ok := a.Heroes[id]
 	rule, known := r.HeroAwake[awake]
-	if !ok || !known || hero.Trial == 1 || awake/10 != int(id) || awake%10 < 1 || awake%10 > 7 || slices.Contains(hero.AwakeIDs, awake) || len(rule.Cost) != 2 || rule.Cost[1] < 0 {
+	if !ok || !known || hero.Trial == 1 || awake/10 != int(id) || slices.Contains(hero.AwakeIDs, awake) || len(rule.Cost) != 2 || rule.Cost[1] < 0 {
 		return rejected("invalid hero awakening")
 	}
 	for _, required := range rule.Prerequisites {
@@ -64,7 +64,7 @@ func (a *Account) AwakeHero(r *Rules, id model.HeroID, awake int) error {
 	item, needed := model.ItemID(rule.Cost[0]), rule.Cost[1]
 	cost := map[model.ItemID]int64{item: needed}
 	if owned := max(a.Items[item], 0); owned < needed {
-		if substitute, known := heroAwakeSubstitutes[r.ItemRules[item].Rarity]; known && substitute != item {
+		if substitute, known := r.Constants.Constants.HeroStarAwakeItems[r.ItemRules[item].Rarity]; known && substitute != item {
 			cost[item], cost[substitute] = owned, needed-owned
 		}
 	}
@@ -195,8 +195,8 @@ func (a *Account) UpgradeArtifact(r *Rules, id model.InstanceID, count int) erro
 		if !ok {
 			return rejected("unknown artifact level")
 		}
-		cost[12] += row.Experience
-		cost[1] += row.Money
+		cost[r.Constants.Items.ArtifactExperience] += row.Experience
+		cost[r.Constants.Items.Gold] += row.Money
 	}
 	if len(r.ArtifactTemplates) > 0 {
 		if err := initializeArtifactGrowth(r, &artifact); err != nil {

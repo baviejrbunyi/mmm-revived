@@ -81,7 +81,7 @@ func (a *Account) applyEconomy(r *Rules) {
 		return
 	}
 	if r.Economy.InfiniteEnergy {
-		a.Items[6] = max(a.Items[6], r.TeamLevels[a.Level].EnergyLimit)
+		a.Items[r.Constants.Items.Energy] = max(a.Items[r.Constants.Items.Energy], r.TeamLevels[a.Level].EnergyLimit)
 	}
 	if r.Economy.FreeDraws {
 		for _, pool := range r.Draw.Pools {

@@ -25,15 +25,11 @@ func (s service) cancelMatch(p *server.Player) error {
 }
 
 const (
-	totalRounds       = 3
-	roundActors       = 1
-	firstRoundSeconds = 30
-	roundSeconds      = 15
-	roundGrace        = 5 * time.Second
-	resultConfirm     = 15 * time.Second
-	botWait           = 10 * time.Second
-	botThinkMinimum   = 3 * time.Second
-	botThinkSpread    = 5 * time.Second
+	roundGrace      = 5 * time.Second
+	resultConfirm   = 15 * time.Second
+	botWait         = 10 * time.Second
+	botThinkMinimum = 3 * time.Second
+	botThinkSpread  = 5 * time.Second
 )
 
 type matchedBot struct {
@@ -56,7 +52,7 @@ func (s service) joinMatch(p *server.Player, r MatchStart) error {
 	if err := s.season(p); err != nil {
 		return err
 	}
-	if r.Activity != p.Account.RealtimeActivity() || p.Account.Activities[r.Activity].Status != model.PVPMatching {
+	if r.Activity != p.Account.RealtimeActivity(s.Store.Rules) || p.Account.Activities[r.Activity].Status != model.PVPMatching {
 		return fmt.Errorf("%w: matchmaking preparation is incomplete", account.ErrProgression)
 	}
 	arena, err := s.arena(r.Activity)
@@ -114,7 +110,7 @@ func (s service) openBotRoom(p *server.Player, activity model.ActivityID) error 
 	if err != nil {
 		return err
 	}
-	picks, err := s.Store.Rules.RealtimeBotPlan(activity, p.Account.Activities[activity], totalRounds*roundActors)
+	picks, err := s.Store.Rules.RealtimeBotPlan(activity, p.Account.Activities[activity], s.Store.Rules.Settings.Realtime.Rounds*s.Store.Rules.Settings.Realtime.HeroesPerRound)
 	if err != nil {
 		return err
 	}
@@ -135,7 +131,7 @@ func (s service) botSelect(match *server.Room) error {
 		return nil
 	}
 	uid := bot.Account.UID
-	for index := len(match.Choices[uid]); index < min(len(match.Plan), match.Round*roundActors); index++ {
+	for index := len(match.Choices[uid]); index < min(len(match.Plan), match.Round*s.Store.Rules.Settings.Realtime.HeroesPerRound); index++ {
 		if selected := match.Plan[index]; !selectionTaken(match, uid, selected) {
 			addSelection(match, uid, selected, false)
 		}
@@ -289,9 +285,9 @@ func (s service) loadMatch(p *server.Player) error {
 }
 
 func (s service) newRound(match *server.Room) error {
-	seconds := roundSeconds
+	seconds := s.Store.Rules.Constants.Constants.RealtimeDeployRoundTime
 	if match.Round == 1 {
-		seconds = firstRoundSeconds
+		seconds = s.Store.Rules.Constants.Constants.RealtimeFirstDeployRoundTime
 	}
 	ends := time.Now().Add(time.Duration(seconds) * time.Second)
 	match.Deadline = ends.Add(roundGrace)
@@ -299,7 +295,7 @@ func (s service) newRound(match *server.Room) error {
 		if member.Bot() {
 			continue
 		}
-		if err := member.Send("pvpBattleNewRound", totalRounds, match.Round, ends.Unix(), roundActors); err != nil {
+		if err := member.Send("pvpBattleNewRound", s.Store.Rules.Settings.Realtime.Rounds, match.Round, ends.Unix(), s.Store.Rules.Settings.Realtime.HeroesPerRound); err != nil {
 			return err
 		}
 	}
@@ -312,7 +308,7 @@ func (s service) confirmSelection(p *server.Player, r ConfirmSelection) error {
 	if match == nil || match.Finished || match.Started || r.Round != match.Round || match.Confirmed[p.Account.UID] {
 		return nil
 	}
-	if len(match.Ready) != 2 || len(match.Choices[p.Account.UID])+len(r.Heroes) > match.Round*roundActors {
+	if len(match.Ready) != 2 || len(match.Choices[p.Account.UID])+len(r.Heroes) > match.Round*s.Store.Rules.Settings.Realtime.HeroesPerRound {
 		return fmt.Errorf("%w: invalid deployment state", account.ErrProgression)
 	}
 	if err := s.validatePVPPlacement(p, r); err != nil {
@@ -407,7 +403,7 @@ func (s service) completeRound(match *server.Room) error {
 			return err
 		}
 	}
-	if match.Round < totalRounds {
+	if match.Round < s.Store.Rules.Settings.Realtime.Rounds {
 		match.Round++
 		match.Confirmed = map[model.UserID]bool{}
 		return s.newRound(match)

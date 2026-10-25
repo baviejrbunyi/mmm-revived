@@ -3,6 +3,7 @@ package account
 import (
 	"cmp"
 	"slices"
+	"time"
 
 	"mmm-revived/internal/model"
 )
@@ -172,7 +173,6 @@ func (a *Account) SettlePVP(id model.ActivityID, giveup bool) error {
 const (
 	realtimeActivityType  = 2
 	asyncActivityType     = 14
-	defaultRealtimeChance = 3
 	maximumRealtimeChance = 999
 )
 
@@ -215,8 +215,8 @@ func (r *Rules) RealtimeSeason(now int64) model.ActivityID {
 	})
 }
 
-func (a *Account) RealtimeActivity() model.ActivityID {
-	best, at := DefaultPVPActivity, int64(-1)
+func (a *Account) RealtimeActivity(r *Rules) model.ActivityID {
+	best, at := r.RealtimeSeason(time.Now().Unix()), int64(-1)
 	for id, activity := range a.Activities {
 		if activity.InitializedAt > at || activity.InitializedAt == at && id > best {
 			best, at = id, activity.InitializedAt
@@ -237,7 +237,7 @@ func (a *Account) PrepareRealtimePVP(r *Rules, now int64) {
 		a.Tasks = map[model.TaskID]model.Task{}
 	}
 	rule, day := r.PVP[season], LogicDay(now)
-	daily := cmp.Or(rule.DayRecover, defaultRealtimeChance)
+	daily := rule.DayRecover
 	current, exists := a.Activities[season]
 	if exists && current.InitializedAt > 0 {
 		for id := range a.Activities {
@@ -254,7 +254,7 @@ func (a *Account) PrepareRealtimePVP(r *Rules, now int64) {
 		}
 		return
 	}
-	previousID := a.RealtimeActivity()
+	previousID := a.RealtimeActivity(r)
 	previous := a.Activities[previousID]
 	a.settleRealtimeSeason(r, r.PVP[previousID], rule)
 	next := model.PVPActivity{InitializedAt: now, Chance: daily}

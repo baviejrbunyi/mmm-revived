@@ -43,7 +43,7 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 		if !known {
 			return fmt.Errorf("%w: unknown battle", account.ErrProgression)
 		}
-		if mode == 14 || mode == 22 || mode == 15 {
+		if rules.RogueBattle(r.Battle) {
 			bundle, err := p.Account.RogueBattleData(rules, r.Battle)
 			if err != nil {
 				return err
@@ -51,8 +51,11 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 			if err = s.Store.Update(p.Account, func(tx *sql.Tx) error { return p.Account.BeginRogueBattle(rules, r.Battle) }); err != nil {
 				return err
 			}
+			if err = rogue.Sync(p); err != nil {
+				return err
+			}
 			bundle.Extra.SeasonScience = slices.Clone(p.Account.Events.Season.Nodes)
-			if mode != 14 {
+			if !rules.RogueRunBattle(r.Battle) {
 				bundle.Extra.Bonds = p.Account.BondAttributes(rules)
 			}
 			p.RogueBattle, p.Limited = true, bundle.Limited
@@ -133,7 +136,7 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 					return account.ErrProgression
 				}
 				p.Brawl, info.Activity = r.Extra.Activity, r.Extra.Activity
-				info.Environments = []int{mayhemEnvironment(activity.Parameter)}
+				info.Environments = slices.Clone(activity.Environments)
 				extraBattle = info
 			}
 		}
@@ -221,10 +224,6 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 		}
 	}
 	nodeChanged := false
-	mode := 0
-	if s.Store.Rules != nil {
-		mode = s.Store.Rules.BattleModes[p.BattleID]
-	}
 	beforeReward := *p.Account
 	battleRewards := map[model.ItemID]int64{}
 	previousLevel, teamBroke := p.Account.Level, false
@@ -282,16 +281,13 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 			}
 		}
 		if p.RogueBattle {
-			if len(r.Result.Extra.Inherit) > 0 {
-				if err := p.Account.ApplyRogueHeroStatus(r.Result.Extra.Inherit); err != nil {
-					return err
-				}
-			}
-			if p.Account.RogueProgress.Run.Status == model.RogueBattle {
+			switch {
+			case s.Store.Rules.RogueRunBattle(p.BattleID) && p.Account.RogueProgress.Run.Status == model.RogueBattle:
 				if err := p.Account.ApplyRogueBattleProgress(r.Result.Extra.RogueLevelUp, r.Result.Extra.DiedCreatures, len(r.Result.Extra.DiedCreatures)); err != nil {
 					return err
 				}
-			} else if mode == 22 && p.Account.RogueProgress.PVE.Status == model.RoguePVEBattle {
+			case s.Store.Rules.RoguePVEBattle(p.BattleID) && p.Account.RogueProgress.PVE.Status == model.RoguePVEBattle:
+				p.Account.ApplyRogueHeroStatus(r.Result.Extra.Inherit)
 				p.Account.RogueProgress.PVE.Mana = r.Result.Extra.Mana
 			}
 			if err := p.Account.FinishRogueBattle(s.Store.Rules, p.BattleID, r.Win, r.Result.Extra.UseTime); err != nil {
@@ -359,8 +355,8 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 				return err
 			}
 		}
-		if r.Win {
-			p.Account.AddProficiency(s.Store.Rules, p.SelectedHeroes, 50)
+		if r.Win && s.Store.Rules.ProficiencyBattle(p.BattleID) {
+			p.Account.AddProficiency(s.Store.Rules, p.SelectedHeroes, s.Store.Rules.Constants.Constants.HeroProficiency)
 		}
 		return nil
 	})
@@ -377,7 +373,7 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 		if err := rogue.Sync(p); err != nil {
 			return err
 		}
-		if id, active := p.Account.ActiveRoguePVEEvent(s.Store.Rules); mode == 22 && active {
+		if id, active := p.Account.ActiveRoguePVEEvent(s.Store.Rules); s.Store.Rules.RoguePVEBattle(p.BattleID) && active {
 			if err := p.Send("RoguePveEvent", id); err != nil {
 				return err
 			}

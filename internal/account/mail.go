@@ -14,7 +14,12 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const MailboxLimit = 500
+func (s *Store) mailboxLimit() int64 {
+	if s.Rules == nil {
+		return 0
+	}
+	return int64(s.Rules.Constants.Constants.MailLimit)
+}
 
 func decodeMail(row database.Mailbox) (model.MailInfo, map[model.ItemID]int64, error) {
 	result := model.MailInfo{Status: row.Status, Expires: row.Expires, Sent: row.Created, Template: row.Template, From: 1, Reward: row.RewardID, Items: []model.MailAttachment{}}
@@ -34,8 +39,8 @@ func decodeMail(row database.Mailbox) (model.MailInfo, map[model.ItemID]int64, e
 	return result, quantities, nil
 }
 
-func mailbox(q *database.Queries, uid model.UserID, now int64) (map[model.MailID]model.MailInfo, error) {
-	rows, err := q.ListMailbox(context.Background(), database.ListMailboxParams{Owner: uid, Now: now, MaxRows: MailboxLimit})
+func mailbox(q *database.Queries, uid model.UserID, now, limit int64) (map[model.MailID]model.MailInfo, error) {
+	rows, err := q.ListMailbox(context.Background(), database.ListMailboxParams{Owner: uid, Now: now, MaxRows: limit})
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +56,7 @@ func mailbox(q *database.Queries, uid model.UserID, now int64) (map[model.MailID
 }
 
 func (s *Store) Mailbox(uid model.UserID) (map[model.MailID]model.MailInfo, error) {
-	return mailbox(s.Database.Queries, uid, time.Now().Unix())
+	return mailbox(s.Database.Queries, uid, time.Now().Unix(), s.mailboxLimit())
 }
 
 func addQuantity(total map[model.ItemID]int64, item model.ItemID, amount int64) bool {
@@ -67,7 +72,7 @@ func (s *Store) ClaimMail(tx *sql.Tx, a *Account, ids []model.MailID) (map[model
 	now := time.Now().Unix()
 	quantities := map[model.ItemID]int64{}
 	if ids == nil {
-		rows, err := q.ListMailbox(ctx, database.ListMailboxParams{Owner: a.UID, Now: now, MaxRows: MailboxLimit})
+		rows, err := q.ListMailbox(ctx, database.ListMailboxParams{Owner: a.UID, Now: now, MaxRows: s.mailboxLimit()})
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +101,7 @@ func (s *Store) ClaimMail(tx *sql.Tx, a *Account, ids []model.MailID) (map[model
 		if err != nil {
 			return nil, err
 		}
-		if row.RewardID != 0 {
+		if row.RewardID != 0 && len(items) == 0 {
 			reward, err := rewardItems(s.Rules, row.RewardID, 1)
 			if err != nil {
 				return nil, err

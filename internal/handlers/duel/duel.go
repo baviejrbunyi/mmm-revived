@@ -88,7 +88,7 @@ func (s service) reply(p *server.Player, r Reply) error {
 		s.CloseInvites([]matchmaking.Invite{invite}, result, result)
 		return nil
 	}
-	return realtimepvp.StartMatch(s.Service, [2]*server.Player{inviter, p}, inviter.Account.RealtimeActivity(), invite.Mode, invite.Manual, heroes)
+	return realtimepvp.StartMatch(s.Service, [2]*server.Player{inviter, p}, inviter.Account.RealtimeActivity(s.Store.Rules), invite.Mode, invite.Manual, heroes)
 }
 
 func (s service) friends(uid, peer model.UserID) (bool, error) {
@@ -124,7 +124,7 @@ func (s service) pools(mode model.MatchMode, players ...*server.Player) (map[mod
 }
 
 func (s service) pool(mode model.MatchMode, a *account.Account) (map[model.HeroID]model.Hero, model.DuelResult) {
-	activity := a.RealtimeActivity()
+	activity := a.RealtimeActivity(s.Store.Rules)
 	rule := s.Store.Rules.PVP[activity]
 	heroes := map[model.HeroID]model.Hero{}
 	switch mode {

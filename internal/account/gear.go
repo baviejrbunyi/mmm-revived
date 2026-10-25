@@ -136,9 +136,10 @@ func (a *Account) RefineArtifact(r *Rules, id model.InstanceID, locked string) e
 		pending[name] = rolls
 		order = append(order, name)
 	}
-	cost := map[model.ItemID]int64{1: 30000, 30: 5}
+	cost := map[model.ItemID]int64{}
+	maps.Copy(cost, r.Constants.Constants.ArtifactRefreshCost)
 	if locked != "" {
-		cost[39] = 1
+		cost[r.Constants.Constants.ArtifactRefreshLock]++
 	}
 	if err := a.Spend(cost); err != nil {
 		return err
@@ -187,7 +188,7 @@ func (a *Account) SalvageGear(r *Rules, ids []model.InstanceID, highlights bool)
 			if !owned || entry.Locked != 0 || entry.Install != 0 || !known {
 				return nil, rejected("artifact cannot be salvaged")
 			}
-			reward[12] += count
+			reward[r.Constants.Items.ArtifactExperience] += count
 		}
 	}
 	if err := a.GrantItems(r, reward); err != nil {
@@ -221,13 +222,7 @@ func (a *Account) AwakeHighlight(r *Rules, id model.InstanceID, consumed []model
 		seen[instance] = true
 		levels += 1 + entry.Awake
 	}
-	var common model.ItemID
-	switch template.Rarity {
-	case 4:
-		common = 100011
-	case 5:
-		common = 100012
-	}
+	common := r.Constants.Constants.HighlightAwakeItems[template.Rarity]
 	for item, count := range items {
 		if item == 0 || item != template.AwakeItem && item != common || count <= 0 || count > 30 {
 			return rejected("invalid awakening material")

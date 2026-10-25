@@ -67,6 +67,8 @@ type SystemState struct {
 	Products        map[int]int                        `json:"products"`
 	Gifts           map[int]int64                      `json:"gifts"`
 	FinishedGifts   map[int]int                        `json:"finished_gifts"`
+	GiftOffers      map[int]int                        `json:"gift_offers,omitempty"`
+	GiftsPending    bool                               `json:"-"`
 	HeroPacks       map[int]SystemHeroPack             `json:"hero_packs"`
 	Receipts        []LocalReceipt                     `json:"receipts"`
 	NextReceipt     int64                              `json:"next_receipt"`

@@ -195,10 +195,10 @@ func (s service) claimGifts(p *server.Player, targets []model.UserID) error {
 			return err
 		}
 		amount := int64(count) * repo.Limits.GiftEnergy
-		if p.Account.Items[6] > math.MaxInt64-amount {
+		if p.Account.Items[repo.Limits.GiftItem] > math.MaxInt64-amount {
 			return fmt.Errorf("%w: energy overflow", account.ErrProgression)
 		}
-		p.Account.Items[6] += amount
+		p.Account.Items[repo.Limits.GiftItem] += amount
 		return nil
 	})
 	if err != nil {
@@ -213,7 +213,7 @@ func (s service) claimGifts(p *server.Player, targets []model.UserID) error {
 	if count == 0 {
 		return server.Acknowledge(p)
 	}
-	return p.Send("onRecvFriendGift", 6, int64(count)*repo.Limits.GiftEnergy)
+	return p.Send("onRecvFriendGift", repo.Limits.GiftItem, int64(count)*repo.Limits.GiftEnergy)
 }
 
 func (s service) sendChat(p *server.Player, r SendChat) error {

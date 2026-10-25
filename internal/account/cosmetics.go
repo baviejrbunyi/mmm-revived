@@ -33,7 +33,7 @@ func (a *Account) ownsPermanentCosmetic(c Catalog, kind int, item model.ItemID) 
 		return true
 	}
 	switch item {
-	case DefaultHead, DefaultHeadFrame, DefaultBackground:
+	case c.DefaultHead, c.DefaultFrame, c.DefaultBack:
 		return true
 	}
 	return a.Items[item] > 0
@@ -64,7 +64,7 @@ func (a *Account) ExpireCosmetics(c Catalog, now int64) bool {
 		kind     int
 		item     *model.ItemID
 		fallback model.ItemID
-	}{{headItemType, &a.Profile.Head, DefaultHead}, {headFrameItemType, &a.Profile.Frame, DefaultHeadFrame}} {
+	}{{headItemType, &a.Profile.Head, c.DefaultHead}, {headFrameItemType, &a.Profile.Frame, c.DefaultFrame}} {
 		if valid, timed := a.TimedCosmetics[*slot.item]; timed && valid <= now && !a.ownsPermanentCosmetic(c, slot.kind, *slot.item) {
 			*slot.item = slot.fallback
 			expired = true

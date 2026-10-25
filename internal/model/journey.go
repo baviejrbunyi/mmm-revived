@@ -164,9 +164,8 @@ type JourneySpiralGroup struct {
 }
 
 type InviteProgress struct {
-	UID       UserID
-	Level     int
-	Story     bool
-	Purchases map[int]bool
-	Bound     int64
+	UID   UserID
+	Level int
+	Tasks map[TaskID]int
+	Bound int64
 }

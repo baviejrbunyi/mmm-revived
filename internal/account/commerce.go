@@ -57,35 +57,35 @@ func (a *Account) BuyEnergy(r *Rules, count int, now int64) error {
 		}
 		cost, energy = cost+row.Price, energy+row.Energy
 	}
-	if a.Items[6] > math.MaxInt64-energy {
+	if a.Items[r.Constants.Items.Energy] > math.MaxInt64-energy {
 		return rejected("energy overflow")
 	}
-	if err := a.Spend(map[model.ItemID]int64{2: cost}); err != nil {
+	if err := a.Spend(map[model.ItemID]int64{r.Constants.Items.Diamond: cost}); err != nil {
 		return err
 	}
-	a.Items[6] += energy
+	a.Items[r.Constants.Items.Energy] += energy
 	a.Energy.Day, a.Energy.Bought = day, bought+count
 	a.RefreshTasks(r)
 	return nil
 }
 
-func (a *Account) TransferEnergy(count int64) error {
-	if count <= 0 || count > a.Energy.Bank || a.Items[6] > math.MaxInt64-count {
+func (a *Account) TransferEnergy(r *Rules, count int64) error {
+	if count <= 0 || count > a.Energy.Bank || a.Items[r.Constants.Items.Energy] > math.MaxInt64-count {
 		return rejected("invalid bank transfer")
 	}
 	a.Energy.Bank -= count
-	a.Items[6] += count
+	a.Items[r.Constants.Items.Energy] += count
 	return nil
 }
 
 func (a *Account) ConvertYuanbao(r *Rules, count int64) error {
-	if count <= 0 || a.Items[2] > math.MaxInt64-count {
+	if count <= 0 || a.Items[r.Constants.Items.Diamond] > math.MaxInt64-count {
 		return rejected("invalid currency exchange")
 	}
-	if err := a.Spend(map[model.ItemID]int64{3: count}); err != nil {
+	if err := a.Spend(map[model.ItemID]int64{r.Constants.Items.Yuanbao: count}); err != nil {
 		return err
 	}
-	a.Items[2] += count
+	a.Items[r.Constants.Items.Diamond] += count
 	a.RefreshTasks(r)
 	return nil
 }
@@ -191,7 +191,7 @@ func (a *Account) Craft(r *Rules, id model.CraftID, count int, materials map[mod
 	if optional != rule.OptionalCount {
 		return nil, rejected("craft optional materials are incomplete")
 	}
-	unit[1] += rule.Gold
+	unit[r.Constants.Items.Gold] += rule.Gold
 	cost, err := multiplied(unit, int64(count))
 	if err != nil {
 		return nil, err
@@ -217,7 +217,7 @@ func (a *Account) UseItem(r *Rules, id model.ItemID, count int64, selection int)
 	cost := map[model.ItemID]int64{id: count}
 	switch rule.Type {
 	case 1008:
-		quantities = map[model.ItemID]int64{6: rule.Parameter}
+		quantities = map[model.ItemID]int64{r.Constants.Items.Energy: rule.Parameter}
 	case 1017:
 		quantities, err = rewardItems(r, model.RewardID(rule.Parameter), 1)
 	case 1038:
@@ -230,7 +230,7 @@ func (a *Account) UseItem(r *Rules, id model.ItemID, count int64, selection int)
 			return nil, rejected("chest choice is invalid")
 		}
 		quantities, err = rewardItems(r, model.RewardID(rule.Choices[selection]), 1)
-		cost[6] += rule.Secondary * count
+		cost[r.Constants.Items.Energy] += rule.Secondary * count
 	case 1024:
 		recipe := model.CraftID(rule.Parameter)
 		if _, known := r.Crafts[recipe]; !known || slices.Contains(a.CraftRecipes, recipe) {

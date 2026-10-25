@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"mmm-revived/internal/calendar"
 	"mmm-revived/internal/json"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/social"
@@ -59,6 +60,8 @@ func Open(dir, catalogPath string) (*Store, error) {
 			}
 		}
 		s.Catalog.DefaultSkins = s.Rules.Defaults.Retail.DefaultSkins
+		calendar.ConfigureRefresh(s.Rules.RetailActivity.DailyRefresh)
+		s.Catalog.DefaultHead, s.Catalog.DefaultFrame, s.Catalog.DefaultBack = s.Rules.Defaults.Retail.Head, s.Rules.Defaults.Retail.Frame, s.Rules.Defaults.Retail.Background
 	}
 	if err = os.MkdirAll(dir, 0700); err != nil {
 		return nil, err
@@ -84,6 +87,9 @@ func (s *Store) prepare() error {
 	var err error
 	if s.Social, err = social.Open(s.Database); err != nil {
 		return err
+	}
+	if s.Rules != nil {
+		s.Social.Configure(s.Rules.SocialConfig())
 	}
 	if err = s.RecoverNetworkBattles(); err != nil {
 		return fmt.Errorf("recover interrupted network battles: %w", err)

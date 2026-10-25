@@ -120,10 +120,10 @@ func (a *Account) ExecuteGM(r *Rules, catalog Catalog, command model.GMCommand, 
 		if _, known := r.ItemRules[id]; !known {
 			return result, rejected("unknown item")
 		}
-		if id == 38 && command.Value > 120 {
-			return result, rejected("monthly pass grant limit is 120")
+		if id == r.Settings.Items.MonthlyPass && command.Value > int64(r.Journey.MonthlyMaximumDuration) {
+			return result, rejected("monthly pass grant exceeds the maximum duration")
 		}
-		if (id == 35 || id == 36) && command.Value != 1 {
+		if (id == r.Settings.Items.PassActivation || id == r.Settings.Items.PremiumPassActivation) && command.Value != 1 {
 			return result, rejected("pass activation requires one item")
 		}
 		result.Items[id] = command.Value
@@ -265,7 +265,7 @@ func (a *Account) ExecuteGM(r *Rules, catalog Catalog, command model.GMCommand, 
 		result.Mail = int(command.ID)
 		result.Text = "Mail delivered"
 	case model.GMSetEnergy:
-		a.Items[6] = command.Value
+		a.Items[r.Constants.Items.Energy] = command.Value
 		result.Text = "Energy updated"
 	case model.GMBossReset:
 		a.Events.Boss.Count = 0
@@ -289,19 +289,19 @@ func (a *Account) ExecuteGM(r *Rules, catalog Catalog, command model.GMCommand, 
 		result.Text = "Season level updated"
 	case model.GMRogueInitialize:
 		if a.RogueProgress.Run.Status == model.RogueIdle {
-			a.Level = max(11, a.Level)
+			a.Level = max(r.Rogue.Unlock[rogueSystem].Level, a.Level)
 			if err := a.InitRogue(r, now); err != nil {
 				return result, err
 			}
 		}
 		result.Text = "Rogue initialized"
 	case model.GMRoguePVEInitialize:
-		id := int(command.ID)
+		id := r.RoguePVEOptions(now)[int(command.ID)]
 		rule, known := r.Rogue.PVE[id]
 		if !known {
 			return result, rejected("unknown rogue difficulty")
 		}
-		a.Level = max(a.Level, rule.Level)
+		a.Level = max(a.Level, rule.Level, r.Rogue.Unlock[pveSystem].Level)
 		a.RogueProgress.MaxDifficulty = max(a.RogueProgress.MaxDifficulty, rule.Difficulty)
 		if a.RogueProgress.PVE.Status == model.RoguePVEIdle {
 			if err := a.TryRoguePVE(r, id, now); err != nil {

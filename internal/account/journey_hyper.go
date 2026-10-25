@@ -49,8 +49,9 @@ func (a *Account) ResetJourneyBuffs(r *Rules, id model.ActivityID, now int64) er
 	if !changed {
 		return nil
 	}
-	cost := int64(500 + min(activity.BuffReset, 9)*500)
-	if err := a.Spend(map[model.ItemID]int64{1: cost}); err != nil {
+	limits := r.Constants.Constants
+	cost := min(limits.HyperflowResetBase+limits.HyperflowResetIncrement*int64(activity.BuffReset), limits.HyperflowResetMaximum)
+	if err := a.Spend(map[model.ItemID]int64{r.Constants.Items.Gold: cost}); err != nil {
 		return err
 	}
 	activity.BuffReset++

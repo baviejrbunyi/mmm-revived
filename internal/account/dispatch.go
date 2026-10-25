@@ -8,12 +8,11 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const DefaultDispatchDuration int64 = 72000
+const dispatchSystem = "dispatch"
 
-const (
-	DefaultDispatchOffers       = 8
-	DefaultDispatchRefreshLimit = 5
-)
+func (a *Account) DispatchUnlocked(r *Rules) bool {
+	return r != nil && a.Level >= r.SystemLevel(dispatchSystem)
+}
 
 func (a *Account) dispatchOffers(r *Rules, state model.DispatchState) (model.DispatchState, error) {
 	pool := make([]model.DispatchRuleID, 0, len(r.DispatchMissions))
@@ -26,7 +25,7 @@ func (a *Account) dispatchOffers(r *Rules, state model.DispatchState) (model.Dis
 	if len(pool) == 0 || len(r.DispatchMaps) == 0 {
 		return state, rejected("dispatch missions are unavailable at this level")
 	}
-	selected, err := sample(pool, DefaultDispatchOffers)
+	selected, err := sample(pool, r.Constants.Constants.DispatchOffers)
 	if err != nil {
 		return state, err
 	}
@@ -51,7 +50,7 @@ func (a *Account) dispatchOffers(r *Rules, state model.DispatchState) (model.Dis
 
 func (a *Account) PrepareDispatch(r *Rules, now int64) error {
 	day := LogicDay(now)
-	if r == nil || len(r.DispatchMissions) == 0 || a.Level < 12 || a.Dispatch.Initialized && a.Dispatch.Day == day {
+	if !a.DispatchUnlocked(r) || len(r.DispatchMissions) == 0 || a.Dispatch.Initialized && a.Dispatch.Day == day {
 		return nil
 	}
 	state := a.Dispatch
@@ -69,7 +68,7 @@ func (a *Account) RefreshDispatch(r *Rules, now int64) error {
 		return err
 	}
 	empty := len(a.Dispatch.Missions) == 0
-	if !a.Dispatch.Initialized || !empty && a.Dispatch.Refreshes >= DefaultDispatchRefreshLimit {
+	if !a.Dispatch.Initialized || !empty && a.Dispatch.Refreshes >= r.Constants.Constants.DispatchRefreshLimit {
 		return rejected("dispatch refresh limit reached")
 	}
 	state, err := a.dispatchOffers(r, a.Dispatch)
@@ -110,7 +109,7 @@ func (a *Account) StartDispatch(r *Rules, id model.DispatchID, heroes []model.He
 		}
 		used[id] = true
 	}
-	mission.Started, mission.Ends, mission.Heroes = now, now+DefaultDispatchDuration, slices.Clone(heroes)
+	mission.Started, mission.Ends, mission.Heroes = now, now+r.Constants.Constants.DispatchDuration, slices.Clone(heroes)
 	a.Dispatch.Missions[id] = mission
 	a.Dispatch.Started++
 	a.RecordJourneyTaskEvent(r, 67, 1, 0)
@@ -172,7 +171,7 @@ func (a *Account) ClaimDispatch(r *Rules, ids []model.DispatchID, now int64) (ma
 	for _, id := range ids {
 		delete(a.Dispatch.Missions, id)
 	}
-	a.AddProficiency(r, heroes, 200)
+	a.AddProficiency(r, heroes, r.Constants.Constants.HeroProficiencyDispatch)
 	a.RecordJourneyTaskEvent(r, 45, len(ids), 0)
 	return rewards, egg, nil
 }

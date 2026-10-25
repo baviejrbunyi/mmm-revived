@@ -15,8 +15,6 @@ import (
 
 var ErrProgression = errors.New("progression request rejected")
 
-const trialHeroMaxLevel = 30
-
 func rejected(message string) error { return fmt.Errorf("%w: %s", ErrProgression, message) }
 
 func highlightLevelKey(rarity, level int) string {
@@ -76,7 +74,7 @@ func (a *Account) Grant(r *Rules, ids ...model.RewardID) error {
 
 func (a *Account) UpgradeHero(r *Rules, id model.HeroID, count int) error {
 	hero, ok := a.Heroes[id]
-	if !ok || count < 1 || count > 100 || hero.Level+count > r.TeamLevels[a.Level].HeroLimit || hero.Trial == 1 && hero.Level+count > trialHeroMaxLevel {
+	if !ok || count < 1 || count > 100 || hero.Level+count > r.TeamLevels[a.Level].HeroLimit || hero.Trial == 1 && hero.Level+count > r.Constants.Constants.TrialHeroMaxLevel {
 		return rejected("invalid hero level")
 	}
 	breaks := r.Breaks[r.HeroBreakSets[id]]
@@ -94,8 +92,8 @@ func (a *Account) UpgradeHero(r *Rules, id model.HeroID, count int) error {
 			addItems(cost, row)
 		}
 		hero.Break = max(hero.Break, rule.Break)
-		cost[9] += rule.Experience
-		cost[1] += rule.Money
+		cost[r.Constants.Items.HeroExperience] += rule.Experience
+		cost[r.Constants.Items.Gold] += rule.Money
 	}
 	if err := a.Spend(cost); err != nil {
 		return err
@@ -131,7 +129,7 @@ func (a *Account) UpgradeHighlight(r *Rules, id model.InstanceID, count int) err
 			addItems(cost, row)
 		}
 		highlight.Break = max(highlight.Break, rule.Break)
-		cost[1] += rule.Money
+		cost[r.Constants.Items.Gold] += rule.Money
 	}
 	if err := a.Spend(cost); err != nil {
 		return err
@@ -163,7 +161,7 @@ func (a *Account) BeginMission(r *Rules, chapter model.ChapterID, id model.Missi
 		}
 		initializeMemento(&mission, rule, tiles)
 	}
-	if err := a.Spend(map[model.ItemID]int64{6: rule.Energy}); err != nil {
+	if err := a.Spend(map[model.ItemID]int64{r.Constants.Items.Energy: rule.Energy}); err != nil {
 		return err
 	}
 	if err := a.grantEnergyExperience(r, rule.Energy); err != nil {

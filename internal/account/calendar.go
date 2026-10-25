@@ -16,20 +16,12 @@ import (
 )
 
 const (
-	passSettlementMail        = 60002
-	limitedPassSettlementMail = 60001
-	calendarCycleMigration    = "calendar-cycle-%d"
+	calendarCycleMigration = "calendar-cycle-%d"
 )
 
 var calendarRotations = [...]int{10, 14}
 
 var calendarRankModes = [...]model.RankMode{model.RankBoss, model.RankInfinite, model.RankAsync, model.RankRetailPVP, model.RankGuildWar}
-
-var calendarMailTexts = map[int][3]string{
-	passSettlementMail:        {"Battle Pass Unclaimed Rewards", "The last Battle Pass season has ended. Its unclaimed rewards have been sent to you.", "MARVEL Mystic Mayhem Team"},
-	limitedPassSettlementMail: {"Limited Pass Unclaimed Rewards", "The last limited event pass has ended. Its unclaimed rewards have been sent to you.", "MARVEL Mystic Mayhem Team"},
-	bossScoreMail:             {"Nightfall Rewards", "The Nightfall event has ended. Your unclaimed rewards have been sent to you.", "Official"},
-}
 
 type CalendarState struct {
 	Cycle int64          `json:"cycle"`
@@ -173,9 +165,9 @@ func (s *Store) advanceAccountCalendar(tx *sql.Tx, a *Account, now int64) error 
 	if err != nil {
 		return err
 	}
-	for len(a.Calendar.Mail) > 0 && count < MailboxLimit {
+	for len(a.Calendar.Mail) > 0 && count < s.mailboxLimit() {
 		mail := a.Calendar.Mail[0]
-		texts := calendarMailTexts[mail.Template]
+		texts := s.Rules.MailTexts(mail.Template)
 		var payloads [4][]byte
 		for index, value := range [...]any{model.LocalizedText{"cn": texts[0], "en": texts[0]}, model.LocalizedText{"cn": texts[1], "en": texts[1]}, model.LocalizedText{"cn": texts[2], "en": texts[2]}, mail.Items} {
 			if payloads[index], err = json.Marshal(value); err != nil {
@@ -216,7 +208,7 @@ func (a *Account) AdvanceCalendar(r *Rules, now int64) {
 	if a.Journey.Pass.ID == active {
 		return
 	}
-	a.settlePass(r, a.Journey.Pass, r.Journey.Passes[a.Journey.Pass.ID], passSettlementMail)
+	a.settlePass(r, a.Journey.Pass, r.Journey.Passes[a.Journey.Pass.ID], r.Settings.Mail.PassSettlement)
 	a.Journey.Pass = model.JourneyPass{}
 	if rule, known := r.Journey.Passes[active]; known {
 		a.Journey.Pass = newJourneyPass(active)
@@ -237,7 +229,7 @@ func activeCalendarPass(r *Rules, now int64) int {
 
 func (a *Account) repeatCalendar(r *Rules) {
 	a.settlePVPCycle(r)
-	a.settlePass(r, a.Journey.Pass, r.Journey.Passes[a.Journey.Pass.ID], passSettlementMail)
+	a.settlePass(r, a.Journey.Pass, r.Journey.Passes[a.Journey.Pass.ID], r.Settings.Mail.PassSettlement)
 	a.Journey.Pass = model.JourneyPass{}
 	for id, state := range a.Journey.Activities {
 		rule, known := r.Journey.Activities[id]
@@ -245,7 +237,7 @@ func (a *Account) repeatCalendar(r *Rules) {
 			continue
 		}
 		pass := r.Journey.LimitedPasses[state.Pass.ID]
-		a.settlePass(r, state.Pass, pass, limitedPassSettlementMail)
+		a.settlePass(r, state.Pass, pass, r.Settings.Mail.LimitedPassSettlement)
 		a.restartTasks(r, pass.Tasks, pass.WeeklyTasks)
 		if rule.Type == 22 {
 			a.restartTasks(r, r.Journey.Hyperflows[rule.Parameter].Tasks)

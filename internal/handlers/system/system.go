@@ -57,7 +57,7 @@ func (s service) receipts(p *server.Player, apply func(*account.Account)) error 
 	if err != nil {
 		return err
 	}
-	return p.Update([]string{"shipComp"}, p.Account.Snapshot(s.Store.Catalog).Purchases)
+	return p.Update([]string{"shipComp"}, p.Account.Snapshot(s.Store.Catalog, s.Store.Rules).Purchases)
 }
 
 func (s service) purchase(p *server.Player, r Purchase) error {
@@ -80,7 +80,7 @@ func (s service) purchase(p *server.Player, r Purchase) error {
 		}
 		return p.Send("onPassThroughCheck", r.Product, r.Count, r.Kind, r.Reference, account.ShipErrorCode(err))
 	}
-	snapshot := p.Account.Snapshot(s.Store.Catalog)
+	snapshot := p.Account.Snapshot(s.Store.Catalog, s.Store.Rules)
 	if err = s.Sync(p, "itemComp", "heroComp", "taskComp", "activityComp"); err != nil {
 		return err
 	}

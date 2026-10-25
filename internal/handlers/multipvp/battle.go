@@ -28,6 +28,13 @@ func (s service) prepareBattle(p *server.Player, request battle.CreateBattle) (b
 	if !recognized && !activityKnown {
 		return false, nil
 	}
+	if recognized {
+		card, err := request.RetailCard()
+		if err != nil {
+			return true, err
+		}
+		request.Extra.RetailTarget = card
+	}
 	now := time.Now().Unix()
 	if request.Extra.IsRevenge < 0 || request.Extra.IsRevenge > 1 {
 		return true, fmt.Errorf("%w: invalid Halloween revenge flag", account.ErrProgression)
@@ -47,7 +54,7 @@ func (s service) prepareBattle(p *server.Player, request battle.CreateBattle) (b
 		return true, fmt.Errorf("%w: Halloween target identity differs from authorized snapshot", account.ErrProgression)
 	}
 	var defender model.AsyncDefense
-	card := model.RetailPVPCard{UID: target.UID, Name: "Local Challenger", Level: target.Level, Head: 5001, Frame: 6001, Host: 1, Server: 1}
+	card := model.RetailPVPCard{UID: target.UID, Name: "Local Challenger", Level: target.Level, Head: s.Store.Catalog.DefaultHead, Frame: s.Store.Catalog.DefaultFrame, Host: 1, Server: 1}
 	if request.Extra.RetailTarget != nil && request.Extra.RetailTarget.UID == target.UID {
 		card = *request.Extra.RetailTarget
 		card.Level = target.Level

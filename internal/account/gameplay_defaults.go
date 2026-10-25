@@ -3,8 +3,7 @@ package account
 import "mmm-revived/internal/model"
 
 type GameplayDefaults struct {
-	RealtimeBattles []int       `json:"realtime_battles"`
-	Retail          RetailRules `json:"retail"`
+	Retail RetailRules `json:"retail"`
 }
 
 type RetailRules struct {
@@ -53,18 +52,11 @@ func (r *Rules) RealtimeBattlePool(activity model.ActivityID) ([]int, error) {
 	if !known {
 		return nil, rejected("unknown matchmaking activity")
 	}
-	valid := func(candidates []int) []int {
-		result := make([]int, 0, len(candidates))
-		for _, battle := range candidates {
-			if r.BattleModes[model.BattleID(battle)] == RealtimeBattleMode {
-				result = append(result, battle)
-			}
+	result := make([]int, 0, len(rule.Battles))
+	for _, entry := range rule.Battles {
+		if battle, mapped := r.PVPBattleMaps[entry]; mapped && r.BattleModes[battle] == RealtimeBattleMode {
+			result = append(result, int(battle))
 		}
-		return result
-	}
-	result := valid(rule.Battles)
-	if len(result) == 0 {
-		result = valid(r.Defaults.RealtimeBattles)
 	}
 	if len(result) == 0 {
 		return nil, rejected("matchmaking battle data is unavailable")

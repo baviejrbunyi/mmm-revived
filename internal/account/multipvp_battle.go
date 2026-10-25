@@ -97,7 +97,7 @@ func (a *Account) FinishRetailPVPBattle(r *Rules, id model.ActivityID, token str
 		if state.Point > math.MaxInt64-point {
 			return model.RetailPVPRecord{}, rejected("Halloween score exceeds limit")
 		}
-		if err = a.grantItems(r, map[model.ItemID]int64{71: coin}, 0); err != nil {
+		if err = a.grantItems(r, map[model.ItemID]int64{r.Constants.Items.HalloweenCurrency: coin}, 0); err != nil {
 			return model.RetailPVPRecord{}, err
 		}
 		state.Point += point

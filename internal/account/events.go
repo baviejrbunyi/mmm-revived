@@ -8,12 +8,7 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const (
-	bossDailyLimit       = 5
-	bossSettleDelay      = 600
-	bossRankDisplaySize  = 100
-	bossRankBoardMinimum = 2500
-)
+const ()
 
 type EventRules struct {
 	CalendarOffset int64                   `json:"calendar_offset"`
@@ -55,10 +50,10 @@ type BossRankRule struct {
 	Reward     model.RewardID `json:"reward"`
 }
 
-func (b BossRankRule) Matches(position, total int64) bool {
+func (b BossRankRule) Matches(position, total int64, settings BossSettings) bool {
 	value, percent := position, false
-	if position > bossRankDisplaySize {
-		value, percent = min(100, (position-1)*100/max(total, bossRankBoardMinimum)), true
+	if position > settings.RankDisplay {
+		value, percent = min(100, (position-1)*100/max(total, settings.RankBoardMinimum)), true
 	}
 	if b.MinPercent {
 		if !percent || value < b.Minimum {
@@ -244,7 +239,7 @@ func (a *Account) SettleBoss(r *Rules) (map[model.ItemID]int64, error) {
 	result := state.Pending
 	state.Pending = nil
 	rewards := map[model.ItemID]int64{}
-	if result == nil || state.Count >= bossDailyLimit {
+	if result == nil || state.Count >= r.Constants.Constants.WorldBossDailyTime {
 		return rewards, nil
 	}
 	if result.First {
@@ -266,7 +261,7 @@ func (a *Account) SettleBoss(r *Rules) (map[model.ItemID]int64, error) {
 func (a *Account) SweepBoss(r *Rules, mission, count int, now int64) error {
 	state := &a.Events.Boss
 	missions, open := r.Events.bossMissions(state.Open, now)
-	if !open || !slices.Contains(missions, mission) || count < 1 || state.Count+count > bossDailyLimit || state.Best[mission] <= 0 || state.Daily[mission] == 0 {
+	if !open || !slices.Contains(missions, mission) || count < 1 || state.Count+count > r.Constants.Constants.WorldBossDailyTime || state.Best[mission] <= 0 || state.Daily[mission] == 0 {
 		return rejected("boss sweep is unavailable")
 	}
 	state.Count += count
@@ -300,12 +295,12 @@ func (a *Account) ClaimBossRank(r *Rules, position, total, now int64) (map[model
 	state := &a.Events.Boss
 	open, exists := r.Events.BossOpens[state.Open]
 	calendar := now + r.Events.CalendarOffset
-	if !exists || position <= 0 || total <= 0 || position > total || calendar <= open.Settle+bossSettleDelay || calendar >= open.End || slices.Contains(state.RankClaimed, state.Open) {
+	if !exists || position <= 0 || total <= 0 || position > total || calendar <= open.Settle+r.Settings.Boss.SettleDelay || calendar >= open.End || slices.Contains(state.RankClaimed, state.Open) {
 		return nil, rejected("boss rank reward is unavailable")
 	}
 	var reward model.RewardID
 	for _, id := range slices.Sorted(maps.Keys(r.Events.BossRanks)) {
-		if row := r.Events.BossRanks[id]; row.Matches(position, total) {
+		if row := r.Events.BossRanks[id]; row.Matches(position, total, r.Settings.Boss) {
 			reward = row.Reward
 			break
 		}

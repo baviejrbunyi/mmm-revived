@@ -9,8 +9,6 @@ import (
 	"mmm-revived/internal/model"
 )
 
-const doubleMaterialMultiplier = 2
-
 func (a *Account) journeyLoginUnlocked(rule JourneyActivityRule, now int64) bool {
 	return rule.LoginDay > 0 && rule.LoginLevel > 0 && a.Level >= rule.LoginLevel && LogicDay(now)-LogicDay(a.CreatedAt)+1 >= int64(rule.LoginDay)
 }
@@ -174,7 +172,7 @@ func (a *Account) consumeDoubleMaterial(r *Rules, group, count int, quantities m
 	if err != nil {
 		return nil, err
 	}
-	doubled, err := multiplied(quantities, doubleMaterialMultiplier)
+	doubled, err := multiplied(quantities, r.Settings.DoubleMaterial)
 	if err != nil {
 		return nil, err
 	}

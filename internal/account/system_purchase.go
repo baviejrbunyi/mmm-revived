@@ -57,7 +57,7 @@ func (a *Account) PurchaseLocalProduct(r *Rules, product, count, kind, reference
 	switch kind {
 	case 1:
 		if sku.Yuanbao > 0 && reference == 0 {
-			values[3] = sku.Yuanbao + sku.Bonus
+			values[r.Constants.Items.Yuanbao] = sku.Yuanbao + sku.Bonus
 			break
 		}
 		id := model.ShopID(reference)
@@ -178,9 +178,9 @@ func (a *Account) PurchaseLocalProduct(r *Rules, product, count, kind, reference
 	if err = a.GrantItems(r, values); err != nil {
 		return nil, empty, err
 	}
-	if kind == 2 && values[40] > 0 {
+	if bonus := values[r.Settings.PassLevelBonusItem]; kind == 2 && bonus > 0 {
 		rule := r.Journey.Passes[a.Journey.Pass.ID]
-		a.Journey.Pass.Level = min(rule.MaximumLevel, a.Journey.Pass.Level+int(values[40]))
+		a.Journey.Pass.Level = min(rule.MaximumLevel, a.Journey.Pass.Level+int(bonus))
 		if a.Journey.Pass.Level == rule.MaximumLevel {
 			a.Journey.Pass.Experience = 0
 		}

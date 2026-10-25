@@ -63,9 +63,9 @@ type PurchaseComponent struct {
 }
 
 type PopupPackComponent struct {
-	Current  map[int]int `wire:"currPack"`
-	Finished map[int]int `wire:"finishedPack"`
-	ClientID int         `wire:"clientPackId"`
+	Current  map[int]int64 `wire:"currPack"`
+	Finished []int         `wire:"finishedPack"`
+	ClientID int           `wire:"clientPackId"`
 }
 
 type HeroPurchaseComponent struct {

@@ -66,8 +66,6 @@ func (a *Account) DrawSnapshot() model.DrawComponent {
 	return model.DrawComponent{Pools: a.Draw.Pools, Records: records, SharedPity: a.Draw.Counters}
 }
 
-var drawSoftPityThresholds = [...]int{40, 50, 60, 65, 70, 75}
-
 func (r DrawRules) weightedSet(pool DrawPoolRule, pity int) (model.DrawSetID, error) {
 	weights := make([]int64, len(pool.Sets))
 	var total int64
@@ -77,7 +75,7 @@ func (r DrawRules) weightedSet(pool DrawPoolRule, pity int) (model.DrawSetID, er
 			return 0, rejected("draw prize set is unavailable")
 		}
 		weight := set.Weight
-		for _, threshold := range drawSoftPityThresholds {
+		for _, threshold := range slices.Sorted(maps.Keys(set.SoftWeights)) {
 			if pity >= threshold {
 				if adjusted, ok := set.SoftWeights[threshold]; ok {
 					weight = adjusted
@@ -142,7 +140,7 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 		if strategy.Counter != 0 {
 			count = a.Draw.Counters[strategy.Counter].Number
 		}
-		if strategy.Created != 0 && a.CreatedAt > strategy.Created && strategyID == 1001 {
+		if strategy.Created != 0 && a.CreatedAt > strategy.Created {
 			continue
 		}
 		if count+1 >= strategy.Number && (strategy.Counter != 0 || !state.Satisfied[strategyID]) {
@@ -188,7 +186,7 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 	if a.Items[pool.Ticket] > 0 {
 		cost[pool.Ticket] = 1
 	} else {
-		cost[2] = pool.Price
+		cost[r.Constants.Items.Diamond] = pool.Price
 	}
 	next := *a
 	next.Items = maps.Clone(a.Items)

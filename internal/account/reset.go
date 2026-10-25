@@ -16,14 +16,14 @@ func (a *Account) HeroResetItems(r *Rules, id model.HeroID) (map[model.ItemID]in
 	if !owned {
 		return nil, rejected("hero is not owned")
 	}
-	items := map[model.ItemID]int64{9: hero.Experience}
+	items := map[model.ItemID]int64{r.Constants.Items.HeroExperience: hero.Experience}
 	for level := 1; level < hero.Level; level++ {
 		row, known := r.Levels[level]
 		if !known {
 			return nil, rejected("unknown hero level")
 		}
-		items[9] += row.Experience
-		items[1] += row.Money
+		items[r.Constants.Items.HeroExperience] += row.Experience
+		items[r.Constants.Items.Gold] += row.Money
 	}
 	breaks := r.Breaks[r.HeroBreakSets[id]]
 	for tier := 1; tier <= hero.Break; tier++ {
@@ -51,13 +51,13 @@ func (a *Account) HighlightResetItems(r *Rules, id model.InstanceID) (map[model.
 	if !owned || !known {
 		return nil, rejected("highlight is not owned")
 	}
-	items := map[model.ItemID]int64{1: entry.Experience}
+	items := map[model.ItemID]int64{r.Constants.Items.Gold: entry.Experience}
 	for level := 1; level < entry.Level; level++ {
 		row, known := r.HighlightLevels[highlightLevelKey(template.Rarity, level)]
 		if !known {
 			return nil, rejected("unknown highlight level")
 		}
-		items[1] += row.Money
+		items[r.Constants.Items.Gold] += row.Money
 	}
 	breaks := r.HighlightBreaks[template.BreakSet]
 	for tier := 1; tier <= entry.Break; tier++ {
@@ -85,8 +85,8 @@ func (a *Account) ResetHeroAwake(r *Rules, id model.HeroID, now int64) (map[mode
 	}
 	next := *a
 	next.Items = maps.Clone(a.Items)
-	if !a.ResetActivityOpen(now) {
-		if err := next.Spend(map[model.ItemID]int64{46: 1}); err != nil {
+	if !a.ResetActivityOpen(r, now) {
+		if err := next.Spend(r.Constants.Constants.AwakeResetCost); err != nil {
 			return nil, err
 		}
 	}
@@ -155,6 +155,13 @@ func (a *Account) FreeResetHighlight(r *Rules, id model.InstanceID) (map[model.I
 	return items, nil
 }
 
-func (a *Account) ResetActivityOpen(now int64) bool {
-	return a.Level >= 7 && now >= a.CreatedAt && LogicDay(now)-LogicDay(a.CreatedAt) <= DefaultResetDuration/DaySeconds
+const freeResetActivityType = 4
+
+func (r *Rules) FreeResetActivity() (model.ActivityID, JourneyActivityRule, bool) {
+	return r.ActivityOfType(freeResetActivityType)
+}
+
+func (a *Account) ResetActivityOpen(r *Rules, now int64) bool {
+	_, rule, known := r.FreeResetActivity()
+	return known && a.Level >= rule.Level && now >= a.CreatedAt && LogicDay(now)-LogicDay(a.CreatedAt) <= int64(rule.Duration)
 }

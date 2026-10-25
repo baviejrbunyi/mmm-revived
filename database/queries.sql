@@ -150,6 +150,9 @@ WHERE a.uid IN (SELECT CAST(value AS INTEGER) FROM json_each(CAST(:uids AS TEXT)
 -- name: GetPublicHeroes :many
 SELECT uid,id,payload FROM account_records WHERE category='hero' AND uid IN (SELECT CAST(value AS INTEGER) FROM json_each(CAST(:uids AS TEXT)));
 
+-- name: GetPublicPassed :many
+SELECT uid,id,payload FROM account_records WHERE category='passed' AND uid IN (SELECT CAST(value AS INTEGER) FROM json_each(CAST(:uids AS TEXT)));
+
 -- name: CreateGuild :one
 INSERT INTO guilds(name,search_name,signature,announcement,approval,minimum_level,head,frame,boss,created,name_updated) VALUES (:name,:search_name,:signature,:announcement,:approval,:minimum_level,:head,:frame,:boss,:created,:created) RETURNING id;
 
@@ -426,16 +429,9 @@ INSERT INTO invite_links(invitee,inviter,bound) VALUES (?,?,?);
 SELECT level FROM accounts WHERE uid=?;
 
 -- name: GetInviteProgress :many
-SELECT l.invitee,l.bound,a.level,
-CAST(EXISTS(SELECT 1 FROM account_records p WHERE p.uid=l.invitee AND p.category='passed' AND p.id='100109' AND coalesce(json_extract(p.payload,'$.stars'),0)>0) AS INTEGER) AS story,
-CAST(coalesce(json_extract(t1.payload,'$.status'),0) AS INTEGER) AS purchase1,
-CAST(coalesce(json_extract(t2.payload,'$.status'),0) AS INTEGER) AS purchase2,
-CAST(coalesce(json_extract(t3.payload,'$.status'),0) AS INTEGER) AS purchase3
+SELECT l.invitee,l.bound,a.level
 FROM invite_links l JOIN accounts a ON a.uid=l.invitee
-LEFT JOIN account_records t1 ON t1.uid=l.invitee AND t1.category='task' AND t1.id='3711'
-LEFT JOIN account_records t2 ON t2.uid=l.invitee AND t2.category='task' AND t2.id='3712'
-LEFT JOIN account_records t3 ON t3.uid=l.invitee AND t3.category='task' AND t3.id='3713'
-WHERE l.inviter=? ORDER BY l.invitee LIMIT 5;
+WHERE l.inviter=? ORDER BY l.invitee;
 
 -- name: AddGuildContribution :exec
 INSERT INTO guild_contributions(guild_id,uid,week,score) VALUES (?,?,?,?) ON CONFLICT(guild_id,week,uid) DO UPDATE SET score=score+excluded.score;

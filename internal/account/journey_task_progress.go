@@ -67,7 +67,7 @@ func (a *Account) taskCumulativeValue(r *Rules, rule TaskRule) int64 {
 		}
 		return result
 	case 21, 43:
-		return a.Journey.SpentItems[6]
+		return a.Journey.SpentItems[r.Constants.Items.Energy]
 	case 42:
 		return a.Journey.DailyClaims
 	case 73:
@@ -136,7 +136,7 @@ func (a *Account) refreshJourneyTaskValuesAt(r *Rules, now int64) {
 		case 19, 21, 42, 43, 73:
 			value = max(int64(0), a.taskCumulativeValue(r, rule)-a.Journey.TaskBaselines[id])
 			if rule.Type == 21 || rule.Type == 43 || rule.Type == 73 {
-				item := model.ItemID(6)
+				item := r.Constants.Items.Energy
 				if rule.Type == 73 {
 					item = model.ItemID(taskNumber(rule, 0, 1))
 				}
@@ -358,7 +358,7 @@ func (a *Account) RecordJourneyTaskEvent(r *Rules, kind, amount, parameter int) 
 		if filter := rule.Lists[0]; (kind == 2 || kind == 7) && len(filter) > 0 && !slices.Contains(filter, 0) && !slices.Contains(filter, parameter) {
 			continue
 		}
-		if kind == 31 && (len(rule.Params) < 2 || rule.Params[1] != parameter) || kind == 59 && id == DailyShareTask {
+		if kind == 31 && (len(rule.Params) < 2 || rule.Params[1] != parameter) || kind == 59 && id == r.Constants.Constants.DailyShareTask {
 			continue
 		}
 		task := a.Tasks[id]

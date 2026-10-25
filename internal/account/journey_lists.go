@@ -61,9 +61,6 @@ func (a *Account) ClaimJourneyInviteList(r *Rules, target model.UserID, indices 
 	}
 	counts := a.InviteRewardCounts()
 	maximum := r.RetailActivity.InviteRewardMaximum
-	if maximum <= 0 {
-		maximum = 5
-	}
 	seen := map[int]bool{}
 	claimed := maps.Clone(a.Journey.InviteRewards[target])
 	if claimed == nil {
@@ -72,7 +69,7 @@ func (a *Account) ClaimJourneyInviteList(r *Rules, target model.UserID, indices 
 	var rewards []model.RewardID
 	for _, index := range indices {
 		reward, known := r.Journey.InviteRewards[index]
-		if !known || seen[index] || !journeyInviteEligible(index, progress) {
+		if !known || seen[index] || !journeyInviteEligible(r, index, progress) {
 			return nil, rejected("invited player task is incomplete")
 		}
 		seen[index] = true

@@ -41,7 +41,7 @@ func (r *Repository) GuildSnapshot(uid model.UserID) (model.GuildComponent, erro
 		}
 		result.Head, result.Frame = int(guild.Head), int(guild.Frame)
 		result.TaskRefreshed = weekStart(now)
-		result.WarID, result.WarPhase = CurrentWar(now)
+		result.WarID, result.WarPhase = r.CurrentWar(now)
 		if result.WarID != 0 {
 			encoded, err := q.GetGuildWar(ctx, database.GetGuildWarParams{GuildID: guild.ID, War: int64(result.WarID)})
 			if err == nil {

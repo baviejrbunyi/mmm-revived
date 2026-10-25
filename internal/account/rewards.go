@@ -284,7 +284,7 @@ func (a *Account) GrantItems(r *Rules, quantities map[model.ItemID]int64) error 
 	if r == nil {
 		r = &Rules{}
 	}
-	if a.Experience > math.MaxInt64-quantities[4] {
+	if a.Experience > math.MaxInt64-quantities[r.Settings.Items.TeamExperience] {
 		return rejected("experience overflow")
 	}
 	next := *a
@@ -299,32 +299,32 @@ func (a *Account) GrantItems(r *Rules, quantities map[model.ItemID]int64) error 
 	if err := next.grantItems(r, quantities, 0); err != nil {
 		return err
 	}
-	next.Experience += quantities[4]
+	next.Experience += quantities[r.Settings.Items.TeamExperience]
 	next.levelTeam(r)
 	now := time.Now().Unix()
-	if err := next.AddSeasonExperience(r, quantities[7]); err != nil {
+	if err := next.AddSeasonExperience(r, quantities[r.Settings.Items.SeasonExperience]); err != nil {
 		return err
 	}
-	if err := next.AddJourneyPassExperience(r, quantities[37], false, now); err != nil {
+	if err := next.AddJourneyPassExperience(r, quantities[r.Settings.Items.PassExperience], false, now); err != nil {
 		return err
 	}
-	if err := next.AddLimitedJourneyPassExperience(r, quantities[57], now); err != nil {
+	if err := next.AddLimitedJourneyPassExperience(r, quantities[r.Settings.Items.LimitedPassExperience], now); err != nil {
 		return err
 	}
-	if err := next.AddJourneyHyperPoints(r, quantities[61], now); err != nil {
+	if err := next.AddJourneyHyperPoints(r, quantities[r.Settings.Items.HyperflowPoints], now); err != nil {
 		return err
 	}
-	if quantities[35] > 0 {
+	if quantities[r.Settings.Items.PassActivation] > 0 {
 		if err := next.ActivateJourneyPass(r, 1, now); err != nil {
 			return err
 		}
 	}
-	if quantities[36] > 0 {
+	if quantities[r.Settings.Items.PremiumPassActivation] > 0 {
 		if err := next.ActivateJourneyPass(r, 3, now); err != nil {
 			return err
 		}
 	}
-	for range quantities[38] {
+	for range quantities[r.Settings.Items.MonthlyPass] {
 		if err := next.ActivateMonthlyPass(r, now); err != nil {
 			return err
 		}
@@ -346,6 +346,43 @@ func rewardItems(r *Rules, id model.RewardID, count int64) (map[model.ItemID]int
 		}
 	}
 	return multiplied(quantities, count)
+}
+
+const dropChancePer = 10000
+
+func droppedRewardItems(r *Rules, ids []model.RewardID, count int64) (map[model.ItemID]int64, error) {
+	result := map[model.ItemID]int64{}
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		quantities, err := rewardItems(r, id, count)
+		if err != nil {
+			return nil, err
+		}
+		for _, row := range r.Rewards[id] {
+			if row[1] != 0 {
+				continue
+			}
+			item := model.ItemID(row[0])
+			chance := r.DropTierChances[r.DropDetails[id][item]]
+			for range count {
+				roll, err := secureIntN(dropChancePer)
+				if err != nil {
+					return nil, err
+				}
+				if roll < chance {
+					quantities[item]++
+				}
+			}
+		}
+		for item, amount := range quantities {
+			if amount > 0 && !addQuantity(result, item, amount) {
+				return nil, rejected("reward overflow")
+			}
+		}
+	}
+	return result, nil
 }
 
 func RewardQuantities(r *Rules, ids ...model.RewardID) map[model.ItemID]int64 {

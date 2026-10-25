@@ -7,16 +7,10 @@ import (
 )
 
 const (
-	DefaultResetActivity model.ActivityID = 3
-	DefaultResetDuration int64            = 31 * 86400
-	DefaultPVPActivity   model.ActivityID = 1203
-	DefaultTeamLevel                      = 50
-	DefaultHeroLevel                      = 1
-	DefaultItemQuantity  int64            = 9999999
-	DefaultEnergy        int64            = 9999
-	DefaultHead          model.ItemID     = 5001
-	DefaultHeadFrame     model.ItemID     = 6001
-	DefaultBackground    model.ItemID     = 9001
+	DefaultTeamLevel          = 50
+	DefaultHeroLevel          = 1
+	DefaultItemQuantity int64 = 9999999
+	DefaultEnergy       int64 = 9999
 )
 
 func NewAccount(uid model.UserID, name string, createdAt int64, catalog Catalog) Account {

@@ -33,16 +33,16 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 		slices.Sort(a.CraftRecipes)
 	}
 	if a.Profile.Head == 0 {
-		a.Profile.Head = DefaultHead
+		a.Profile.Head = c.DefaultHead
 	}
 	if a.Profile.Frame == 0 {
-		a.Profile.Frame = DefaultHeadFrame
+		a.Profile.Frame = c.DefaultFrame
 	}
 	if a.Profile.Background == 0 {
-		a.Profile.Background = DefaultBackground
+		a.Profile.Background = c.DefaultBack
 	}
-	if a.Profile.ShownHeroes == nil {
-		for _, id := range []model.HeroID{102, 103, 105} {
+	if a.Profile.ShownHeroes == nil && r != nil {
+		for _, id := range r.Defaults.Retail.Heroes {
 			if _, ok := a.Heroes[id]; ok {
 				a.Profile.ShownHeroes = append(a.Profile.ShownHeroes, id)
 			}
@@ -51,12 +51,8 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 	if a.Profile.RedDots == nil {
 		a.Profile.RedDots = map[string]int64{}
 	}
-	if a.Profile.Lobby.Hero == 0 {
-		if _, ok := a.Heroes[105]; ok {
-			a.Profile.Lobby.Hero = 105
-		} else if len(a.Profile.ShownHeroes) > 0 {
-			a.Profile.Lobby.Hero = a.Profile.ShownHeroes[0]
-		}
+	if a.Profile.Lobby.Hero == 0 && len(a.Profile.ShownHeroes) > 0 {
+		a.Profile.Lobby.Hero = a.Profile.ShownHeroes[0]
 	}
 	if len(a.Profile.Tags) == 0 {
 		a.Profile.Tags = model.HonorTags{"story", "heroes", "skins", "createTime"}

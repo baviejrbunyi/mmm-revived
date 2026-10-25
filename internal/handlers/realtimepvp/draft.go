@@ -20,7 +20,7 @@ func (s service) pvpRule(p *server.Player, activity model.ActivityID) (account.P
 		}
 	}
 	rule, ok := s.Store.Rules.PVP[activity]
-	if p.State != server.Lobby || !ok || activity != p.Account.RealtimeActivity() {
+	if p.State != server.Lobby || !ok || activity != p.Account.RealtimeActivity(s.Store.Rules) {
 		return rule, fmt.Errorf("%w: activity is not open", account.ErrProgression)
 	}
 	return rule, nil
@@ -100,7 +100,7 @@ func (s service) claimActivityTasks(p *server.Player, r ActivityTasks) error {
 		}
 	}
 	rule, ok := s.Store.Rules.PVP[r.Activity]
-	if !ok || r.Activity != p.Account.RealtimeActivity() {
+	if !ok || r.Activity != p.Account.RealtimeActivity(s.Store.Rules) {
 		return fmt.Errorf("%w: activity is not open", account.ErrProgression)
 	}
 	rewards := make([]model.RewardID, 0, len(r.Tasks))

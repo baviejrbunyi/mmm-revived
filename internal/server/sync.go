@@ -47,6 +47,7 @@ var components = map[string]component{
 	"matchComp":       field(func(a *model.Avatar) model.MatchComponent { return a.Match }),
 	"activityComp":    field(func(a *model.Avatar) model.ActivityComponent { return a.Activities }),
 	"achieveComp":     field(func(a *model.Avatar) model.AchievementComponent { return a.Achievement }),
+	"popupPackComp":   field(func(a *model.Avatar) model.PopupPackComponent { return a.PopupPacks }),
 }
 
 var ErrProgressionRules = errors.New("progression rules are unavailable")
@@ -66,6 +67,12 @@ func (s *Service) Sync(p *Player, names ...string) error {
 			if !slices.Contains(names, name) {
 				names = append(names, name)
 			}
+		}
+	}
+	if p.Account.System.GiftsPending {
+		p.Account.System.GiftsPending = false
+		if !slices.Contains(names, "popupPackComp") {
+			names = append(slices.Clip(names), "popupPackComp")
 		}
 	}
 	profile := s.clientSnapshot(p.Account)
@@ -105,7 +112,7 @@ func (s *Service) notifyLevel(p *Player) error {
 	if !p.Account.Retail || previous <= 0 || current <= previous || s.Store.Rules == nil {
 		return nil
 	}
-	energy := p.Account.Items[6] - account.LevelEnergyRecovery(s.Store.Rules, previous, current)
+	energy := p.Account.Items[s.Store.Rules.Constants.Items.Energy] - account.LevelEnergyRecovery(s.Store.Rules, previous, current)
 	if err := p.Send("upLv", previous, current, max(0, energy)); err != nil {
 		return err
 	}

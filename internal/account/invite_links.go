@@ -4,9 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"maps"
+	"slices"
+	"strconv"
 	"time"
 
 	"mmm-revived/internal/database"
+	"mmm-revived/internal/json"
 	"mmm-revived/internal/model"
 )
 
@@ -46,18 +50,16 @@ func (s *Store) BindInvite(inviter, invitee model.UserID) error {
 	if err != nil {
 		return err
 	}
-	if inviterLevel < 15 || inviteeLevel < 8 || inviteeLevel > 16 {
+	_, inviterRule, inviterKnown := s.Rules.ActivityOfType(inviterActivityType)
+	_, inviteeRule, inviteeKnown := s.Rules.ActivityOfType(inviteeActivityType)
+	if !inviterKnown || !inviteeKnown || inviterLevel < int64(inviterRule.Level) || inviteeLevel < int64(inviteeRule.Level) || inviteeLevel >= int64(s.Rules.Constants.Constants.InviteCloseBindLevel) {
 		return rejected("invitation level requirements not met")
 	}
 	children, err := q.ListInvitees(ctx, inviter)
 	if err != nil {
 		return err
 	}
-	maximum := 10
-	if s.Rules != nil && s.Rules.RetailActivity.InviteMaximum > 0 {
-		maximum = s.Rules.RetailActivity.InviteMaximum
-	}
-	if len(children) >= maximum {
+	if len(children) >= s.Rules.RetailActivity.InviteMaximum {
 		return rejected("invitation capacity reached")
 	}
 	seen := map[model.UserID]bool{invitee: true}
@@ -100,7 +102,25 @@ func (s *Store) InviteProgress(inviter model.UserID) ([]model.InviteProgress, er
 	}
 	result := make([]model.InviteProgress, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, model.InviteProgress{UID: row.Invitee, Bound: row.Bound, Level: int(row.Level), Story: row.Story != 0, Purchases: map[int]bool{3711: row.Purchase1 >= 3, 3712: row.Purchase2 >= 3, 3713: row.Purchase3 >= 3}})
+		progress := model.InviteProgress{UID: row.Invitee, Bound: row.Bound, Level: int(row.Level), Tasks: map[model.TaskID]int{}}
+		if s.Rules != nil {
+			records, err := s.Database.Queries.ListRecords(context.Background(), row.Invitee)
+			if err != nil {
+				return nil, err
+			}
+			for _, record := range records {
+				id, err := strconv.ParseInt(record.ID, 10, 32)
+				if record.Category != model.RecordTask || err != nil || !slices.Contains(slices.Collect(maps.Values(s.Rules.Journey.InviteTasks)), model.TaskID(id)) {
+					continue
+				}
+				var task model.Task
+				if err = json.Unmarshal(record.Payload, &task); err != nil {
+					return nil, err
+				}
+				progress.Tasks[model.TaskID(id)] = task.Status
+			}
+		}
+		result = append(result, progress)
 	}
 	return result, nil
 }

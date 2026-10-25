@@ -32,7 +32,7 @@ func (s service) starHero(p *server.Player, hero model.HeroID) error {
 	if err := s.developHero(p, p.Account.StarHero(rules, hero)); err != nil {
 		return err
 	}
-	reward := account.HeroStarReward(hero)
+	reward := rules.HeroStarReward(hero)
 	if star != 2 || p.Account.Heroes[hero].Star != 3 || reward == 0 {
 		return nil
 	}

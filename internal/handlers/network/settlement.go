@@ -221,7 +221,7 @@ func (s service) settleAsyncBattle(a *account.Account, input AsyncBattle, result
 			packet["target_data"] = *pending.Target
 		}
 		attacker["score"] = a.Network.Score
-		defender["score"] = 1000
+		defender["score"] = s.Store.Rules.Network.Initial
 		if pending.Target != nil {
 			defender["score"] = pending.Target.Score
 		}

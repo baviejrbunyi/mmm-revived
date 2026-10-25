@@ -1,6 +1,8 @@
 package profile
 
 import (
+	"slices"
+
 	"mmm-revived/internal/account"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/rpc"
@@ -32,6 +34,11 @@ func Register(srv *server.Service, r *server.Router) {
 		return s.editProfile(p, func(a *account.Account) { a.Profile.SupportHeroes = heroes })
 	}))
 	r.Handle("setShowTags", rpc.Bind(DecodeTags, func(p *server.Player, tags model.HonorTags) error {
+		for index, tag := range tags {
+			if s.Store.Rules == nil || !slices.Contains(s.Store.Rules.Constants.HonorTags, tag) {
+				tags[index] = ""
+			}
+		}
 		return s.editProfile(p, func(a *account.Account) { a.Profile.Tags = tags })
 	}))
 	r.Handle("changeHead", s.cosmetic(1022, func(c *model.ProfileCustomization) *model.ItemID { return &c.Head }))

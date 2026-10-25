@@ -49,13 +49,13 @@ func (a *Account) InitializeSystem() {
 	}
 }
 
-func (a *Account) ApplySystemSnapshot(profile *model.Avatar, now int64) {
+func (a *Account) ApplySystemSnapshot(r *Rules, profile *model.Avatar, now int64) {
 	s := &a.System
-	if s.ProtectionHash != "" && !a.protectionExpired(now) {
+	if s.ProtectionHash != "" && !a.protectionExpired(now) && r != nil {
 		profile.Basic.ProtectionCode = s.ProtectionPIN
 		if s.ProtectionReset != 0 {
-			profile.Basic.ProtectionTime = protectionForgetDelay
-			profile.Basic.ProtectionUpdated = s.ProtectionReset - protectionForgetDelay
+			profile.Basic.ProtectionTime = r.Settings.ProtectionForget
+			profile.Basic.ProtectionUpdated = s.ProtectionReset - r.Settings.ProtectionForget
 		}
 	}
 	profile.Questions.Questions = s.QuestionData
@@ -73,11 +73,16 @@ func (a *Account) ApplySystemSnapshot(profile *model.Avatar, now int64) {
 	if receipt := s.LastReceipt; receipt != nil {
 		profile.Purchases.LastPurchase = []int64{int64(receipt.Product), int64(receipt.System), int64(receipt.Reference)}
 	}
-	profile.PopupPacks.Current = map[int]int{}
-	profile.PopupPacks.Finished = s.FinishedGifts
+	profile.PopupPacks.Current = map[int]int64{}
+	profile.PopupPacks.Finished = []int{}
+	for _, id := range slices.Sorted(maps.Keys(s.FinishedGifts)) {
+		if s.FinishedGifts[id] != 0 {
+			profile.PopupPacks.Finished = append(profile.PopupPacks.Finished, id)
+		}
+	}
 	for id, expires := range s.Gifts {
 		if expires == 0 || expires > now {
-			profile.PopupPacks.Current[id] = int(expires)
+			profile.PopupPacks.Current[id] = expires
 			profile.PopupPacks.ClientID = max(profile.PopupPacks.ClientID, id)
 		}
 	}
@@ -196,8 +201,6 @@ func (a *Account) MirageInteract(r *Rules, id model.ActivityID, now int64) (bool
 	return true, nil
 }
 
-const protectionForgetDelay = 7200
-
 func validProtectionPIN(pin string) bool {
 	if len(pin) != 4 {
 		return false
@@ -252,12 +255,12 @@ func (a *Account) UnsetProtectionPIN(pin string, now int64) error {
 	return nil
 }
 
-func (a *Account) ForgetProtectionPIN(now int64) bool {
+func (a *Account) ForgetProtectionPIN(r *Rules, now int64) bool {
 	a.expireProtection(now)
 	if a.System.ProtectionHash == "" || a.System.ProtectionReset != 0 {
 		return false
 	}
-	a.System.ProtectionReset = now + protectionForgetDelay
+	a.System.ProtectionReset = now + r.Settings.ProtectionForget
 	return true
 }
 
@@ -275,4 +278,57 @@ func (a *Account) OfferLocalGift(r *Rules, id int, now int64) error {
 	}
 	a.System.Gifts[id] = expires
 	return nil
+}
+
+func (a *Account) giftConditionMet(conditions []SystemGiftCondition) bool {
+	for _, condition := range conditions {
+		switch {
+		case condition.Level > 0 && a.Level >= condition.Level:
+			return true
+		case condition.Gift != 0 && a.System.FinishedGifts[condition.Gift] != 0:
+			return true
+		case condition.Activity != 0 && a.Journey.Activities[condition.Activity].Open:
+			return true
+		}
+	}
+	return false
+}
+
+func (a *Account) OfferTriggeredGifts(r *Rules, now int64) bool {
+	if r == nil {
+		return false
+	}
+	changed := false
+	for _, id := range slices.Sorted(maps.Keys(r.System.Gifts)) {
+		rule := r.System.Gifts[id]
+		if rule.Product == 0 || rule.Reward == 0 || a.System.FinishedGifts[id] != 0 {
+			continue
+		}
+		if expires, offered := a.System.Gifts[id]; offered && (expires == 0 || expires > now) {
+			continue
+		}
+		offers := a.System.GiftOffers[id]
+		triggered := a.giftConditionMet(rule.Triggers)
+		if offers > 0 {
+			triggered = r.System.ReofferGifts && triggered || offers == 1 && a.giftConditionMet(rule.Retriggers)
+		}
+		if !triggered {
+			continue
+		}
+		a.InitializeSystem()
+		if a.System.GiftOffers == nil {
+			a.System.GiftOffers = map[int]int{}
+		}
+		expires := int64(0)
+		if rule.Duration > 0 {
+			expires = now + rule.Duration
+		}
+		a.System.Gifts[id] = expires
+		a.System.GiftOffers[id] = min(math.MaxInt32, offers+1)
+		changed = true
+	}
+	if changed {
+		a.System.GiftsPending = true
+	}
+	return changed
 }

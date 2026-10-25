@@ -6,7 +6,10 @@ import (
 	"mmm-revived/internal/model"
 )
 
-func (a *Account) Snapshot(c Catalog) model.Avatar {
+func (a *Account) Snapshot(c Catalog, r *Rules) model.Avatar {
+	if r == nil {
+		r = &Rules{}
+	}
 	now := time.Now().Unix()
 	day := LogicDay(now)
 	energyBought := 0
@@ -28,9 +31,9 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 			Break:          a.TeamBreak,
 			TeamName:       a.TeamName,
 			Level:          a.Level,
-			Gold:           a.Items[1],
-			Diamond:        a.Items[2],
-			Yuanbao:        a.Items[3],
+			Gold:           a.Items[r.Constants.Items.Gold],
+			Diamond:        a.Items[r.Constants.Items.Diamond],
+			Yuanbao:        a.Items[r.Constants.Items.Yuanbao],
 			MobileReward:   true,
 		},
 		Heroes: model.HeroComponent{
@@ -51,7 +54,7 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 			RedDots:   a.Profile.RedDots,
 		},
 		Energy: model.EnergyComponent{
-			Energy:      a.Items[6],
+			Energy:      a.Items[r.Constants.Items.Energy],
 			Bank:        a.Energy.Bank,
 			Purchases:   energyBought,
 			RefreshedAt: a.Energy.Refreshed,
@@ -61,9 +64,9 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 			Head:        a.Profile.Head,
 			Frame:       a.Profile.Frame,
 			Background:  a.Profile.Background,
-			Heads:       cosmetics(c, 1022, DefaultHead),
-			Frames:      cosmetics(c, 1023, DefaultHeadFrame),
-			Backgrounds: cosmetics(c, 1045, DefaultBackground),
+			Heads:       cosmetics(c, 1022, c.DefaultHead),
+			Frames:      cosmetics(c, 1023, c.DefaultFrame),
+			Backgrounds: cosmetics(c, 1045, c.DefaultBack),
 			Support:     a.Profile.SupportHeroes,
 			Tags:        a.Profile.Tags,
 			Badge:       a.Profile.Badge,
@@ -71,7 +74,6 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 		},
 		Lineups:    model.LineupComponent{Lineups: a.Lineups},
 		BattlePass: model.BattlePassComponent{Level: 1},
-		PVP:        model.PVPComponent{Score: 1000, MaxScore: 1000},
 		Rogue:      a.RogueComponent(false),
 		RoguePVE:   a.RogueComponent(true),
 		Dreamland:  model.DreamlandComponent{Chapters: a.Chapters, Missions: a.Missions, Passed: a.Passed, Story: a.CurrentStory, Memento: a.CurrentMemento},
@@ -95,18 +97,18 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 			profile.Shop.Counts[id] = purchase.Count
 		}
 	}
-	profile.Activities = model.ActivityComponent{Info: make(map[model.ActivityID]model.ActivityInfo, len(a.Activities)+2), Status: map[model.ActivityID]int{a.RealtimeActivity(): 1}}
+	profile.Activities = model.ActivityComponent{Info: make(map[model.ActivityID]model.ActivityInfo, len(a.Activities)+2), Status: map[model.ActivityID]int{a.RealtimeActivity(r): 1}}
 	for id, state := range a.Activities {
 		profile.Activities.Info[id] = state
 	}
-	if a.ResetActivityOpen(now) {
-		profile.Activities.Status[DefaultResetActivity] = 1
-		profile.Activities.Info[DefaultResetActivity] = model.PVPActivity{InitializedAt: a.CreatedAt}
+	if id, _, _ := r.FreeResetActivity(); a.ResetActivityOpen(r, now) {
+		profile.Activities.Status[id] = 1
+		profile.Activities.Info[id] = model.PVPActivity{InitializedAt: a.CreatedAt}
 	}
 	if a.Retail {
-		profile.Appearance.Heads = a.retailCosmetics(c, 1022, DefaultHead)
-		profile.Appearance.Frames = a.retailCosmetics(c, 1023, DefaultHeadFrame)
-		profile.Appearance.Backgrounds = a.retailCosmetics(c, 1045, DefaultBackground)
+		profile.Appearance.Heads = a.retailCosmetics(c, 1022, c.DefaultHead)
+		profile.Appearance.Frames = a.retailCosmetics(c, 1023, c.DefaultFrame)
+		profile.Appearance.Backgrounds = a.retailCosmetics(c, 1045, c.DefaultBack)
 	}
 	a.timedCosmeticSnapshot(c, &profile.Appearance)
 	for _, id := range c.Cosmetics[1035] {
@@ -127,8 +129,8 @@ func (a *Account) Snapshot(c Catalog) model.Avatar {
 	a.JourneySnapshot(&profile, now)
 	a.EventsSnapshot(&profile)
 	a.manualSnapshot(&profile)
-	a.ApplySystemSnapshot(&profile, now)
-	profile.PVP = a.NetworkSnapshot(now)
+	a.ApplySystemSnapshot(r, &profile, now)
+	profile.PVP = a.NetworkSnapshot(r, now)
 	profile.Battle.SupportUses = a.Network.Support.Used
 	if a.Network.Activity != 0 {
 		profile.Activities.Info[a.Network.Activity] = model.AsyncActivity{Score: a.Network.Points}

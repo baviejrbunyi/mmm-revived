@@ -131,7 +131,7 @@ func (s service) personalRanks(p *server.Player, q RankQuery, guild bool, now in
 }
 
 func (s service) syncNetwork(p *server.Player) error {
-	profile := p.Account.NetworkSnapshot(time.Now().Unix())
+	profile := p.Account.NetworkSnapshot(s.Store.Rules, time.Now().Unix())
 	if s.Store.Rules != nil {
 		profile.Environments = p.Account.NetworkEnvironments(s.Store.Rules.Network)
 	}
@@ -208,7 +208,7 @@ func (s service) recommendSupport(p *server.Player, now int64) error {
 		profile := profiles[uid].Account
 		for _, id := range profile.Profile.SupportHeroes {
 			hero, owned := profile.Heroes[id]
-			if !owned || hero.Level > p.Account.Level+10 {
+			if !owned || hero.Level > p.Account.Level+s.Store.Rules.Settings.SupportLevelGap {
 				continue
 			}
 			encoded, err := SupportHeroPayload(&profile, id)
@@ -249,7 +249,7 @@ func (s service) chooseSupport(p *server.Player, r Support, guildWar bool) error
 	}
 	profile, exists := profiles[r.Owner]
 	hero, owned := profile.Account.Heroes[r.Hero]
-	if !exists || !owned || !slices.Contains(profile.Account.Profile.SupportHeroes, r.Hero) || hero.Level > p.Account.Level+10 || guildWar && hero.Level-p.Account.Level >= 10 {
+	if !exists || !owned || !slices.Contains(profile.Account.Profile.SupportHeroes, r.Hero) || hero.Level > p.Account.Level+s.Store.Rules.Settings.SupportLevelGap || guildWar && hero.Level-p.Account.Level >= s.Store.Rules.Settings.SupportLevelGap {
 		return fmt.Errorf("%w: support hero unavailable", account.ErrProgression)
 	}
 	if !guildWar {

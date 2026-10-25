@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"mmm-revived/internal/json"
 	"mmm-revived/internal/model"
@@ -45,6 +46,27 @@ func (s *Store) publicProfiles(ctx context.Context, encoded string, includeHeroe
 			return nil, err
 		}
 		result[row.UID] = PublicProfile{Account: a, Heroes: row.HeroCount, Online: row.Online, Offline: row.Offline, Guild: model.GuildID(row.GuildID), GuildRole: model.GuildRole(row.GuildRole)}
+	}
+	passed, err := s.Database.Queries.GetPublicPassed(ctx, encoded)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range passed {
+		profile, ok := result[row.UID]
+		if !ok {
+			return nil, errors.New("passed mission references missing public profile")
+		}
+		id, err := strconv.ParseInt(row.ID, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		if profile.Account.Passed == nil {
+			profile.Account.Passed = map[model.MissionID]model.MissionProgress{}
+		}
+		if err = decodeRecord(profile.Account.Passed, model.MissionID(id), row.Payload); err != nil {
+			return nil, err
+		}
+		result[row.UID] = profile
 	}
 	if !includeHeroes {
 		return result, nil

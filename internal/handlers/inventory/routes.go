@@ -81,7 +81,7 @@ func Register(srv *server.Service, r *server.Router) {
 		return i.then(i.account.BuyEnergy(i.rules, count, time.Now().Unix()), "onBuyEnergy", true)
 	}))
 	operations.Handle("transEnergyBank", rpc.Bind(DecodeAmount, func(i *inventory, amount int64) error {
-		return i.then(i.account.TransferEnergy(amount), "onTransEnergyBank", true)
+		return i.then(i.account.TransferEnergy(i.rules, amount), "onTransEnergyBank", true)
 	}))
 	operations.Handle("convertYuanbao", rpc.Bind(DecodeAmount, func(i *inventory, amount int64) error {
 		return i.then(i.account.ConvertYuanbao(i.rules, amount), "convertYuanbaoFinish", amount)

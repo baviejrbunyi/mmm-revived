@@ -11,6 +11,9 @@ type Catalog struct {
 	Artifacts    []model.ArtifactID            `json:"artifacts"`
 	Highlights   []model.HighlightID           `json:"highlights"`
 	DefaultSkins []model.SkinID                `json:"-"`
+	DefaultHead  model.ItemID                  `json:"-"`
+	DefaultFrame model.ItemID                  `json:"-"`
+	DefaultBack  model.ItemID                  `json:"-"`
 	SkinItems    map[model.ItemID]model.SkinID `json:"-"`
 }
 

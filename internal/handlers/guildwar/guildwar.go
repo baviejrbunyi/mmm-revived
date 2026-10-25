@@ -175,7 +175,7 @@ func (s service) publishPhase(p *server.Player, war, phase int) error {
 
 func (s service) guildWar(p *server.Player, now int64, mutate func(*sql.Tx, *warContext) error, respond func(*warContext) error) error {
 	w := &warContext{}
-	w.war, w.phase = social.CurrentWar(now)
+	w.war, w.phase = s.Store.Social.CurrentWar(now)
 	if w.war == 0 {
 		if err := s.publishPhase(p, 0, social.WarEmpty); err != nil {
 			return err

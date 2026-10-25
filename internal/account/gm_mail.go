@@ -22,7 +22,7 @@ func (s *Store) DeliverGMMail(tx *sql.Tx, uid model.UserID, template int, now in
 			return 0, err
 		}
 	case !known:
-		values[1] = 1000
+		values[s.Rules.Constants.Items.Gold] = 1000
 	}
 	ctx := context.Background()
 	q := s.Database.Queries.WithTx(tx)
@@ -30,7 +30,7 @@ func (s *Store) DeliverGMMail(tx *sql.Tx, uid model.UserID, template int, now in
 	if err != nil {
 		return 0, err
 	}
-	if count >= MailboxLimit {
+	if count >= s.mailboxLimit() {
 		return 0, rejected("mailbox is full")
 	}
 	var payloads [4][]byte

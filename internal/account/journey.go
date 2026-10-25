@@ -133,8 +133,8 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 		}
 		if rule.Type == 20 && activity.Pass.ID == 0 {
 			passID := rule.PassID
-			if passID == 0 && rule.Parameter == 1 {
-				passID = 1001
+			if passID == 0 && rule.Parameter > 0 && rule.Parameter <= len(r.Journey.LimitedEventPasses) {
+				passID = r.Journey.LimitedEventPasses[rule.Parameter-1]
 			}
 			if pass, known := r.Journey.LimitedPasses[passID]; known {
 				activity.Pass = newJourneyPass(passID)
@@ -181,7 +181,10 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 		}
 		if rule.Type == 22 && len(activity.BuffNodes) == 0 {
 			hyper := r.Journey.Hyperflows[rule.Parameter]
-			activity.HyperMaximum = 50
+			activity.HyperMaximum = 0
+			for _, node := range hyper.BuffNodes {
+				activity.HyperMaximum = max(activity.HyperMaximum, r.Journey.HyperBuffs[node].Threshold)
+			}
 			for _, node := range hyper.BuffNodes {
 				entry := r.Journey.HyperBuffs[node]
 				choice := 0
@@ -356,15 +359,14 @@ func (a *Account) ClaimNoviceReward(r *Rules, id int) (map[model.ItemID]int64, e
 		return nil, rejected("novice reward is unavailable")
 	}
 	reward := model.RewardID(rule.Parameters[0])
-	quantities, err := rewardItems(r, reward, 1)
-	if err != nil {
-		fallback, allowed := r.Journey.LocalRewardDefaults[reward]
-		if !allowed || fallback.Reason == "" {
+	quantities := map[model.ItemID]int64{}
+	if _, known := r.Rewards[reward]; known {
+		var err error
+		if quantities, err = rewardItems(r, reward, 1); err != nil {
 			return nil, err
 		}
-		quantities = maps.Clone(fallback.Items)
 	}
-	if err = a.GrantItems(r, quantities); err != nil {
+	if err := a.GrantItems(r, quantities); err != nil {
 		return nil, err
 	}
 	a.Journey.Novice.Rewards[id] = true
@@ -376,7 +378,7 @@ func (a *Account) ClaimNoviceReward(r *Rules, id int) (map[model.ItemID]int64, e
 		}
 	}
 	if !visible {
-		if err = a.FinishNoviceNode(r, id); err != nil {
+		if err := a.FinishNoviceNode(r, id); err != nil {
 			return nil, err
 		}
 	}

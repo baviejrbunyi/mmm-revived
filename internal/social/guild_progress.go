@@ -17,40 +17,24 @@ import (
 
 const (
 	newsLevelUp            int64 = 1
-	guildExperienceRate    int64 = 5
-	guildSettlementMail    int64 = 8011
 	guildSettlementExpires int64 = 30 * daySeconds
 )
 
-type guildLevel struct {
+type GuildLevel struct {
 	Experience  int64
 	Members     int
-	RewardItem  model.ItemID
+	Rewards     map[model.ItemID]int64
 	Minimum     int64
 	PerReward   int64
 	RewardLimit int64
 }
 
-var guildLevels = []guildLevel{
-	{},
-	{Experience: 2500, Members: 30, RewardItem: 800003, Minimum: 200, PerReward: 120, RewardLimit: 4},
-	{Experience: 5000, Members: 32, RewardItem: 800003, Minimum: 200, PerReward: 120, RewardLimit: 4},
-	{Experience: 8000, Members: 34, RewardItem: 800003, Minimum: 200, PerReward: 120, RewardLimit: 4},
-	{Experience: 14000, Members: 36, RewardItem: 800003, Minimum: 200, PerReward: 120, RewardLimit: 5},
-	{Experience: 18000, Members: 38, RewardItem: 800004, Minimum: 200, PerReward: 150, RewardLimit: 5},
-	{Experience: 21000, Members: 40, RewardItem: 800004, Minimum: 200, PerReward: 150, RewardLimit: 5},
-	{Experience: 27000, Members: 42, RewardItem: 800004, Minimum: 200, PerReward: 150, RewardLimit: 6},
-	{Experience: 30000, Members: 44, RewardItem: 800004, Minimum: 200, PerReward: 150, RewardLimit: 6},
-	{Experience: 36000, Members: 46, RewardItem: 800005, Minimum: 200, PerReward: 200, RewardLimit: 6},
-	{Members: 50, RewardItem: 800005, Minimum: 200, PerReward: 200, RewardLimit: 7},
-}
-
-func levelRule(level int64) guildLevel {
-	return guildLevels[min(max(level, 1), int64(len(guildLevels)-1))]
+func (r *Repository) levelRule(level int64) GuildLevel {
+	return r.levels[min(max(level, 1), int64(len(r.levels)-1))]
 }
 
 func (r *Repository) memberLimit(level int64) int {
-	return max(r.GuildLimits.Members, levelRule(level).Members)
+	return max(r.GuildLimits.Members, r.levelRule(level).Members)
 }
 
 func (r *Repository) Contribute(tx *sql.Tx, uid model.UserID, amount, now int64) error {
@@ -75,10 +59,10 @@ func (r *Repository) Contribute(tx *sql.Tx, uid model.UserID, amount, now int64)
 	if err != nil {
 		return err
 	}
-	level, experience := max(guild.Level, 1), guild.Experience+amount*guildExperienceRate
+	level, experience := max(guild.Level, 1), guild.Experience+amount*r.GuildLimits.ExperienceRate
 	var news []model.GuildNews
-	for level < int64(len(guildLevels)-1) && experience >= guildLevels[level].Experience {
-		experience -= guildLevels[level].Experience
+	for level < int64(len(r.levels)-1) && experience >= r.levels[level].Experience {
+		experience -= r.levels[level].Experience
 		level++
 		id, err := q.InsertGuildNews(ctx, database.InsertGuildNewsParams{GuildID: guild.ID, Kind: newsLevelUp, Actor: uid, Value: level, Created: now})
 		if err != nil {
@@ -86,7 +70,7 @@ func (r *Repository) Contribute(tx *sql.Tx, uid model.UserID, amount, now int64)
 		}
 		news = append(news, model.GuildNews{ID: id, Kind: int(newsLevelUp), Time: now, Parameters: []model.UserID{model.UserID(level)}})
 	}
-	if level == int64(len(guildLevels)-1) {
+	if level == int64(len(r.levels)-1) {
 		experience = 0
 	}
 	if err = q.SetGuildProgress(ctx, database.SetGuildProgressParams{Level: level, Experience: experience, ID: guild.ID}); err != nil {
@@ -125,9 +109,9 @@ func (r *Repository) SettleGuildWeek(id model.GuildID, now int64) ([]model.UserI
 		if err != nil {
 			return err
 		}
-		rule := levelRule(guild.Level)
+		rule := r.levelRule(guild.Level)
 		var texts [3][]byte
-		for index, text := range [...]string{"Alliance Rewards Settlement", "Thank you for contributing to your alliance last week! Here are some Dream Orbs as a reward.", "Official"} {
+		for index, text := range r.settlement {
 			if texts[index], err = json.Marshal(model.LocalizedText{"cn": text, "en": text}); err != nil {
 				return err
 			}
@@ -145,12 +129,16 @@ func (r *Repository) SettleGuildWeek(id model.GuildID, now int64) ([]model.UserI
 			if rewards <= 0 {
 				continue
 			}
-			items, err := json.Marshal(map[model.ItemID]int64{rule.RewardItem: rewards})
+			quantities := make(map[model.ItemID]int64, len(rule.Rewards))
+			for item, amount := range rule.Rewards {
+				quantities[item] = amount * rewards
+			}
+			items, err := json.Marshal(quantities)
 			if err != nil {
 				return err
 			}
 			owner := model.UserID(key[1])
-			if _, err = q.DeliverMail(ctx, database.DeliverMailParams{Owner: owner, Title: texts[0], Content: texts[1], Sender: texts[2], Template: guildSettlementMail, Created: now, Expires: now + guildSettlementExpires, Items: items, HasReward: 1}); err != nil {
+			if _, err = q.DeliverMail(ctx, database.DeliverMailParams{Owner: owner, Title: texts[0], Content: texts[1], Sender: texts[2], Template: r.settleMail, Created: now, Expires: now + guildSettlementExpires, Items: items, HasReward: 1}); err != nil {
 				return err
 			}
 			mailed = append(mailed, owner)

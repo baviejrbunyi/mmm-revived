@@ -12,8 +12,8 @@ func (a *Account) RogueBattleData(r *Rules, id model.BattleID) (RogueBattleData,
 	if err := a.ValidateRogueBattle(r, id); err != nil {
 		return result, err
 	}
-	switch r.BattleModes[id] {
-	case rogueRunMode:
+	switch {
+	case r.RogueRunBattle(id):
 		run := &a.RogueProgress.Run
 		rule := r.Rogue.Runs[run.ID]
 		for _, oid := range run.Heroes {
@@ -27,7 +27,7 @@ func (a *Account) RogueBattleData(r *Rules, id model.BattleID) (RogueBattleData,
 					entry.Level += enhancement
 				}
 			}
-			entry.Level = min(600, entry.Level)
+			entry.Level = min(r.Rogue.MaxHeroLevel, entry.Level)
 			result.Limited[entry.ID] = entry
 			result.Extra.RogueHeroes[entry.ID] = model.RogueEnhancement{Level: enhancement}
 		}
@@ -46,7 +46,7 @@ func (a *Account) RogueBattleData(r *Rules, id model.BattleID) (RogueBattleData,
 			level := max(1, rule.Levels[min(run.Index, len(rule.Levels)-1)])
 			result.Extra.EnemyTeam = append(result.Extra.EnemyTeam, []int64{int64(chosen), int64(level), 0, 1, 0})
 		}
-	case roguePVEMode:
+	case r.RoguePVEBattle(id):
 		v := &a.RogueProgress.PVE
 		rule := r.Rogue.PVE[v.ID]
 		result.Extra.Mana = v.Mana
@@ -72,7 +72,7 @@ func (a *Account) BeginRogueBattle(r *Rules, id model.BattleID) error {
 	if err := a.ValidateRogueBattle(r, id); err != nil {
 		return err
 	}
-	if r.BattleModes[id] == roguePVEMode && a.RogueProgress.PVE.Status == model.RoguePVEPrepare {
+	if r.RoguePVEBattle(id) && a.RogueProgress.PVE.Status == model.RoguePVEPrepare {
 		a.RogueProgress.PVE.Status = model.RoguePVEBattle
 	}
 	return nil

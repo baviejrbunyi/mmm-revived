@@ -97,12 +97,6 @@ type battleInfo struct {
 	Environments   []int            `wire:"environmentIds,omitempty"`
 }
 
-var mayhemEnvironments = [...]int{1001, 1002, 1003, 1004, 1005, 1006, 1007}
-
-func mayhemEnvironment(parameter int) int {
-	return mayhemEnvironments[(max(parameter, 1)-1)%len(mayhemEnvironments)]
-}
-
 func newBattleInfo(s *server.Service, a *account.Account) battleInfo {
 	return battleInfo{TeamLevel: a.Level, SeasonScience: slices.Clone(a.Events.Season.Nodes), HyperFlowBuffs: []int{}, Bonds: a.BondAttributes(s.Store.Rules), SkinCollection: a.SkinCollectionLevel(s.Store.Rules)}
 }

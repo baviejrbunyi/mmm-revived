@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"mmm-revived/internal/account"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/protocol"
 )
@@ -19,15 +20,10 @@ const (
 	codeItemsMissing          = 132
 	codeNameCharacter         = 139
 	codeNameEmpty             = 141
-	nameMinimum               = 2
-	nameMaximum               = 14
-	signatureMaximum          = 50
 	lineupHeroes              = 3
 	nameLatinLetters          = "ÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜàáâãäçèéêëìíîïñòóôõöùúûüßŒœŸẞ"
 	nameCJKFirst, nameCJKLast = 0x4E00, 0x9FA5
 )
-
-var honorTags = map[string]bool{"": true, "story": true, "heroes": true, "skins": true, "createTime": true, "season": true, "achievePoint": true, "1004102": true, "1004111": true, "1004121": true, "1004131": true, "2000000": true}
 
 type RedDot struct {
 	Key   string
@@ -60,21 +56,21 @@ func nameLength(value string, latin int) (int, bool) {
 	return length, true
 }
 
-func nameCode(value string, latin int) int {
+func nameCode(value string, latin int, limits account.ClientConstants) int {
 	length, ok := nameLength(value, latin)
 	switch {
 	case value == "":
 		return codeNameEmpty
 	case !ok:
 		return codeNameCharacter
-	case length < nameMinimum || length > nameMaximum:
+	case length < limits.NameMinimum || length > limits.NameMaximum:
 		return codeNameLength
 	}
 	return 0
 }
 
-func teamNameCode(value string) int {
-	if code := nameCode(value, 1); code != 0 {
+func teamNameCode(value string, limits account.ClientConstants) int {
+	if code := nameCode(value, 1, limits); code != 0 {
 		return code
 	}
 	if strings.Trim(value, "0123456789") == "" {
@@ -83,13 +79,15 @@ func teamNameCode(value string) int {
 	return 0
 }
 
-func lineupNameCode(value string) int { return nameCode(value, 2) }
+func lineupNameCode(value string, limits account.ClientConstants) int {
+	return nameCode(value, 2, limits)
+}
 
-func signatureCode(value string) int {
+func signatureCode(value string, limits account.ClientConstants) int {
 	switch {
 	case !protocol.ValidText(value):
 		return codeSignature
-	case utf8.RuneCountInString(value) > signatureMaximum:
+	case utf8.RuneCountInString(value) > limits.SignatureMaximum:
 		return codeSignatureLong
 	}
 	return 0
@@ -111,13 +109,7 @@ func DecodeTags(c protocol.Call) (model.HonorTags, error) {
 	if err != nil {
 		return nil, err
 	}
-	tags := make(model.HonorTags, len(values))
-	for index, value := range values {
-		if honorTags[value] {
-			tags[index] = value
-		}
-	}
-	return tags, nil
+	return model.HonorTags(values), nil
 }
 
 func DecodeCosmetic(c protocol.Call) (model.ItemID, error) {

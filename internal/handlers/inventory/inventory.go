@@ -103,7 +103,7 @@ func (s service) reward(i *inventory, claim func() (map[model.ItemID]int64, erro
 
 func (s service) freeReset(i *inventory, activity model.ActivityID, reset func() (map[model.ItemID]int64, error)) error {
 	before := *i.account
-	if !i.account.ResetActivityOpen(time.Now().Unix()) || activity != account.DefaultResetActivity {
+	if id, _, _ := i.rules.FreeResetActivity(); !i.account.ResetActivityOpen(i.rules, time.Now().Unix()) || activity != id {
 		return errResetActivityClose
 	}
 	quantities, err := reset()
