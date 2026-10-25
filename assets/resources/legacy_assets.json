@@ -1,0 +1,48 @@
+{
+  "packages": {
+    "common/c_1c6aee78_39ee9b0c_ext0": {
+      "head": "ed0300000000c040",
+      "deps": [
+        "svc"
+      ]
+    },
+    "common/highlight_spine_ext0_legacy": {
+      "head": "ed03000000000000",
+      "deps": [
+        "common/c_1c6aee78_39ee9b0c_ext0",
+        "common/c_3dad0c9d_511dd611_ext0",
+        "common/c_5248ee97_c9320fb_ext0",
+        "common/c_53ab18ab_60b9b52f_ext0",
+        "common/c_5c42c36f_8a804bcb_ext0",
+        "common/c_8127f9e3_264b068f_ext0",
+        "common/c_8cf61a22_d501b11e_ext0",
+        "common/c_9722e86c_98be3691",
+        "common/c_9dfa4ebd_dccf7d79_ext0",
+        "common/c_cd8600c9_1e2881bd_ext0",
+        "common/c_d14c9291_f1edc7f5_ext0",
+        "common/c_d45c23ce_ce37f999",
+        "common/c_f1a08ec_165a5048_ext0",
+        "common/c_f3da8c5c_d662be78",
+        "common/c_f3da8c5c_d662be78_ext0",
+        "common/c_faaf28f2_65c563c6_ext0",
+        "svc"
+      ]
+    },
+    "common/ui_icon__i_highlight_ext0_legacy": {
+      "head": "ed03000000000000",
+      "deps": []
+    }
+  },
+  "assets": {
+    "Novel/Spine/Highlights/Berserker_Rage/Berserker_Rage_SkeletonData.asset": "common/highlight_spine_ext0_legacy",
+    "UI/Icon/i_Highlight/5202_BerserkerRage.png": "common/ui_icon__i_highlight_ext0_legacy",
+    "UI/Icon/i_Highlight/HighlightSmall/5202_BerserkerRage.png": "common/ui_icon__i_highlight_ext0_legacy"
+  },
+  "fields": {
+    "highlight_data_cn": {
+      "5202": {
+        "version": 101
+      }
+    }
+  }
+}

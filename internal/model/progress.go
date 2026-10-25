@@ -51,8 +51,12 @@ type ActivityInfo interface{ isActivityInfo() }
 func (PVPActivity) isActivityInfo() {}
 
 type ActivityComponent struct {
-	Info   map[ActivityID]ActivityInfo `wire:"activityInfo"`
-	Status map[ActivityID]int          `wire:"activitySt"`
+	Info       map[ActivityID]ActivityInfo `wire:"activityInfo"`
+	Status     map[ActivityID]int          `wire:"activitySt"`
+	EventStart map[ActivityID]int64        `wire:"eventStart,omitempty"`
+	EventEnd   map[ActivityID]int64        `wire:"eventEnd,omitempty"`
+	ShopStart  map[ShopID]int64            `wire:"shopStart,omitempty"`
+	ShopEnd    map[ShopID]int64            `wire:"shopEnd,omitempty"`
 }
 
 type DreamlandComponent struct {

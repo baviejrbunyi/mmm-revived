@@ -12,6 +12,7 @@ type ServerSettings struct {
 	SupportLevelGap    int                                 `json:"support_level_gap"`
 	Realtime           RealtimeSettings                    `json:"realtime"`
 	ProtectionForget   int64                               `json:"protection_forget_delay"`
+	AllEvents          AllEventSettings                    `json:"all_events"`
 }
 
 type MailTemplates struct {

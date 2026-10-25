@@ -70,6 +70,7 @@ Edit `build/config.toml`, then run `just configure "<game folder>"` and `just ru
 | `all_banners` | `true` = open every limited banner |
 | `featured_banners` | Limited banners to open instead of the calendar rotation, e.g. `[5, 12]` (see below) |
 | `calendar_loop` | `true` (default) = replay the dated content (Battle Pass, events, banners, PvP, guild wars) in a 231-day loop so it never runs out // `false` = real dates only |
+| `all_events` | `true` (default) = every event stays open; one-at-a-time events (PvP seasons, Infinite Mayhem, bosses) rotate with no gaps // `false` = calendar dates only |
 
 Banner ids: 2 Iron Man, 3 Captain America, 4 Loki, 5 Invisible Woman, 6 Mister Fantastic, 7 Spider-Man, 8 Thor, 9 Gambit, 10 Juggernaut, 11 Namor, 12 Emma Frost, 13 Silver Surfer, 14 Doctor Strange, 15 Green Goblin, 17 Daredevil, 19 Magneto, 20 Storm, 21 Phoenix, 23 Venom, 25 Wolverine, 27 Cyclops, 29 Morgan le Fay. These options work with `fresh_start` and apply to existing accounts on the next login.
 

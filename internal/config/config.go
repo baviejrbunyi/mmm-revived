@@ -46,6 +46,7 @@ type Config struct {
 	AllBanners      bool    `json:"all_banners" toml:"all_banners"`
 	FeaturedBanners []int32 `json:"featured_banners" toml:"featured_banners"`
 	CalendarLoop    bool    `json:"calendar_loop" toml:"calendar_loop"`
+	AllEvents       bool    `json:"all_events" toml:"all_events"`
 	Keys            Keys    `json:"keys" toml:"keys"`
 	dir             string
 }
@@ -58,6 +59,7 @@ func Default() Config {
 		Start:        string(account.StartItems),
 		FreshStart:   true,
 		CalendarLoop: true,
+		AllEvents:    true,
 		Keys:         Keys{Private: "keys/server.pem", Public: "keys/client-public.pem"},
 	}
 }
@@ -125,6 +127,7 @@ dreamstone_shop = %t # Show the Dreamstone top-up page in the shop (top-ups are 
 all_banners = %t # Open every limited banner
 featured_banners = %s # Limited banner ids to open instead of the calendar rotation, e.g. [5, 12]
 calendar_loop = %t # Repeat the dated content calendar (Battle Pass, events, banners, PvP, guild wars) forever
+all_events = %t # Keep every event open; one-at-a-time events (PvP seasons, Infinite Mayhem, bosses) rotate without gaps
 
 [keys]
 private = %s
@@ -161,7 +164,7 @@ func (c Config) Write(path string) error {
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	data := fmt.Sprintf(fileTemplate, quote(c.Host), c.Port, c.HTTPPort, c.FreshStart, quote(c.Start), c.InfiniteEnergy, c.FreeDraws, c.DreamstoneShop, c.AllBanners, banners(c.FeaturedBanners), c.CalendarLoop, quote(c.Keys.Private), quote(c.Keys.Public))
+	data := fmt.Sprintf(fileTemplate, quote(c.Host), c.Port, c.HTTPPort, c.FreshStart, quote(c.Start), c.InfiniteEnergy, c.FreeDraws, c.DreamstoneShop, c.AllBanners, banners(c.FeaturedBanners), c.CalendarLoop, c.AllEvents, quote(c.Keys.Private), quote(c.Keys.Public))
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}

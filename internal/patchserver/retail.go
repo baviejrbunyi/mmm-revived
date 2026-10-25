@@ -286,6 +286,9 @@ func PrepareRetail(options RetailPrepareOptions) (NativePatchList, error) {
 	if err != nil {
 		return empty, err
 	}
+	if err = applyLegacyCatalog(options.Modules, content.first); err != nil {
+		return empty, err
+	}
 	resources := []NativeResource{{Path: "scripts.pck", Data: scripts}, {Path: "pcengine_files/xlua.dll", Data: patched}}
 	for _, name := range []string{"strs.pck", "assets.bytes", "packages.bytes"} {
 		data, found := content.first[name]

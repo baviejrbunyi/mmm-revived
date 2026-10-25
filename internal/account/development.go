@@ -209,7 +209,7 @@ func (a *Account) UpgradeArtifact(r *Rules, id model.InstanceID, count int) erro
 			if threshold <= artifact.Level || threshold > artifact.Level+count {
 				continue
 			}
-			if len(artifact.Growth) < 4 {
+			if len(artifact.Growth) < r.Constants.Constants.ArtifactMaximumAttributes[rule.Star] {
 				name, value, err := rollAttribute(template, artifact.Growth)
 				if err != nil {
 					return err

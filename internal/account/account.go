@@ -16,6 +16,7 @@ type Account struct {
 	ShopPurchases  map[model.ShopID]model.ShopPurchase       `json:"shop_purchases"`
 	CraftRecipes   []model.CraftID                           `json:"craft_recipes"`
 	NextInstance   int64                                     `json:"next_instance"`
+	ArtifactCopies int                                       `json:"artifact_copies"`
 	CurrentStory   model.MissionID                           `json:"current_story"`
 	CurrentMemento model.MissionID                           `json:"current_memento"`
 	Profile        model.ProfileCustomization                `json:"profile"`

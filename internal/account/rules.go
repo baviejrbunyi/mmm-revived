@@ -73,6 +73,7 @@ type Rules struct {
 	Constants             ConstantRules                                   `json:"-"`
 	Settings              ServerSettings                                  `json:"-"`
 	Economy               Economy                                         `json:"-"`
+	AllEvents             EventWindows                                    `json:"-"`
 }
 
 type HeroTraits struct {

@@ -21,20 +21,25 @@ func (s service) skipTutorial(p *server.Player) error {
 		return fmt.Errorf("%w: leave the multiplayer match before skipping the tutorial", account.ErrProgression)
 	}
 	now := time.Now().Unix()
+	leaving := p.Account.Journey.Novice.Task != 0
 	if err := s.Store.Update(p.Account, func(*sql.Tx) error {
 		for _, kind := range tutorialCommands {
 			if _, err := p.Account.ExecuteGM(s.Store.Rules, s.Store.Catalog, model.GMCommand{Kind: kind}, now); err != nil {
 				return err
 			}
 		}
-		s.Store.AbandonAsyncBattle(p.Account)
+		if leaving {
+			s.Store.AbandonAsyncBattle(p.Account)
+		}
 		return nil
 	}); err != nil {
 		return err
 	}
-	s.Queue().Cancel(p.Account.UID)
-	p.State, p.BattleID, p.Nonce, p.Mission = server.Lobby, 0, "", 0
-	p.Deployment, p.Limited, p.RogueBattle = nil, nil, false
+	if leaving {
+		s.Queue().Cancel(p.Account.UID)
+		p.State, p.BattleID, p.Nonce, p.Mission = server.Lobby, 0, "", 0
+		p.Deployment, p.Limited, p.RogueBattle = nil, nil, false
+	}
 	if err := s.Sync(p, "lobbyComp", "noviceComp", "taskComp", "dreamlandComp"); err != nil {
 		return err
 	}

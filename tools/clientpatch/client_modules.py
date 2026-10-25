@@ -30,8 +30,11 @@ MODULES = [
     ('ResolutionTool.lua', 'scripts/ResolutionTool.luac', {('ResolutionTool', '_GetDeviceResolution'): 'window/ResolutionTool._GetDeviceResolution.lua', ('ResolutionTool', 'OnWindowResize'): 'window/ResolutionTool.OnWindowResize.lua'}),
     ('PanelSkipGuide.lua', 'scripts/PanelSkipGuide.luac', {('PanelSkipGuide', '_OnSkipClicked'): 'tutorial/PanelSkipGuide._OnSkipClicked.lua'}),
     ('HeroHighlight.lua', 'scripts/HeroHighlight.luac', {('HeroHighlight', '_OnHighlightModelClicked'): 'tutorial/HeroHighlight._OnHighlightModelClicked.lua'}),
+    ('ArtifactRefine.lua', 'scripts/ArtifactRefine.luac', {('ArtifactRefine', '_ClickRefine'): 'tutorial/ArtifactRefine._ClickRefine.lua'}),
     ('UniSDKHandler.lua', 'scripts/UniSDKHandler.luac', {('UniSDKHandler', 'CheckOrder'): 'freeshop/UniSDKHandler.CheckOrder.lua', ('UniSDKHandler', 'GetProductPrice'): 'freeshop/UniSDKHandler.GetProductPrice.lua'}),
     ('DrawComp.lua', 'scripts/DrawComp.luac', {('DrawComp', 'OnInit'): 'economy/DrawComp.OnInit.lua'}),
+    ('ActivityComp.lua', 'scripts/ActivityComp.luac', {('ActivityComp', '_OnAvatarReady'): 'events/ActivityComp._OnAvatarReady.lua'}),
+    ('PanelDaySignPopup.lua', 'scripts/PanelDaySignPopup.luac', {('PanelDaySignPopup', 'Show'): 'events/PanelDaySignPopup.Show.lua'}),
     ('PanelLimitDrawUp.lua', 'scripts/PanelLimitDrawUp.luac', {('PanelLimitDrawUp', 'SetInfo'): 'economy/PanelLimitDrawUp.SetInfo.lua'}),
     ('PanelLimitDrawUpInvincible.lua', 'scripts/PanelLimitDrawUpInvincible.luac', {('PanelLimitDrawUpInvincible', 'SetInfo'): 'economy/PanelLimitDrawUpInvincible.SetInfo.lua'}),
     ('PanelDrawPaiLianAnimator.lua', 'scripts/PanelDrawPaiLianAnimator.luac', {('PanelDrawPaiLianAnimator', 'Show'): 'economy/PanelDrawPaiLianAnimator.Show.lua'}),
@@ -58,6 +61,8 @@ CJK = re.compile('[\u3400-\u9fff]')
 TRANSLATED = {'draw_pool_data', 'activity_data', 'act_condition_task_data', 'activity_follow_data', 'battlepass_task_data', 'activity_version_preview_data', 'hero_purchase_pack_data', 'gift_data', 'server_list_data', 'draw_prize_data', 'card_data_new_cn', 'character_data_new_cn', 'error_content_cn', 'item_data_cn', 'mail_data_cn', 'shop_data_cn'}
 LOCALIZATION = 'localization'
 SCRIPTS = 'scripts'
+LEGACY = 'resources/legacy_assets.json'
+CONSTRUCTOR_OPCODES = {'LOADBOOL', 'LOADK', 'LOADKX', 'LOADNIL', 'NEWTABLE', 'RETURN', 'SETLIST', 'SETTABLE', 'EXTRAARG', 'MOVE'}
 
 
 def values(value):
@@ -502,6 +507,26 @@ def build(arguments):
             assert not remaining, (table, remaining)
             report['modules'][name] = {'method': 'constants', 'changed_constants': changed, 'original_sha256': sha(source), 'patched_sha256': sha(patched)}
             localized[name] = (path, patched)
+        legacy = assets / LEGACY
+        overrides = json.loads(legacy.read_text(encoding='utf8'))['fields'] if legacy.is_file() else {}
+        for table, rows in overrides.items():
+            name = table + '.lua'
+            assert name in localized, name
+            source = localized[name][1]
+            expected = tools.module_data(source, table)
+            for row, fields in rows.items():
+                assert int(row) in expected and set(fields) <= set(expected[int(row)]), (table, row)
+                expected[int(row)].update(fields)
+            if tools.module_data(source, table) == expected:
+                report['modules'][name] = {'method': 'fields', 'rows': sorted(rows), 'original_sha256': sha(source), 'patched_sha256': sha(source)}
+                continue
+            header, root = parse(source)
+            ctor = root['children'][tools.methods(root)[(table, 'Ctor')][0]]
+            assert {tools.opcodes[x & 63] for x in ctor['code']} <= CONSTRUCTOR_OPCODES, table
+            patched, _ = tools.rebuild(source, {(table, 'Ctor'): 'function ' + table + ':Ctor()\nself.data=' + literal(expected) + '\nend\n'})
+            assert tools.module_data(patched, table) == expected, table
+            report['modules'][name] = {'method': 'fields', 'rows': sorted(rows), 'original_sha256': sha(source), 'patched_sha256': sha(patched)}
+            localized[name] = (localized[name][0], patched)
         strings_original = (analysis / 'installed' / index[STRINGS]['file']).read_bytes()
         current = localized[STRINGS][1]
         additions = {}

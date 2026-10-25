@@ -93,6 +93,9 @@ func (s *Store) createAccountWithCredential(name string, credential *database.Cr
 		err = a.BeginRetail(s.Rules)
 	} else {
 		err = a.ApplyStart(s.Rules, s.Catalog, s.Start, a.CreatedAt)
+		if err == nil {
+			err = a.StockArtifacts(s.Rules, s.Catalog)
+		}
 	}
 	if err != nil {
 		return nil, err

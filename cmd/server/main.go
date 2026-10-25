@@ -70,6 +70,7 @@ func run(log *slog.Logger, c config.Config) error {
 	store.Start = c.StartMode()
 	store.Fresh = c.FreshStart
 	store.ConfigureCalendarLoop(c.CalendarLoop)
+	store.ConfigureEvents(c.AllEvents)
 	shift, err := store.ConfigureCalendar(nil)
 	if err != nil {
 		return fmt.Errorf("configure content calendar: %w", err)
@@ -111,7 +112,7 @@ func run(log *slog.Logger, c config.Config) error {
 	defer cancel()
 	service := server.NewService(store, server.Config{}, handlers.Register)
 	server := gate.Server{Key: key, Handler: service, Logger: log}
-	log.Info("server ready", "gate", listener.Addr(), "http", httpListener.Addr(), "start", c.Start, "fresh_start", c.FreshStart, "infinite_energy", c.InfiniteEnergy, "free_draws", c.FreeDraws, "dreamstone_shop", c.DreamstoneShop, "all_banners", c.AllBanners, "featured_banners", c.FeaturedBanners, "public_key", c.PublicKey())
+	log.Info("server ready", "gate", listener.Addr(), "http", httpListener.Addr(), "start", c.Start, "fresh_start", c.FreshStart, "infinite_energy", c.InfiniteEnergy, "free_draws", c.FreeDraws, "dreamstone_shop", c.DreamstoneShop, "all_banners", c.AllBanners, "featured_banners", c.FeaturedBanners, "all_events", c.AllEvents, "public_key", c.PublicKey())
 	var running sync.WaitGroup
 	running.Go(func() { service.Run(ctx) })
 	results := make(chan error, 2)

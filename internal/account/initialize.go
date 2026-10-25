@@ -150,6 +150,9 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 			if artifact.Sub == nil {
 				artifact.Sub = map[string]int64{}
 			}
+			if seeded := artifact; len(artifact.Growth) == 0 && len(r.ArtifactTemplates) > 0 && initializeArtifactGrowth(r, &seeded) == nil {
+				artifact = seeded
+			}
 			a.Artifacts[id] = artifact
 		}
 		if !a.Retail {

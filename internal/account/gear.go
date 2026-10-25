@@ -80,7 +80,7 @@ func initializeArtifactGrowth(r *Rules, artifact *model.Artifact) error {
 	}
 	template := r.ArtifactTemplates[artifact.Template]
 	artifact.Order = nil
-	for range min(3, max(1, r.Artifacts[artifact.ID].Star-2)) {
+	for range r.Constants.Constants.ArtifactInitialAttributes[r.Artifacts[artifact.ID].Star] {
 		name, value, err := rollAttribute(template, artifact.Growth)
 		if err != nil {
 			return err

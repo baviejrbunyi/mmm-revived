@@ -39,6 +39,9 @@ type ClientConstants struct {
 	AwakeResetCost               map[model.ItemID]int64 `json:"awake_hero_reset_item"`
 	ArtifactRefreshCost          map[model.ItemID]int64 `json:"artifact_refresh_cost"`
 	ArtifactRefreshLock          model.ItemID           `json:"artifact_refresh_lock"`
+	ArtifactInitialAttributes    map[int]int            `json:"artifact_rarity_subattr_num"`
+	ArtifactMaximumAttributes    map[int]int            `json:"artifact_rarity_subattr_num_max"`
+	DepotArtifactLimit           int                    `json:"depot_artifact_limit"`
 	HeroProficiency              int64                  `json:"hero_prof_num"`
 	HeroProficiencyModes         []int                  `json:"hero_prof_valid_battle_mode"`
 	HeroProficiencyDispatch      int64                  `json:"hero_prof_num_dispatch"`

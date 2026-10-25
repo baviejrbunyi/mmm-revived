@@ -120,6 +120,9 @@ func (s *Store) Login(name string) (*Account, error) {
 	a.LastLogin = time.Now().Unix()
 	a.RegenerateEnergy(s.Rules, a.LastLogin)
 	a.Initialize(s.Catalog, s.Rules)
+	if err = a.StockArtifacts(s.Rules, s.Catalog); err != nil {
+		return nil, err
+	}
 	a.ExpireCosmetics(s.Catalog, a.LastLogin)
 	if err = a.PrepareDispatch(s.Rules, a.LastLogin); err != nil {
 		return nil, err

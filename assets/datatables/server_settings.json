@@ -57,5 +57,9 @@
     "rounds": 3,
     "heroes_per_round": 1
   },
-  "protection_forget_delay": 7200
+  "protection_forget_delay": 7200,
+  "all_events": {
+    "overlap": 604800,
+    "horizon": 315360000
+  }
 }

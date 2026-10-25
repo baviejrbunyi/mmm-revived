@@ -13,6 +13,17 @@ function PanelSkipGuide:_OnSkipClicked()
       MC.UIManager:ClosePanel("PanelPopUpConfirm")
       local avatar = MC.GameWorld.Avatar
       local novice = avatar ~= nil and avatar.NoviceComp ~= nil and not avatar.NoviceComp:IsNoviceFinish()
+      local lobby = avatar ~= nil and avatar.LobbyComp or nil
+      if lobby ~= nil and lobby.guides ~= nil then
+        local guides = config("guide_data").Instance().data
+        local id, data = next(guides)
+        while id ~= nil do
+          if data.BootOn then
+            lobby.guides[tostring(data.SaveCond or id)] = "1"
+          end
+          id, data = next(guides, id)
+        end
+      end
       local current = MC.GuideMgr:GetGuideId()
       if current ~= nil and current ~= 0 then
         MC.GuideMgr:TrySkipGuide(current)

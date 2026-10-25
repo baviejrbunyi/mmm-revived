@@ -332,29 +332,48 @@ func (a *Account) ExecuteGM(r *Rules, catalog Catalog, command model.GMCommand, 
 	return result, nil
 }
 
-func (a *Account) gmUnlockEquipment(r *Rules, catalog Catalog) error {
-	artifacts := map[model.ArtifactID]bool{}
-	highlights := map[model.HighlightID]bool{}
-	for _, value := range a.Artifacts {
-		artifacts[value.ID] = true
+func artifactCopies(r *Rules, catalog Catalog) int {
+	if len(catalog.Artifacts) == 0 {
+		return 0
 	}
+	return min(len(catalog.Heroes), r.Constants.Constants.DepotArtifactLimit/len(catalog.Artifacts))
+}
+
+func (a *Account) StockArtifacts(r *Rules, catalog Catalog) error {
+	if a.Retail || r == nil || a.ArtifactCopies >= artifactCopies(r, catalog) {
+		return nil
+	}
+	return a.stockArtifacts(r, catalog)
+}
+
+func (a *Account) stockArtifacts(r *Rules, catalog Catalog) error {
+	copies := artifactCopies(r, catalog)
+	owned := map[model.ArtifactID]int{}
+	for _, value := range a.Artifacts {
+		owned[value.ID]++
+	}
+	for _, id := range catalog.Artifacts {
+		if rule, known := r.Artifacts[id]; !known || len(rule.Templates) == 0 {
+			continue
+		}
+		for range copies - owned[id] {
+			if err := a.createArtifact(r, id); err != nil {
+				return err
+			}
+		}
+		owned[id] = max(owned[id], copies)
+	}
+	a.ArtifactCopies = max(a.ArtifactCopies, copies)
+	return nil
+}
+
+func (a *Account) gmUnlockEquipment(r *Rules, catalog Catalog) error {
+	highlights := map[model.HighlightID]bool{}
 	for _, value := range a.Highlights {
 		highlights[value.ID] = true
 	}
-	for _, id := range catalog.Artifacts {
-		if artifacts[id] {
-			continue
-		}
-		rule, known := r.Artifacts[id]
-		if !known || len(rule.Templates) == 0 {
-			continue
-		}
-		value := model.Artifact{ID: id, Level: 1, Template: rule.Templates[0], PendingGrowth: map[string][]int64{}, Obtained: time.Now().Unix()}
-		if err := initializeArtifactGrowth(r, &value); err != nil {
-			return err
-		}
-		a.Artifacts[a.instanceID()] = value
-		artifacts[id] = true
+	if err := a.stockArtifacts(r, catalog); err != nil {
+		return err
 	}
 	for _, id := range catalog.Highlights {
 		if highlights[id] {
