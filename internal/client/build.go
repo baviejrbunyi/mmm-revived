@@ -66,6 +66,7 @@ type BuildProfile struct {
 	UniMatrixHelperSHA256        string
 	RandomNameSHA256             string
 	NumFormatSHA256              string
+	EnergySHA256                 string
 	PatchedScriptsSHA256         string
 }
 
@@ -92,7 +93,7 @@ var Supported = BuildProfile{
 	PatchStatusSHA256:            "d9b8ad79628f66ddd6bb8a8709bdb9051ba6f30c0da99582b4ee27ca5d939cd4",
 	LogicSHA256:                  "3bcb098a3d612353703f507e32960fa015f13579790fd863199ff18069004bf7",
 	AIEngineSHA256:               "62b105fdb25b056f63a995678b2c7f717f558b6ddbc4d1720cfa1cc424d68b9c",
-	BattlePanelSHA256:            "fb3db94d48cb799052d4eb17c42f8035e82ca860232ff9954d7fead90f3c50fa",
+	BattlePanelSHA256:            "97fe41127ddfbd691432ef13304ee22bf2d4aa3cec90166b66ce65c3afcecb2c",
 	WindowSHA256:                 "16bdc7a63a6ca09a168c794bea49dc299006da613f9bcfd1f1bf12a71a05734e",
 	SkipGuideSHA256:              "2bc4c16e8ac01f6031ca8d069fe9188c6302eb67a9b043a8daad71c7ff15740e",
 	HeroHighlightSHA256:          "123afecf95b7e2ba166489547f495105e352b83dc34846f87b089742c7c5e427",
@@ -112,7 +113,8 @@ var Supported = BuildProfile{
 	UniMatrixHelperSHA256:        "6320379d9a9fa12f1f65b07760f60ef96e86fa590e57a8b06fdc04c3e96ca667",
 	RandomNameSHA256:             "372f986d47291f040010501c535c3b28ac2655451eacc96636d90056d8498a77",
 	NumFormatSHA256:              "4afa806ae6c2273b7319f8aa752c28e19fc790c2e8ca7d977b5ed11b30b7f885",
-	PatchedScriptsSHA256:         "0b143fd7b30ec8afa7a1b964e1107eebe3f1689de9f2d4f664cc25f37b0f87de",
+	EnergySHA256:                 "e0e8528b8d8a72824286e8e17a3ad7c5ed5f208d26eb633e23cb720f500357c2",
+	PatchedScriptsSHA256:         "f020c67a8439467dec84b72720c70cc9597d5be41feb3bf1169265907ddc1bc5",
 }
 
 const PatchListPath = "/native/patchlist_win32.json"

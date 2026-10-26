@@ -15,6 +15,8 @@ type EnergyComponent struct {
 	Bank        int64 `wire:"energyBank"`
 	RefreshedAt int64 `wire:"refreshTime"`
 	Purchases   int   `wire:"buyCount"`
+	Recover     int64 `wire:"energyRecover,omitempty"`
+	BankRecover int64 `wire:"energyBankRecover,omitempty"`
 }
 
 type ShopComponent struct {

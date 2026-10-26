@@ -74,7 +74,8 @@ func (a *Account) RegenerateEnergy(r *Rules, now int64) bool {
 		return false
 	}
 	start := r.Defaults.Retail
-	if start.EnergySeconds <= 0 {
+	every, bankEvery := r.energyInterval(start.EnergySeconds), r.energyInterval(start.BankSeconds)
+	if every <= 0 {
 		return false
 	}
 	energy, bank, refreshed := a.Items[r.Constants.Items.Energy], a.Energy.Bank, a.Energy.Refreshed
@@ -83,15 +84,15 @@ func (a *Account) RegenerateEnergy(r *Rules, now int64) bool {
 	}
 	limit := r.TeamLevels[a.Level].EnergyLimit
 	if a.Items[r.Constants.Items.Energy] < limit {
-		gained := min((now-a.Energy.Refreshed)/start.EnergySeconds, limit-a.Items[r.Constants.Items.Energy])
+		gained := min((now-a.Energy.Refreshed)/every, limit-a.Items[r.Constants.Items.Energy])
 		a.Items[r.Constants.Items.Energy] += gained
-		a.Energy.Refreshed += gained * start.EnergySeconds
+		a.Energy.Refreshed += gained * every
 	}
 	if a.Items[r.Constants.Items.Energy] >= limit {
-		if start.BankSeconds > 0 && a.Energy.Bank < start.BankLimit {
-			gained := min((now-a.Energy.Refreshed)/start.BankSeconds, start.BankLimit-a.Energy.Bank)
+		if bankEvery > 0 && a.Energy.Bank < start.BankLimit {
+			gained := min((now-a.Energy.Refreshed)/bankEvery, start.BankLimit-a.Energy.Bank)
 			a.Energy.Bank += gained
-			a.Energy.Refreshed += gained * start.BankSeconds
+			a.Energy.Refreshed += gained * bankEvery
 		}
 		if a.Energy.Bank >= start.BankLimit {
 			a.Energy.Refreshed = now

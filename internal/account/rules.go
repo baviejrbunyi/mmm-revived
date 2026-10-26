@@ -75,6 +75,7 @@ type Rules struct {
 	Economy               Economy                                         `json:"-"`
 	AllEvents             EventWindows                                    `json:"-"`
 	TeamSize              int                                             `json:"-"`
+	EnergyRegen           float64                                         `json:"-"`
 }
 
 type HeroTraits struct {

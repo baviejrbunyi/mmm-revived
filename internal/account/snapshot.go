@@ -16,6 +16,7 @@ func (a *Account) Snapshot(c Catalog, r *Rules) model.Avatar {
 	if a.Energy.Day == LogicDay(now) {
 		energyBought = a.Energy.Bought
 	}
+	energyRecover, bankRecover := r.energyIntervals()
 	profile := model.Avatar{
 		GM:        model.GMComponent{History: a.GM.History},
 		UID:       a.UID,
@@ -58,6 +59,8 @@ func (a *Account) Snapshot(c Catalog, r *Rules) model.Avatar {
 			Bank:        a.Energy.Bank,
 			Purchases:   energyBought,
 			RefreshedAt: a.Energy.Refreshed,
+			Recover:     energyRecover,
+			BankRecover: bankRecover,
 		},
 		Season: model.SeasonComponent{Level: 1},
 		Appearance: model.AppearanceComponent{

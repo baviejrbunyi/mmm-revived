@@ -43,6 +43,7 @@ func (p BuildProfile) Modules() []PatchFile {
 		{Path: "scripts/UniMatrixHelper.luac", SHA256: p.UniMatrixHelperSHA256},
 		{Path: "scripts/BasicComp.luac", SHA256: p.RandomNameSHA256},
 		{Path: "scripts/I18NHelper.luac", SHA256: p.NumFormatSHA256},
+		{Path: "scripts/EnergyComp.luac", SHA256: p.EnergySHA256},
 	}
 	return append(files, retailLocalizationModules[:]...)
 }
