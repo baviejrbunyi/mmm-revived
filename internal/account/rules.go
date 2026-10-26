@@ -132,6 +132,7 @@ type ArtifactTemplate struct {
 }
 
 type ArtifactRule struct {
+	Name       string         `json:"name"`
 	Refinable  bool           `json:"refinable"`
 	SubLevels  []int          `json:"sub_levels"`
 	Star       int            `json:"star"`
