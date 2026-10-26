@@ -107,7 +107,7 @@ func (a *Account) levelTeam(r *Rules) {
 		if _, exists := r.TeamLevels[a.Level+1]; !known || !exists || a.Retail && current.Break > a.TeamBreak {
 			break
 		}
-		if a.Retail && current.Experience <= 0 && current.Break > 0 {
+		if current.Experience <= 0 && current.Break > 0 {
 			a.Level++
 			continue
 		}
