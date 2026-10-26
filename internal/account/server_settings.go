@@ -13,6 +13,12 @@ type ServerSettings struct {
 	Realtime           RealtimeSettings                    `json:"realtime"`
 	ProtectionForget   int64                               `json:"protection_forget_delay"`
 	AllEvents          AllEventSettings                    `json:"all_events"`
+	BattleTasks        BattleTaskSettings                  `json:"battle_task_parameters"`
+}
+
+type BattleTaskSettings struct {
+	ChapterTags    map[string]int `json:"chapter_tags"`
+	ChallengeTypes map[int]int    `json:"challenge_types"`
 }
 
 type MailTemplates struct {

@@ -8,7 +8,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from client_modules import REPO, Toolchain, parse
+from client_modules import LEGACY, REPO, Toolchain, parse
 
 DATATABLES = 'assets/datatables'
 
@@ -35,8 +35,9 @@ def ints(value):
 
 
 class Tables:
-    def __init__(self, tools, analysis):
+    def __init__(self, tools, analysis, overrides=None):
         self.tools = tools
+        self.overrides = overrides or {}
         self.folder = analysis / 'installed'
         self.rows = json.loads((self.folder / 'index.json').read_text())
         self.index = {row['name']: row for row in self.rows}
@@ -46,7 +47,14 @@ class Tables:
         if name not in self.cache:
             raw = (self.folder / self.index[name + '.lua']['file']).read_bytes()
             self.cache[name] = {str(key): plain(value) for key, value in self.tools.module_data(raw, name + '.lua').items()}
+            for key, fields in self.overrides.get(name, {}).items():
+                if isinstance(self.cache[name].get(key), dict):
+                    self.cache[name][key].update(fields)
         return self.cache[name]
+
+    def released(self, name):
+        versions = set(self.module('version_control_data'))
+        return {key for key, row in self.module(name).items() if str(row.get('version')) in versions}
 
     def code_module(self, name):
         if not hasattr(self, 'shim'):
@@ -149,7 +157,7 @@ def rules(t):
         'proficiency_levels': {key: row.get('exp', 0) for key, row in load('hero_prof_lv_data').items()},
         'proficiency_rewards': {key: {str(level): row.get('level' + str(level), {}).get('reward', 0) for level in range(1, 6)} for key, row in load('hero_prof_rwd_data').items()},
         'crafts': {key: {'type': row.get('type', ''), 'initial': row.get('init', 0), 'materials': row.get('necessary_material') or {}, 'optional': row.get('optional_material') or [], 'optional_count': row.get('optional_material_num', 0), 'gold': row.get('gold', 0), 'reward': row.get('product', 0), 'banned_highlights': row.get('ban_highlight') or []} for key, row in load('craft_data').items()},
-        'shops': {key: {'currency': row.get('currency_type', 0), 'prices': row.get('price') or [], 'reward': row.get('reward', 0), 'level': row.get('unlock_lv', 1), 'limit': row.get('limit_param', 0), 'period': row.get('limit_type', 0), 'start': row.get('start_time', 0), 'end': row.get('end_time', 0), 'guild_level': row.get('alliance_lv', 0), 'recharge': row.get('recharge_id', 0), 'pre_id': row.get('pre_id', 0), 'period_time': row.get('period_time', 0)} for key, row in shops.items()},
+        'shops': {key: {'currency': row.get('currency_type', 0), 'prices': row.get('price') or [], 'reward': row.get('reward', 0), 'level': row.get('unlock_lv', 1), 'limit': row.get('limit_param', 0), 'period': row.get('limit_type', 0), 'start': row.get('start_time', 0), 'end': row.get('end_time', 0), 'guild_level': row.get('alliance_lv', 0), 'recharge': row.get('recharge_id', 0), 'pre_id': row.get('pre_id', 0), 'pre_task': row.get('pre_task', 0), 'period_time': row.get('period_time', 0)} for key, row in shops.items()},
         'missions': {key: {'chapter': row.get('chapter', 0), 'memento': chapter_tags.get(str(row.get('chapter', 0)), '').startswith('memento'), 'first_node': row.get('firstInitNode', 0), 'max_steps': row.get('maxRound', 0), 'deployment_level': row.get('deploymentLv', 0), 'switches': mapping(row.get('switches', {})), 'star_conditions': row.get('starNeed') or [], 'boss_penalty': row.get('nerfBossLevel', 0), 'energy': row.get('energyCost', 0), 'level': row.get('unlockLv', 1), 'prerequisites': row.get('befMission') or [], 'reward': row.get('firstReward', 0)} for key, row in missions.items()},
         'nodes': {key: {'next': row.get('nextNode', 0), 'type': row.get('nodeType', 0), 'battle': row.get('param', 0) if row.get('nodeType') == 1 else 0, 'map': row.get('param', 0) if row.get('nodeType') == 5 else 0} for key, row in nodes.items()},
         'memento_maps': memento_maps,
@@ -164,11 +172,11 @@ def rules(t):
         'team_levels': {key: {'break': row.get('break_tag', 0), 'experience': row.get('exp', 0), 'hero_limit': row.get('hero_level_limit', 0), 'reward': row.get('rewardId', 0), 'energy_limit': row.get('energy_limit', 0), 'energy_recover': row.get('energy_recover', 0)} for key, row in load('player_level_data').items()},
         'highlight_levels': {key: {'break_level': row.get('break_need', 0), 'money': row.get('exp', 0)} for key, row in load('highlight_level_data').items()},
         'highlight_breaks': {key: {tier: mapping(row.get('item', {})) for tier, row in mapping(value).items()} for key, value in load('highlight_break_data').items()},
-        'highlight_templates': {key: {'rarity': row.get('rarity', 0), 'break_set': row.get('break_set', 0), 'awake_item': row.get('awake_item', 0), 'classified': 'classifyMark' in row} for key, row in highlights.items()},
+        'highlight_templates': {key: {'rarity': row.get('rarity', 0), 'break_set': row.get('break_set', 0), 'awake_item': row.get('awake_item', 0), 'classified': 'classifyMark' in row, 'career': row.get('career', 0), 'item': row.get('itemId', 0), 'unreleased': key not in t.released('highlight_data_cn')} for key, row in highlights.items()},
         'skins': {key: row.get('owner', 0) for key, row in load('skin_res_data_cn').items()},
         'skin_rarities': {key: row.get('rarity', 0) for key, row in load('skin_res_data_cn').items()},
         'skin_collection': skin_collection(t),
-        'artifacts': {key: {'refinable': row.get('isrefresh') == 1, 'sub_levels': row.get('sub_attr_lv') or [], 'position': row.get('position', 0), 'max_level': row.get('max_lv', 0), 'star': row.get('star', 0), 'template': row.get('template') or [], 'pool': row.get('pool') or [], 'unique': row.get('isrefresh') == 1} for key, row in artifacts.items()},
+        'artifacts': {key: {'refinable': row.get('isrefresh') == 1, 'sub_levels': row.get('sub_attr_lv') or [], 'position': row.get('position', 0), 'max_level': row.get('max_lv', 0), 'star': row.get('star', 0), 'template': row.get('template') or [], 'pool': row.get('pool') or [], 'unique': row.get('isrefresh') == 1, 'item': row.get('itemId', 0), 'unreleased': key not in t.released('artifact_data_cn')} for key, row in artifacts.items()},
         'artifact_levels': {key: {str(index + 1): {'experience': row.get('exp_need', 0), 'money': row.get('money', 0)} for index, row in enumerate(value)} if isinstance(value, list) else value for key, value in load('artifact_up_data').items()},
         'hero_stars': {key: row.get('item', {}) for key, row in load('character_star_data').items()},
         'hero_talents': {key: {'break': row.get('break_need', 0), 'cost': row.get('item') or {}} for key, row in load('character_talent_data_cn').items()},
@@ -300,6 +308,8 @@ def journey(t):
         value = {'type': row['act_type'], 'level': row.get('open_lv', 0), 'start': row.get('start_time', 0), 'end': row.get('end_time', 0), 'duration': row.get('duration', 0), 'parameter': parameters[0] if parameters and isinstance(parameters[0], int) else 0}
         if row.get('loginday') and row.get('loginlv'):
             value['login_day'], value['login_level'] = row['loginday'], row['loginlv']
+        if follows := [other for other in ints(parameters[1:]) if str(other) != key and load('activity_data').get(str(other), {}).get('act_type') == row['act_type']]:
+            value['follows'] = follows[0]
         if sequence(row.get('act_task')):
             value['tasks'] = sequence(row.get('act_task'))
         if key in conditions:
@@ -550,12 +560,13 @@ def catalog(t):
     load = t.module
     books = load('book_character_data_cn')
     heroes = {key: {'star': row.get('star') or 1, 'talents': {str(index): 1 for index in range(1, 6)}} for key, row in load('character_data_new_cn').items() if 'hero' in sequence(row.get('tag')) and key in books}
+    unreleased = {str(row.get('itemId')) for name in ('artifact_data_cn', 'highlight_data_cn') for key, row in load(name).items() if key not in t.released(name)}
     return {
         'activities': sorted(int(key) for key in load('activity_data')),
-        'artifacts': sorted(int(key) for key in load('artifact_data_cn')),
+        'artifacts': sorted(int(key) for key in t.released('artifact_data_cn')),
         'heroes': heroes,
-        'highlights': sorted(int(key) for key in load('highlight_data_cn')),
-        'items': sorted(int(key) for key in load('item_data_cn')),
+        'highlights': sorted(int(key) for key in t.released('highlight_data_cn')),
+        'items': sorted(int(key) for key in load('item_data_cn') if key not in unreleased),
         'skins': sorted(int(key) for key in load('skin_res_data_cn')),
     }
 
@@ -676,6 +687,7 @@ def constants(t):
         'guild_levels': {key: {'experience': row.get('exp', 0), 'members': row['members'], 'reward': row['reward'], 'minimum': row.get('reward_min', 0), 'per_reward': row.get('contri_to_reward', 0), 'reward_limit': row.get('reward_limit', 0)} for key, row in load('alliance_level_data').items()},
         'item_ids': t.code_module('Const')['ItemId'],
         'honor_tags': sorted(t.code_module('UIConst')['ServerHonorType'], key=t.code_module('UIConst')['ServerHonorType'].get),
+        'formation_size': t.code_module('Const')['FormationHeroMaxCount'],
         'guild_wars': {key: {'prepare': row['prepare_time'], 'battle': row['battle_time'], 'end': row['end_time'], 'phases': sequence(row.get('phase_change'))} for key, row in load('alliance_war_data_cn').items() if row.get('prepare_time') and row.get('battle_time') and row.get('end_time')},
     }
 
@@ -728,7 +740,8 @@ def write(path, data, raw):
 def build(arguments):
     folder = arguments.repo / DATATABLES
     tools = Toolchain(arguments.toolchain)
-    t = Tables(tools, arguments.analysis)
+    legacy = arguments.repo / 'assets' / LEGACY
+    t = Tables(tools, arguments.analysis, json.loads(legacy.read_text(encoding='utf8'))['fields'] if legacy.is_file() else {})
     exporters = {
         'catalog.json': lambda current: catalog(t),
         'rules.json': lambda current: rules(t),

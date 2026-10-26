@@ -42,7 +42,11 @@ func (s service) lockHeroes(p *server.Player, r Deployment) error {
 				return err
 			}
 		}
-		if len(selected) == 0 && len(rule.FixedHeroes) == 0 || rule.Heroes > 0 && len(selected) > rule.Heroes {
+		limit := rule.Heroes
+		if p.HeroLimit > 0 {
+			limit = p.HeroLimit
+		}
+		if len(selected) == 0 && len(rule.FixedHeroes) == 0 || limit > 0 && len(selected) > limit {
 			return fmt.Errorf("%w: invalid deployment size", account.ErrProgression)
 		}
 		if len(r.Cards) > rule.CardCount {

@@ -190,5 +190,6 @@ func (a *Account) PurchaseLocalProduct(r *Rules, product, count, kind, reference
 	receipt := model.LocalReceipt{ID: a.System.NextReceipt, Product: product, System: kind, Reference: reference, Count: count, Created: now}
 	a.System.Receipts = appendRecent(a.System.Receipts, receipt, 128)
 	a.System.LastReceipt = &receipt
+	a.RefreshTasks(r)
 	return values, receipt, nil
 }

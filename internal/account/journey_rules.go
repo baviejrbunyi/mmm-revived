@@ -100,6 +100,7 @@ type JourneyActivityRule struct {
 	Permanent    []model.TaskID         `json:"permanent"`
 	Coin         model.ItemID           `json:"coin"`
 	WeeklyCap    int                    `json:"weekly_cap"`
+	Follows      model.ActivityID       `json:"follows"`
 }
 
 type JourneyConditionRule struct {

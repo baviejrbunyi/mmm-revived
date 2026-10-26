@@ -102,11 +102,11 @@ func (a *Account) grantItems(r *Rules, quantities map[model.ItemID]int64, depth 
 		case 1013, 1014:
 			candidates := []model.ArtifactID{}
 			exact := model.ArtifactID(int64(rule.Rarity)*1000 + rule.Secondary)
-			if _, known := r.Artifacts[exact]; rule.Secondary != 0 && known {
+			if artifact, known := r.Artifacts[exact]; rule.Secondary != 0 && known && !artifact.Unreleased {
 				candidates = append(candidates, exact)
 			} else {
 				for id, artifact := range r.Artifacts {
-					if artifact.Star == rule.Rarity {
+					if artifact.Star == rule.Rarity && !artifact.Unreleased {
 						candidates = append(candidates, id)
 					}
 				}
@@ -127,7 +127,7 @@ func (a *Account) grantItems(r *Rules, quantities map[model.ItemID]int64, depth 
 		case 1029:
 			candidates := []model.ArtifactID{}
 			for id, artifact := range r.Artifacts {
-				if slices.Contains(artifact.Pools, item) {
+				if slices.Contains(artifact.Pools, item) && !artifact.Unreleased {
 					candidates = append(candidates, id)
 				}
 			}
@@ -148,7 +148,7 @@ func (a *Account) grantItems(r *Rules, quantities map[model.ItemID]int64, depth 
 		case 1036:
 			var classified, candidates []model.HighlightID
 			for id, template := range r.HighlightTemplates {
-				if int64(template.Rarity) != rule.Parameter {
+				if int64(template.Rarity) != rule.Parameter || template.Unreleased {
 					continue
 				}
 				candidates = append(candidates, id)
@@ -179,11 +179,15 @@ func (a *Account) grantItems(r *Rules, quantities map[model.ItemID]int64, depth 
 			}
 		case 1015:
 			id := model.HighlightID(rule.Parameter)
-			if _, known := r.HighlightTemplates[id]; !known {
+			if template, known := r.HighlightTemplates[id]; !known || template.Unreleased {
 				return rejected("unknown highlight reward")
 			}
 			for range amount {
 				a.Highlights[a.instanceID()] = model.Highlight{ID: id, Level: 1, Obtained: time.Now().Unix()}
+			}
+		case limitedPassItemType:
+			if !a.activateLimitedPass(r, model.ActivityID(rule.Parameter)) {
+				a.Items[item] += amount
 			}
 		case timedItemType:
 			if !a.grantTimedCosmetic(r, rule, amount, time.Now().Unix()) {

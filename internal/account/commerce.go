@@ -102,6 +102,9 @@ func (a *Account) BuyCommodity(r *Rules, id model.ShopID, count int, now int64, 
 	if rule.Predecessor != 0 && a.ShopPurchases[rule.Predecessor].Total == 0 {
 		return nil, rejected("previous commodity has not been bought")
 	}
+	if rule.PreTask != 0 && a.Tasks[rule.PreTask].Status < 3 {
+		return nil, rejected("commodity requires an unfinished task")
+	}
 	purchase := a.ShopPurchases[id]
 	period := shopPeriod(rule.Period, now)
 	windowed := rule.Period == 5 && rule.PeriodHours > 0

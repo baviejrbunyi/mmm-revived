@@ -51,6 +51,7 @@ type BuildProfile struct {
 	SkipGuideSHA256              string
 	HeroHighlightSHA256          string
 	ArtifactRefineSHA256         string
+	BattlePrepareSHA256          string
 	DrawSHA256                   string
 	ActivityCompSHA256           string
 	DaySignPopupSHA256           string
@@ -77,7 +78,7 @@ var Supported = BuildProfile{
 	DLLSHA256:                    "92a283058c9a857cdd786755039b127e5858a6de33f01dca3eb25a177044d516",
 	AssemblySHA256:               "7dfd282cbc3e9e71b0332fe19b4b2c0e17a75c5faa1d3e47ca8fad951f15b53b",
 	ScriptsSHA256:                "32dc0ab3c2fd1cf4424909b7ac0f400814727f19e5c8639e7b83fffec45ecc67",
-	BattleSHA256:                 "c9e2ddb58832b1150b3c6b4049cfaff1c97587a630e9ad21572706ead696f628",
+	BattleSHA256:                 "b1c0dc2106929befefcaabf79b2ef7a27d38277f5dabcc2f9ec90618b6bcecda",
 	LoginSHA256:                  "d83b3595a6acd9416255e348fa8fd84df07259a5ce43b5934189db200894ca5f",
 	ServerClientSHA256:           "da97ca7327cd75581d683816bae29119181c278f35baba6f91f2549fd82f7e41",
 	FriendTipSHA256:              "238ffca33b0b1867b1864a0cee4a7a26661a29fa03b3b1bdc737724f3dd39e6c",
@@ -91,11 +92,12 @@ var Supported = BuildProfile{
 	PatchStatusSHA256:            "d9b8ad79628f66ddd6bb8a8709bdb9051ba6f30c0da99582b4ee27ca5d939cd4",
 	LogicSHA256:                  "3bcb098a3d612353703f507e32960fa015f13579790fd863199ff18069004bf7",
 	AIEngineSHA256:               "62b105fdb25b056f63a995678b2c7f717f558b6ddbc4d1720cfa1cc424d68b9c",
-	BattlePanelSHA256:            "3bb754d4c2256147bc6047cfc66a3141ec89104248c84840fe0655969c7ae124",
+	BattlePanelSHA256:            "fb3db94d48cb799052d4eb17c42f8035e82ca860232ff9954d7fead90f3c50fa",
 	WindowSHA256:                 "16bdc7a63a6ca09a168c794bea49dc299006da613f9bcfd1f1bf12a71a05734e",
 	SkipGuideSHA256:              "2bc4c16e8ac01f6031ca8d069fe9188c6302eb67a9b043a8daad71c7ff15740e",
 	HeroHighlightSHA256:          "123afecf95b7e2ba166489547f495105e352b83dc34846f87b089742c7c5e427",
 	ArtifactRefineSHA256:         "a7f3d9d022eb9eda4d909d01e5911cc2f4921e32eac9a2a6f2c3b558d0382a71",
+	BattlePrepareSHA256:          "7a911db1183f2c8ed7cc12d9e6a9bfc48e386f123b90d09e0d7ca249918a6206",
 	DrawSHA256:                   "a93f6255626dc900c24c24d2ca53323b4ea2a073306928bb03652903e5712a1a",
 	ActivityCompSHA256:           "3d0f45337b0cf5fb594fe205dd819bfa19d3e007cfe814b738af00e230f0a065",
 	DaySignPopupSHA256:           "93a283c39cd7955d9dccf759ef49b47a703a74e96bbee1b5400a38b7d53247ec",
@@ -110,7 +112,7 @@ var Supported = BuildProfile{
 	UniMatrixHelperSHA256:        "6320379d9a9fa12f1f65b07760f60ef96e86fa590e57a8b06fdc04c3e96ca667",
 	RandomNameSHA256:             "372f986d47291f040010501c535c3b28ac2655451eacc96636d90056d8498a77",
 	NumFormatSHA256:              "4afa806ae6c2273b7319f8aa752c28e19fc790c2e8ca7d977b5ed11b30b7f885",
-	PatchedScriptsSHA256:         "f421a2bb7c72b016136eb183de0740858d8322ae0111edb4b7235a35ec19a459",
+	PatchedScriptsSHA256:         "0b143fd7b30ec8afa7a1b964e1107eebe3f1689de9f2d4f664cc25f37b0f87de",
 }
 
 const PatchListPath = "/native/patchlist_win32.json"

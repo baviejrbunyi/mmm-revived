@@ -287,3 +287,54 @@ func (a *Account) ClaimProficiency(r *Rules, heroes []model.HeroID, level int) (
 	}
 	return reward, nil
 }
+
+func (a *Account) removeUnreleasedGear(r *Rules) {
+	suits := map[int]bool{}
+	for id, template := range r.HighlightTemplates {
+		if template.Unreleased {
+			delete(a.Items, template.Item)
+			delete(a.Manual.Items, template.Item)
+			delete(a.Manual.Highlights, id)
+		}
+	}
+	for id, artifact := range r.Artifacts {
+		if artifact.Unreleased {
+			delete(a.Items, artifact.Item)
+			delete(a.Manual.Items, artifact.Item)
+			delete(a.Manual.Artifacts, id)
+		}
+		if suit, known := r.Manual.ArtifactSuits[id]; known {
+			suits[suit] = suits[suit] || !artifact.Unreleased
+		}
+	}
+	for suit, kept := range suits {
+		if !kept {
+			delete(a.Manual.Suits, suit)
+		}
+	}
+	removed := map[model.InstanceID]bool{}
+	for id, highlight := range a.Highlights {
+		if r.HighlightTemplates[highlight.ID].Unreleased {
+			delete(a.Highlights, id)
+			removed[id] = true
+		}
+	}
+	for id, artifact := range a.Artifacts {
+		if r.Artifacts[artifact.ID].Unreleased {
+			delete(a.Artifacts, id)
+			removed[id] = true
+		}
+	}
+	if len(removed) == 0 {
+		return
+	}
+	equipped := func(_ int, instance model.InstanceID) bool { return removed[instance] }
+	for id, hero := range a.Heroes {
+		hero.Highlights = maps.Clone(hero.Highlights)
+		hero.Artifacts = maps.Clone(hero.Artifacts)
+		maps.DeleteFunc(hero.Highlights, equipped)
+		maps.DeleteFunc(hero.Artifacts, equipped)
+		hero.Highlight = hero.Highlights[1]
+		a.Heroes[id] = hero
+	}
+}

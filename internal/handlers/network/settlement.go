@@ -254,7 +254,7 @@ func (s service) settleAsyncBattle(a *account.Account, input AsyncBattle, result
 		a.RecordJourneyTaskEvent(s.Store.Rules, 106, 1, 0)
 		kills, _ := battle.Integer(packet["killnum"])
 		if kills >= 0 && kills <= 1000000 {
-			a.RecordJourneyBattleTasks(s.Store.Rules, int(input.Battle), win, int(kills), 0, false)
+			a.RecordJourneyBattleTasks(s.Store.Rules, 0, win, int(kills), 0, false)
 		}
 		a.RecordJourneyBattleResult(s.Store.Rules, input.Battle, win, packet)
 		record, err := server.EncodePayload(packet)

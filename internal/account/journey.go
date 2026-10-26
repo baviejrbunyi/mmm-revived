@@ -207,6 +207,9 @@ func (a *Account) InitializeJourney(r *Rules, now int64) {
 		}
 		a.refreshJourneyEvent(r, rule, &activity, now)
 		state.Activities[id] = activity
+		if rule.Type == 20 {
+			a.redeemLimitedPassItems(r, id)
+		}
 	}
 	a.InitializeRetailPVP(r, now)
 	a.InitializeRetailShare(r, now)

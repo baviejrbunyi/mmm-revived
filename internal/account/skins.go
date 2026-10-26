@@ -3,6 +3,7 @@ package account
 import (
 	"iter"
 	"maps"
+	"math"
 	"slices"
 
 	"mmm-revived/internal/model"
@@ -84,4 +85,40 @@ func (a *Account) normalizeSkins(r *Rules) {
 			a.Heroes[id] = hero
 		}
 	}
+}
+
+func (r *Rules) costumeShop(rule ShopRule) bool {
+	rows := r.Rewards[rule.Reward]
+	return len(rows) > 0 && r.skinItem(model.ItemID(rows[0][0])) != 0
+}
+
+func (r *Rules) releaseCostumeShops() map[model.ShopID][2]int64 {
+	latest, released := int64(0), int64(math.MaxInt64)
+	for _, rule := range r.Journey.Activities {
+		latest = max(latest, rule.End)
+	}
+	for _, rule := range r.Shops {
+		latest = max(latest, rule.End)
+	}
+	var unreleased []model.ShopID
+	for id, rule := range r.Shops {
+		switch {
+		case !r.costumeShop(rule):
+		case rule.Start > latest:
+			unreleased = append(unreleased, id)
+		default:
+			released = min(released, rule.Start)
+		}
+	}
+	windows := map[model.ShopID][2]int64{}
+	if released == math.MaxInt64 {
+		return windows
+	}
+	for _, id := range unreleased {
+		rule := r.Shops[id]
+		rule.Start = released
+		r.Shops[id] = rule
+		windows[id] = [2]int64{released, 0}
+	}
+	return windows
 }

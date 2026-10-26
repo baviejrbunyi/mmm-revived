@@ -39,6 +39,7 @@ type Player struct {
 	Limited               map[model.HeroID]model.RogueLimitedHero
 	Chip                  *model.MementoChipID
 	SelectedHeroes        []model.HeroID
+	HeroLimit             int
 	LastBattleWon         bool
 	Account               *account.Account
 	BattleID              model.BattleID

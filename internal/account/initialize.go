@@ -137,6 +137,7 @@ func (a *Account) Initialize(c Catalog, r *Rules) {
 			}
 			a.Missions[id] = mission
 		}
+		a.removeUnreleasedGear(r)
 		for id, artifact := range a.Artifacts {
 			if templates := r.Artifacts[artifact.ID].Templates; artifact.Template == 0 && len(templates) > 0 {
 				artifact.Template = templates[0]

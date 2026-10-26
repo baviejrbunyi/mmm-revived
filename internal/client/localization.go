@@ -28,6 +28,7 @@ func (p BuildProfile) Modules() []PatchFile {
 		{Path: "scripts/PanelSkipGuide.luac", SHA256: p.SkipGuideSHA256},
 		{Path: "scripts/HeroHighlight.luac", SHA256: p.HeroHighlightSHA256},
 		{Path: "scripts/ArtifactRefine.luac", SHA256: p.ArtifactRefineSHA256},
+		{Path: "scripts/PanelBattleNewPrepare.luac", SHA256: p.BattlePrepareSHA256},
 		{Path: "scripts/DrawComp.luac", SHA256: p.DrawSHA256},
 		{Path: "scripts/ActivityComp.luac", SHA256: p.ActivityCompSHA256},
 		{Path: "scripts/PanelDaySignPopup.luac", SHA256: p.DaySignPopupSHA256},

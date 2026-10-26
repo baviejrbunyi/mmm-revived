@@ -148,7 +148,7 @@ func (a *Account) SweepJourneyChallenge(r *Rules, id, count int) (map[model.Item
 	if err = next.GrantItems(r, quantities); err != nil {
 		return nil, err
 	}
-	next.RecordJourneyTaskEvent(r, 2, count, rule.Group)
+	next.RecordJourneyTaskEvent(r, 2, count, r.challengeTaskParameter(rule.Group))
 	*a = next
 	return quantities, nil
 }

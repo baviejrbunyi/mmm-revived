@@ -21,7 +21,7 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 	if p.State != server.Lobby {
 		return fmt.Errorf("%w: battle is already active", account.ErrProgression)
 	}
-	p.RogueBattle, p.BossMission, p.Limited = false, 0, nil
+	p.RogueBattle, p.BossMission, p.Limited, p.HeroLimit = false, 0, nil, 0
 	p.Challenge, p.Spiral = 0, 0
 	p.ActivityBattle, p.ActivityMission, p.ActivityNode, p.Brawl = 0, 0, 0, 0
 	p.LimitedBoss, p.LimitedBossGroup, p.LimitedBossDifficulty = 0, 0, 0
@@ -185,6 +185,12 @@ func (s service) createBattle(p *server.Player, r CreateBattle) error {
 	if rule.SkipDeploy {
 		p.State, p.SelectedHeroes = server.Combat, fixedHeroes(rule)
 	}
+	if info, standard := extraBattle.(battleInfo); standard {
+		if limit, custom := s.Store.Rules.BattleHeroLimit(r.Battle); custom {
+			info.HeroLimit, p.HeroLimit = limit, limit
+			extraBattle = info
+		}
+	}
 	heroes, artifacts, highlights := battleGear(p.Account, rule)
 	return p.Send("createBattle", r.Battle, p.Account.Events.Season.ID, mode, heroes, artifacts, highlights, TrialInfo{}, limited, extraBattle, echo, p.Nonce)
 }
@@ -301,12 +307,8 @@ func (s service) settleBattle(p *server.Player, r VerifyBattle) error {
 			p.Account.RecordBossBattle(p.BossMission, r.Win, p.SelectedHeroes, time.Now().Unix())
 		}
 		if s.Store.Rules != nil {
-			group := s.Store.Rules.BattleModes[p.BattleID]
-			if p.Challenge > 0 {
-				group = s.Store.Rules.Journey.Challenges[p.Challenge].Group
-			}
 			statistics := statisticsFrom(r.Packet)
-			p.Account.RecordJourneyBattleTasks(s.Store.Rules, group, r.Win, r.Result.KillCount, statistics.Mana, r.Result.Extra.UseAssist)
+			p.Account.RecordJourneyBattleTasks(s.Store.Rules, s.Store.Rules.BattleTaskParameter(p.Mission, p.Challenge), r.Win, r.Result.KillCount, statistics.Mana, r.Result.Extra.UseAssist)
 			p.Account.RecordJourneyBattleStatistics(s.Store.Rules, statistics.Ultimates, statistics.Cards)
 			p.Account.RecordJourneyBattleResult(s.Store.Rules, p.BattleID, r.Win, r.Packet)
 			p.Account.CompleteJourneyBattle(s.Store.Rules, p.BattleID, r.Win, r.Result.StarBitmap, time.Now().Unix())

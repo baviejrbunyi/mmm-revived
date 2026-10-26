@@ -25,9 +25,14 @@ func (s *Store) ConfigureEvents(enabled bool) {
 		return
 	}
 	s.Rules.AllEvents = EventWindows{}
+	costumes := s.Rules.releaseCostumeShops()
 	if enabled {
 		s.Rules.openAllEvents()
 	}
+	if len(costumes) > 0 && s.Rules.AllEvents.Shops == nil {
+		s.Rules.AllEvents.Shops = map[model.ShopID][2]int64{}
+	}
+	maps.Copy(s.Rules.AllEvents.Shops, costumes)
 }
 
 func (r *Rules) openAllEvents() {
@@ -51,6 +56,12 @@ func (r *Rules) openAllEvents() {
 	}
 	end := max(latest, first+period) + r.Settings.AllEvents.Horizon
 	windows := map[model.ActivityID][2]int64{}
+	followers := map[model.ActivityID]bool{}
+	for id, rule := range original {
+		if previous, known := original[rule.Follows]; rule.Follows != 0 && known && previous.Type == rule.Type && previous.End > 0 {
+			followers[id] = true
+		}
+	}
 	for kind, timed := range kinds {
 		if r.concurrentEvents(original, timed) {
 			for _, id := range timed {
@@ -60,7 +71,7 @@ func (r *Rules) openAllEvents() {
 		}
 		var sequence []model.ActivityID
 		for id, rule := range original {
-			if rule.Type == kind && rule.Start < end {
+			if rule.Type == kind && rule.Start < end && !followers[id] {
 				sequence = append(sequence, id)
 			}
 		}
@@ -80,6 +91,9 @@ func (r *Rules) openAllEvents() {
 			}
 			windows[id] = window
 		}
+	}
+	for id := range followers {
+		windows[id] = [2]int64{original[id].Start, original[id].Start - 1}
 	}
 	for id, window := range windows {
 		r.Journey.Activities[id] = withWindow(r.Journey.Activities[id], window)
@@ -146,7 +160,7 @@ func eventShopWindow(rules map[model.ActivityID]JourneyActivityRule, windows map
 }
 
 func (r *Rules) EventWindowSnapshot(activities *model.ActivityComponent) {
-	if r == nil || len(r.AllEvents.Activities) == 0 {
+	if r == nil || len(r.AllEvents.Activities) == 0 && len(r.AllEvents.Shops) == 0 {
 		return
 	}
 	activities.EventStart = make(map[model.ActivityID]int64, len(r.AllEvents.Activities))

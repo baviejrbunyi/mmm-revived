@@ -215,7 +215,7 @@ func (s service) finishBattle(p *server.Player, request battle.VerifyBattle) (bo
 				return err
 			}
 		}
-		p.Account.RecordJourneyBattleTasks(s.Store.Rules, 28, request.Win, request.Result.KillCount, 0, false)
+		p.Account.RecordJourneyBattleTasks(s.Store.Rules, 0, request.Win, request.Result.KillCount, 0, false)
 		p.Account.RecordJourneyBattleResult(s.Store.Rules, request.Battle, request.Win, packet)
 		return s.Store.RecordRank(tx, p.Account.UID, model.RankRetailPVP, int(id), p.Account.Journey.Activities[id].RetailPVP.Point, now)
 	})

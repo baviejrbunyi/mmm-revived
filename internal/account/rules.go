@@ -74,6 +74,7 @@ type Rules struct {
 	Settings              ServerSettings                                  `json:"-"`
 	Economy               Economy                                         `json:"-"`
 	AllEvents             EventWindows                                    `json:"-"`
+	TeamSize              int                                             `json:"-"`
 }
 
 type HeroTraits struct {
@@ -130,14 +131,16 @@ type ArtifactTemplate struct {
 }
 
 type ArtifactRule struct {
-	Refinable bool           `json:"refinable"`
-	SubLevels []int          `json:"sub_levels"`
-	Star      int            `json:"star"`
-	Templates []int          `json:"template"`
-	Position  int            `json:"position"`
-	MaxLevel  int            `json:"max_level"`
-	Pools     []model.ItemID `json:"pool"`
-	Unique    bool           `json:"unique"`
+	Refinable  bool           `json:"refinable"`
+	SubLevels  []int          `json:"sub_levels"`
+	Star       int            `json:"star"`
+	Templates  []int          `json:"template"`
+	Position   int            `json:"position"`
+	MaxLevel   int            `json:"max_level"`
+	Pools      []model.ItemID `json:"pool"`
+	Unique     bool           `json:"unique"`
+	Unreleased bool           `json:"unreleased"`
+	Item       model.ItemID   `json:"item"`
 }
 type TalentRule struct {
 	Break int                    `json:"break"`
@@ -152,6 +155,8 @@ type HighlightTemplate struct {
 	Rarity     int          `json:"rarity"`
 	BreakSet   int          `json:"break_set"`
 	Classified bool         `json:"classified"`
+	Unreleased bool         `json:"unreleased"`
+	Item       model.ItemID `json:"item"`
 }
 
 type MissionRule struct {
@@ -344,6 +349,7 @@ type ShopRule struct {
 	GuildLevel  int            `json:"guild_level"`
 	Recharge    int            `json:"recharge"`
 	Predecessor model.ShopID   `json:"pre_id"`
+	PreTask     model.TaskID   `json:"pre_task"`
 	PeriodHours int64          `json:"period_time"`
 }
 

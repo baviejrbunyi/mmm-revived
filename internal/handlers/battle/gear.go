@@ -95,6 +95,7 @@ type battleInfo struct {
 	SkinCollection int              `wire:"skinCollectionLv"`
 	Activity       model.ActivityID `wire:"activityId,omitempty"`
 	Environments   []int            `wire:"environmentIds,omitempty"`
+	HeroLimit      int              `wire:"heroLimit,omitempty"`
 }
 
 func newBattleInfo(s *server.Service, a *account.Account) battleInfo {

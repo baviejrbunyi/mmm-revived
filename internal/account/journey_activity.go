@@ -9,6 +9,26 @@ import (
 	"mmm-revived/internal/model"
 )
 
+const limitedPassItemType = 1056
+
+func (a *Account) activateLimitedPass(r *Rules, id model.ActivityID) bool {
+	activity, known := a.Journey.Activities[id]
+	if _, pass := r.Journey.LimitedPasses[activity.Pass.ID]; !known || !pass {
+		return false
+	}
+	activity.Pass.Active = max(activity.Pass.Active, 1)
+	a.Journey.Activities[id] = activity
+	return true
+}
+
+func (a *Account) redeemLimitedPassItems(r *Rules, id model.ActivityID) {
+	for item, count := range a.Items {
+		if rule := r.ItemRules[item]; count > 0 && rule.Type == limitedPassItemType && model.ActivityID(rule.Parameter) == id && a.activateLimitedPass(r, id) {
+			delete(a.Items, item)
+		}
+	}
+}
+
 func (a *Account) ClaimJourneySign(r *Rules, id model.ActivityID, days []int, now int64) (map[model.ItemID]int64, error) {
 	rule, err := a.JourneyActivityRule(r, id, 24, now)
 	if err != nil {

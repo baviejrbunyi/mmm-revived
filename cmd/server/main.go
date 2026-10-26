@@ -80,6 +80,9 @@ func run(log *slog.Logger, c config.Config) error {
 	if err = store.ConfigureEconomy(c.Economy()); err != nil {
 		return fmt.Errorf("configure economy: %w", err)
 	}
+	if err = store.ConfigureTeamSize(c.TeamSize); err != nil {
+		return fmt.Errorf("configure team size: %w", err)
+	}
 	web := bootstrap.Server{GateAddress: c.Address()}
 	patches, err := openPatches(log, c.Patches())
 	if err != nil {
@@ -112,7 +115,7 @@ func run(log *slog.Logger, c config.Config) error {
 	defer cancel()
 	service := server.NewService(store, server.Config{}, handlers.Register)
 	server := gate.Server{Key: key, Handler: service, Logger: log}
-	log.Info("server ready", "gate", listener.Addr(), "http", httpListener.Addr(), "start", c.Start, "fresh_start", c.FreshStart, "infinite_energy", c.InfiniteEnergy, "free_draws", c.FreeDraws, "dreamstone_shop", c.DreamstoneShop, "all_banners", c.AllBanners, "featured_banners", c.FeaturedBanners, "all_events", c.AllEvents, "public_key", c.PublicKey())
+	log.Info("server ready", "gate", listener.Addr(), "http", httpListener.Addr(), "start", c.Start, "fresh_start", c.FreshStart, "infinite_energy", c.InfiniteEnergy, "free_draws", c.FreeDraws, "dreamstone_shop", c.DreamstoneShop, "all_banners", c.AllBanners, "featured_banners", c.FeaturedBanners, "all_events", c.AllEvents, "team_size", c.TeamSize, "public_key", c.PublicKey())
 	var running sync.WaitGroup
 	running.Go(func() { service.Run(ctx) })
 	results := make(chan error, 2)

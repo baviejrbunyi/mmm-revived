@@ -16,6 +16,7 @@ type ConstantRules struct {
 	HeroStarRewards map[model.HeroID]model.RewardID `json:"hero_star_rewards"`
 	GuildLevels     map[int]GuildLevelRule          `json:"guild_levels"`
 	GuildWars       map[int]GuildWarPeriodRule      `json:"guild_wars"`
+	FormationSize   int                             `json:"formation_size"`
 }
 
 type ClientConstants struct {

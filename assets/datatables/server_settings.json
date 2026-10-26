@@ -61,5 +61,21 @@
   "all_events": {
     "overlap": 604800,
     "horizon": 315360000
+  },
+  "battle_task_parameters": {
+    "chapter_tags": {
+      "story": 1,
+      "branch": 7
+    },
+    "challenge_types": {
+      "1": 101,
+      "2": 102,
+      "3": 103,
+      "4": 104,
+      "5": 101,
+      "6": 102,
+      "7": 103,
+      "8": 104
+    }
   }
 }

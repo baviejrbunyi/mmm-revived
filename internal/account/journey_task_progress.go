@@ -314,6 +314,10 @@ func (a *Account) refreshJourneyTaskValuesAt(r *Rules, now int64) {
 			if a.Profile.Signature != "" {
 				value = 1
 			}
+		case 109:
+			for _, count := range a.System.Products {
+				value += int64(count)
+			}
 		case 82:
 			value = a.rogueLevelValue(taskNumber(rule, 0, 1))
 		case 88:
@@ -378,9 +382,30 @@ func (a *Account) RecordJourneyBattleStatistics(r *Rules, ultimates, cards int64
 	}
 }
 
-func (a *Account) RecordJourneyBattleTasks(r *Rules, group int, won bool, kills int, manaSpent int64, assist bool) {
+func (r *Rules) challengeTaskParameter(group int) int {
+	for kind, groups := range r.Journey.ChallengeTypes {
+		if slices.Contains(groups, group) {
+			return r.Settings.BattleTasks.ChallengeTypes[kind]
+		}
+	}
+	return 0
+}
+
+func (r *Rules) BattleTaskParameter(mission model.MissionID, challenge int) int {
+	switch {
+	case r == nil:
+		return 0
+	case challenge > 0:
+		return r.challengeTaskParameter(r.Journey.Challenges[challenge].Group)
+	case mission != 0:
+		return r.Settings.BattleTasks.ChapterTags[r.GM.Chapters[r.Missions[mission].Chapter]]
+	}
+	return 0
+}
+
+func (a *Account) RecordJourneyBattleTasks(r *Rules, parameter int, won bool, kills int, manaSpent int64, assist bool) {
 	if won {
-		a.RecordJourneyTaskEvent(r, 2, 1, group)
+		a.RecordJourneyTaskEvent(r, 2, 1, parameter)
 	}
 	if kills > 0 && kills <= 1000000 {
 		a.RecordJourneyTaskEvent(r, 74, kills, 0)
