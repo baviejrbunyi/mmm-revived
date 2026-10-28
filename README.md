@@ -96,6 +96,7 @@ Open the built-in **Helper** contact in the friend chat. Commands sent there are
 | --- | --- |
 | `/gain_artifact` | Start the guided artifact creation wizard. |
 | `/artifact_ids` | List available artifact IDs and names. |
+| `/gain_itm` | `/gain_itm dreamcore 999` grants 999 Dreamcore; `/gain_itm spinning_success 5` grants five copies of the Spinning Success Highlight. You can use an item ID instead of an alias if the client blocks the name (for example, `/gain_itm 555101 1`). `/gain_item` remains as a legacy alias. See [the item reference](documentation/helper-items.md) for all item aliases and IDs. |
 | `/cancel` | Cancel the active artifact wizard. |
 | `/infinite_energy` | `/infinite_energy on` or `/infinite_energy off` (also accepts `true`/`false`, `yes`/`no`, or `1`/`0`; the misspelled `/infinte_energy` is also accepted). |
 | `/free_draws` | `/free_draws on` or `/free_draws off` (also accepts `true`/`false`, `yes`/`no`, or `1`/`0`). |
@@ -103,9 +104,13 @@ Open the built-in **Helper** contact in the friend chat. Commands sent there are
 | `/all_banners` | `/all_banners on` or `/all_banners off` (also accepts `true`/`false`, `yes`/`no`, or `1`/`0`). |
 | `/featured_banners` | `/featured_banners 2,5,12` using banner IDs listed in [Config](#config), or `/featured_banners none` to clear the selection. |
 | `/team_size` | `/team_size 1` through `/team_size 5`. |
+| `/draw_rules` | Show current draw settings, or set a value with one of the subcommands below. |
+| `/draw_rules pity` | `/draw_rules pity 1` through `/draw_rules pity 80` sets the pull count for a guaranteed 5-star (default `80`). |
+| `/draw_rules fifty_fifty` | `/draw_rules fifty_fifty on` keeps the 50/50; `/draw_rules fifty_fifty off` guarantees the featured character on every 5-star banner pull. |
+| `/draw_rules select` | `/draw_rules select 1` through `/draw_rules select 1000` sets the currency cost in pulls for selecting the banner character or highlight (default `80`). |
 | `/commands` | Show the in-game command list. |
 
-Helper settings are per-player account overrides of the server's defaults. They persist across logins and apply immediately to the player who sent the command; they do not edit `build/config.toml` or affect other players. Server owners can still use the Config options above to set defaults for all accounts.
+Helper settings are per-player account overrides of the server's defaults. They persist across logins and apply immediately to the player who sent the command; they do not edit `build/config.toml` or affect other players. The client updates the displayed draw pity and selection cost when the draw details are opened or reopened. Server owners can still use the Config options above to set defaults for all accounts.
 
 ## Issues
 

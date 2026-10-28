@@ -92,6 +92,7 @@ func (a *Account) ConvertYuanbao(r *Rules, count int64) error {
 
 func (a *Account) BuyCommodity(r *Rules, id model.ShopID, count int, now int64, guildLevel int) (map[model.ItemID]int64, error) {
 	rule, known := r.Shops[id]
+	rule = a.HelperShopRule(id, rule)
 	if !known || len(rule.Prices) == 0 || count < 1 || count > MaxBulkCount || a.Level < rule.Level || rule.GuildLevel > guildLevel || rule.Recharge != 0 {
 		return nil, rejected("commodity is unavailable")
 	}

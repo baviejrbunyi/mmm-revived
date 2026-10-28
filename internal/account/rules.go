@@ -320,6 +320,8 @@ func (t TemplateHeroRule) At(teamLevel int) TemplateHeroState {
 
 type ItemRule struct {
 	Type      int                    `json:"type"`
+	Name      string                 `json:"name"`
+	ItemType  int                    `json:"item_type"`
 	Rarity    int                    `json:"rarity"`
 	Parameter int64                  `json:"parameter"`
 	Secondary int64                  `json:"secondary"`

@@ -1,4 +1,8 @@
 function PanelLimitDrawUpInvincible:SetInfo(data)
+  local avatar = MC.GameWorld.Avatar
+  if avatar and avatar.DrawComp and _G.ApplyHelperDrawRules then
+    _G.ApplyHelperDrawRules(avatar.DrawComp)
+  end
   local permanent = data.endTime ~= nil and data.endTime >= 4000000000
   self._timeBg.gameObject:SetActive(not permanent)
   if data.endTime ~= nil and not permanent then

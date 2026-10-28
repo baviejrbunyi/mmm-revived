@@ -25,11 +25,14 @@ type ShopComponent struct {
 }
 
 type DrawComponent struct {
-	Pools          map[DrawPoolID]DrawPoolState `wire:"drawInfo"`
-	Records        []DrawRecord                 `wire:"drawRec"`
-	SharedPity     map[int]DrawCounter          `wire:"shareInsure"`
-	Open           map[DrawPoolID]int           `wire:"poolOpen,omitempty"`
-	DreamstoneShop int                          `wire:"dreamstoneShop,omitempty"`
+	Pools             map[DrawPoolID]DrawPoolState `wire:"drawInfo"`
+	Records           []DrawRecord                 `wire:"drawRec"`
+	SharedPity        map[int]DrawCounter          `wire:"shareInsure"`
+	Open              map[DrawPoolID]int           `wire:"poolOpen,omitempty"`
+	DreamstoneShop    int                          `wire:"dreamstoneShop,omitempty"`
+	HelperDrawPity    int                          `wire:"helperDrawPity"`
+	HelperFiftyFifty  int                          `wire:"helperFiftyFifty"`
+	HelperSelectCount int                          `wire:"helperSelectCount"`
 }
 
 type MonthlyPassComponent struct {
