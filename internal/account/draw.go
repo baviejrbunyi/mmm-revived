@@ -124,7 +124,14 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 	if state.Satisfied == nil {
 		state.Satisfied = map[model.DrawStrategyID]bool{}
 	}
-	pity := a.Draw.Counters[r.Draw.Strategies[pool.WeightStrategy].Counter].Number
+	drawRules := r.Draw
+	if a.HelperSettings.DrawPitySet || a.HelperSettings.DrawFiftyFiftySet {
+		drawRules.Strategies = maps.Clone(r.Draw.Strategies)
+		for strategyID, strategy := range drawRules.Strategies {
+			drawRules.Strategies[strategyID] = a.HelperDrawStrategy(strategy)
+		}
+	}
+	pity := a.Draw.Counters[drawRules.Strategies[pool.WeightStrategy].Counter].Number
 	setID, err := r.Draw.weightedSet(pool, pity)
 	if err != nil {
 		return 0, err
@@ -132,7 +139,7 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 	var item model.ItemID
 	var guarantee model.DrawStrategyID
 	for _, strategyID := range pool.Strategies {
-		strategy, exists := r.Draw.Strategies[strategyID]
+		strategy, exists := drawRules.Strategies[strategyID]
 		if !exists || strategy.Number <= 0 {
 			return 0, rejected("draw strategy is unavailable")
 		}
@@ -148,7 +155,7 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 		}
 	}
 	if guarantee != 0 {
-		strategy := r.Draw.Strategies[guarantee]
+		strategy := drawRules.Strategies[guarantee]
 		if len(strategy.Prizes) > 0 {
 			prize, err := randomChoice(strategy.Prizes)
 			if err != nil {
@@ -169,7 +176,7 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 	if item == 0 {
 		choices := set.Items
 		for _, strategyID := range pool.Strategies {
-			strategy := r.Draw.Strategies[strategyID]
+			strategy := drawRules.Strategies[strategyID]
 			if slices.Contains(strategy.Sets, setID) && strategy.AdvanceNumber > 0 && a.Draw.Counters[strategy.Counter].Advance+1 >= strategy.AdvanceNumber && len(set.Up) > 0 {
 				choices = set.Up
 			}
@@ -210,7 +217,7 @@ func (a *Account) DrawOne(r *Rules, id model.DrawPoolID, now int64) (model.ItemI
 	next.Draw.History = maps.Clone(a.Draw.History)
 	updated := map[int]bool{}
 	for _, strategyID := range pool.Strategies {
-		strategy := r.Draw.Strategies[strategyID]
+		strategy := drawRules.Strategies[strategyID]
 		trigger := slices.Contains(strategy.TriggerSets, setID) || slices.ContainsFunc(strategy.TriggerPrizes, func(prize int) bool {
 			_, candidate, err := r.Draw.resolvePrize(prize)
 			return err == nil && candidate == item

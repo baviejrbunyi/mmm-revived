@@ -21,6 +21,12 @@ type HelperSettings struct {
 	FeaturedBannersSet bool               `json:"featured_banners_set,omitempty"`
 	TeamSize           int                `json:"team_size,omitempty"`
 	TeamSizeSet        bool               `json:"team_size_set,omitempty"`
+	DrawPity           int                `json:"draw_pity,omitempty"`
+	DrawPitySet        bool               `json:"draw_pity_set,omitempty"`
+	DrawFiftyFifty     bool               `json:"draw_fifty_fifty,omitempty"`
+	DrawFiftyFiftySet  bool               `json:"draw_fifty_fifty_set,omitempty"`
+	DrawSelectCount    int                `json:"draw_select_count,omitempty"`
+	DrawSelectCountSet bool               `json:"draw_select_count_set,omitempty"`
 }
 
 func (a *Account) SetHelperBoolean(name string, value bool) error {
@@ -62,6 +68,54 @@ func (a *Account) SetHelperTeamSize(size int) error {
 	a.HelperSettings.TeamSize = size
 	a.HelperSettings.TeamSizeSet = true
 	return nil
+}
+
+func (a *Account) SetHelperDrawPity(number int) error {
+	if number < 1 || number > 80 {
+		return fmt.Errorf("five-star pity must be between 1 and 80, got %d", number)
+	}
+	a.HelperSettings.DrawPity = number
+	a.HelperSettings.DrawPitySet = true
+	return nil
+}
+
+func (a *Account) SetHelperDrawFiftyFifty(enabled bool) {
+	a.HelperSettings.DrawFiftyFifty = enabled
+	a.HelperSettings.DrawFiftyFiftySet = true
+}
+
+func (a *Account) SetHelperDrawSelectCount(number int) error {
+	if number < 1 || number > 1000 {
+		return fmt.Errorf("draw selection count must be between 1 and 1000, got %d", number)
+	}
+	a.HelperSettings.DrawSelectCount = number
+	a.HelperSettings.DrawSelectCountSet = true
+	return nil
+}
+
+func (a *Account) HelperDrawStrategy(rule DrawStrategyRule) DrawStrategyRule {
+	if a.HelperSettings.DrawPitySet && rule.Number >= 60 && rule.Number <= 80 && rule.Counter != 0 {
+		rule.Number = a.HelperSettings.DrawPity
+	}
+	if a.HelperSettings.DrawFiftyFiftySet && rule.AdvanceNumber > 0 {
+		if a.HelperSettings.DrawFiftyFifty {
+			rule.AdvanceNumber = 2
+		} else {
+			rule.AdvanceNumber = 1
+		}
+	}
+	return rule
+}
+
+func (a *Account) HelperShopRule(id model.ShopID, rule ShopRule) ShopRule {
+	if !a.HelperSettings.DrawSelectCountSet || id < 3005 || id > 3008 {
+		return rule
+	}
+	rule.Prices = slices.Clone(rule.Prices)
+	if len(rule.Prices) > 0 {
+		rule.Prices[0] = int64(a.HelperSettings.DrawSelectCount)
+	}
+	return rule
 }
 
 func (a *Account) Economy(r *Rules) Economy {
@@ -110,6 +164,18 @@ func (a *Account) Economy(r *Rules) Economy {
 		economy.Pools = maps.Clone(economy.Pools)
 	}
 	return economy
+}
+
+func (a *Account) HelperDrawRulesSnapshot(draw *model.DrawComponent) {
+	draw.HelperDrawPity = a.HelperSettings.DrawPity
+	if a.HelperSettings.DrawFiftyFiftySet {
+		if a.HelperSettings.DrawFiftyFifty {
+			draw.HelperFiftyFifty = 1
+		} else {
+			draw.HelperFiftyFifty = 2
+		}
+	}
+	draw.HelperSelectCount = a.HelperSettings.DrawSelectCount
 }
 
 func (a *Account) EconomySnapshot(r *Rules, draw *model.DrawComponent) {

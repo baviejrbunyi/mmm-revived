@@ -1,4 +1,4 @@
-package friend
+package helper
 
 import (
 	"database/sql"
@@ -7,13 +7,23 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"mmm-revived/internal/account"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/server"
 )
 
-func (s service) helperChat(p *server.Player, kind int, text string) error {
+type Service struct {
+	Store      *account.Store
+	syncPlayer func(*server.Player, ...string) error
+}
+
+func New(store *account.Store, syncPlayer func(*server.Player, ...string) error) Service {
+	return Service{Store: store, syncPlayer: syncPlayer}
+}
+
+func (s Service) Chat(p *server.Player, kind int, text string) error {
 	if kind != 0 && kind != 7 {
 		return s.helperReply(p, "Helper only supports text messages.")
 	}
@@ -48,6 +58,8 @@ func (s service) helperChat(p *server.Player, kind int, text string) error {
 		}
 		p.ArtifactWizard = &server.ArtifactWizard{Stage: server.ArtifactWizardID}
 		return s.helperReply(p, "Available artifact IDs: "+availableArtifactIDs(s.Store.Rules)+". Enter the ID you want, or /cancel.")
+	case "/gain_itm", "/gain_item":
+		return s.gainItem(p, fields)
 	case "/infinte_energy", "/infinite_energy":
 		return s.setHelperBoolean(p, fields, "infinite_energy")
 	case "/free_draws":
@@ -60,6 +72,8 @@ func (s service) helperChat(p *server.Player, kind int, text string) error {
 		return s.setFeaturedBanners(p, fields)
 	case "/team_size":
 		return s.setTeamSize(p, fields)
+	case "/draw_rules":
+		return s.setDrawRules(p, fields)
 	case "/cancel":
 		if p.ArtifactWizard == nil {
 			return s.helperReply(p, "No artifact wizard is active.")
@@ -76,6 +90,7 @@ func (s service) helperChat(p *server.Player, kind int, text string) error {
 const helperCommands = "Helper commands (setting changes are saved to your account only):\n" +
 	"/gain_artifact - create an artifact with guided prompts\n" +
 	"/artifact_ids - list available artifact IDs and names\n" +
+	"/gain_itm <snake_case_name|item_id> <count> - grant an item (legacy alias: /gain_item)\n" +
 	"/cancel - stop the artifact wizard\n" +
 	"/infinite_energy on|off (also /infinte_energy; true|false and 1|0 also work)\n" +
 	"/free_draws on|off (true|false and 1|0 also work)\n" +
@@ -83,9 +98,128 @@ const helperCommands = "Helper commands (setting changes are saved to your accou
 	"/all_banners on|off (true|false and 1|0 also work)\n" +
 	"/featured_banners <comma-separated README banner IDs|none>\n" +
 	"/team_size 1-5\n" +
+	"/draw_rules - show current draw settings\n" +
+	"/draw_rules pity 1-80\n" +
+	"/draw_rules fifty_fifty on|off\n" +
+	"/draw_rules select 1-1000\n" +
 	"/commands - show this list"
 
-func (s service) helperReply(p *server.Player, text string) error {
+func (s Service) gainItem(p *server.Player, fields []string) error {
+	if len(fields) != 3 {
+		return s.helperReply(p, "Usage: /gain_itm <snake_case_item_name|item_id> <count>. See documentation/helper-items.md for item names and IDs.")
+	}
+	if s.Store.Rules == nil {
+		return server.ErrProgressionRules
+	}
+	itemID, aliases := resolveHelperItem(s.Store.Rules, fields[1])
+	if itemID == 0 {
+		if len(aliases) > 0 {
+			return s.helperReply(p, "That item name is ambiguous. Use one of these aliases: "+strings.Join(aliases, ", "))
+		}
+		return s.helperReply(p, "Unknown item name. Use a snake_case alias from documentation/helper-items.md.")
+	}
+	count, err := strconv.ParseInt(fields[2], 10, 64)
+	if err != nil || count < 1 || count > 1_000_000_000 {
+		return s.helperReply(p, "Item count must be a whole number from 1 to 1000000000.")
+	}
+	rule := s.Store.Rules.ItemRules[itemID]
+	if isEquipmentItemRule(rule.Type) && count > 1000 {
+		return s.helperReply(p, "This item can only be granted in quantities from 1 to 1000.")
+	}
+	var grantErr error
+	err = s.Store.Update(p.Account, func(*sql.Tx) error {
+		grantErr = p.Account.GrantItems(s.Store.Rules, map[model.ItemID]int64{itemID: count})
+		return grantErr
+	})
+	if err != nil {
+		if grantErr != nil {
+			return s.helperReply(p, "Could not grant item: "+grantErr.Error())
+		}
+		return err
+	}
+	if err = s.syncPlayer(p, "itemComp", "heroComp"); err != nil {
+		return err
+	}
+	return s.helperReply(p, fmt.Sprintf("Granted %d × %s (item ID %d) to your account.", count, rule.Name, itemID))
+}
+
+func isEquipmentItemRule(itemType int) bool {
+	switch itemType {
+	case 1013, 1014, 1015, 1021, 1029, 1036, 1053:
+		return true
+	default:
+		return false
+	}
+}
+
+func resolveHelperItem(rules *account.Rules, name string) (model.ItemID, []string) {
+	if rules == nil {
+		return 0, nil
+	}
+	if parsed, err := strconv.ParseInt(name, 10, 32); err == nil {
+		id := model.ItemID(parsed)
+		if _, exists := rules.ItemRules[id]; exists {
+			return id, nil
+		}
+		return 0, nil
+	}
+	aliases := helperItemAliases(rules)
+	if id, found := aliases[strings.ToLower(name)]; found {
+		return id, nil
+	}
+	base := strings.ToLower(strings.Trim(name, "_"))
+	var alternatives []string
+	for alias := range aliases {
+		if strings.HasPrefix(alias, base+"_") {
+			alternatives = append(alternatives, alias)
+		}
+	}
+	slices.Sort(alternatives)
+	return 0, alternatives
+}
+
+func helperItemAliases(rules *account.Rules) map[string]model.ItemID {
+	byName := make(map[string][]model.ItemID, len(rules.ItemRules))
+	for id, rule := range rules.ItemRules {
+		slug := helperItemSlug(rule.Name)
+		if slug == "" {
+			slug = fmt.Sprintf("item_%d", id)
+		}
+		byName[slug] = append(byName[slug], id)
+	}
+	aliases := make(map[string]model.ItemID, len(rules.ItemRules))
+	for slug, ids := range byName {
+		slices.Sort(ids)
+		for _, id := range ids {
+			alias := slug
+			if len(ids) > 1 {
+				alias = fmt.Sprintf("%s_%d", slug, id)
+			}
+			aliases[alias] = id
+		}
+	}
+	return aliases
+}
+
+func helperItemSlug(name string) string {
+	name = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(name), "!"))
+	runes := []rune(name)
+	slug := make([]rune, 0, len(runes))
+	for index, char := range runes {
+		if unicode.IsLetter(char) || unicode.IsDigit(char) {
+			if unicode.IsUpper(char) && len(slug) > 0 && slug[len(slug)-1] != '_' &&
+				(index > 0 && (unicode.IsLower(runes[index-1]) || unicode.IsDigit(runes[index-1]))) {
+				slug = append(slug, '_')
+			}
+			slug = append(slug, unicode.ToLower(char))
+		} else if len(slug) > 0 && slug[len(slug)-1] != '_' {
+			slug = append(slug, '_')
+		}
+	}
+	return strings.Trim(string(slug), "_")
+}
+
+func (s Service) helperReply(p *server.Player, text string) error {
 	message := model.ChatMessage{
 		ID:       strconv.FormatInt(time.Now().UnixNano(), 10),
 		Sender:   model.HelperUID,
@@ -96,7 +230,7 @@ func (s service) helperReply(p *server.Player, text string) error {
 	return p.Send("notifyNewChatMsg", message)
 }
 
-func (s service) sendArtifactIDs(p *server.Player, rules *account.Rules) error {
+func (s Service) sendArtifactIDs(p *server.Player, rules *account.Rules) error {
 	entries := artifactIDNames(rules)
 	if len(entries) == 0 {
 		return s.helperReply(p, "No available artifacts.")
@@ -153,7 +287,7 @@ func availableArtifactIDs(rules *account.Rules) string {
 	return strings.Join(formatted, ", ")
 }
 
-func (s service) setHelperBoolean(p *server.Player, fields []string, name string) error {
+func (s Service) setHelperBoolean(p *server.Player, fields []string, name string) error {
 	if len(fields) != 2 {
 		return s.helperReply(p, fmt.Sprintf("Usage: /%s on|off", name))
 	}
@@ -172,15 +306,15 @@ func (s service) setHelperBoolean(p *server.Player, fields []string, name string
 	}
 	switch name {
 	case "infinite_energy":
-		if err := s.Sync(p, "energyComp", "itemComp"); err != nil {
+		if err := s.syncPlayer(p, "energyComp", "itemComp"); err != nil {
 			return err
 		}
 	case "free_draws":
-		if err := s.Sync(p, "itemComp"); err != nil {
+		if err := s.syncPlayer(p, "itemComp"); err != nil {
 			return err
 		}
 	case "dreamstone_shop", "all_banners":
-		if err := s.Sync(p, "drawComp"); err != nil {
+		if err := s.syncPlayer(p, "drawComp"); err != nil {
 			return err
 		}
 	}
@@ -198,7 +332,7 @@ func parseHelperBoolean(text string) (bool, error) {
 	}
 }
 
-func (s service) setFeaturedBanners(p *server.Player, fields []string) error {
+func (s Service) setFeaturedBanners(p *server.Player, fields []string) error {
 	if len(fields) < 2 {
 		return s.helperReply(p, "Usage: /featured_banners <comma-separated README banner IDs|none>")
 	}
@@ -220,7 +354,7 @@ func (s service) setFeaturedBanners(p *server.Player, fields []string) error {
 	}); err != nil {
 		return err
 	}
-	if err = s.Sync(p, "drawComp"); err != nil {
+	if err = s.syncPlayer(p, "drawComp"); err != nil {
 		return err
 	}
 	if len(banners) == 0 {
@@ -259,7 +393,7 @@ func parseFeaturedBanners(text string, pools map[model.DrawPoolID]account.DrawPo
 	return banners, nil
 }
 
-func (s service) setTeamSize(p *server.Player, fields []string) error {
+func (s Service) setTeamSize(p *server.Player, fields []string) error {
 	if len(fields) != 2 {
 		return s.helperReply(p, "Usage: /team_size 1-5")
 	}
@@ -275,6 +409,75 @@ func (s service) setTeamSize(p *server.Player, fields []string) error {
 	return s.helperReply(p, fmt.Sprintf("Saved team_size = %d to your account. This setting affects only you.", size))
 }
 
+func (s Service) setDrawRules(p *server.Player, fields []string) error {
+	if len(fields) == 1 {
+		pity := p.Account.HelperSettings.DrawPity
+		if !p.Account.HelperSettings.DrawPitySet {
+			pity = 80
+		}
+		fiftyFifty := p.Account.HelperSettings.DrawFiftyFifty
+		if !p.Account.HelperSettings.DrawFiftyFiftySet {
+			fiftyFifty = true
+		}
+		selectCount := p.Account.HelperSettings.DrawSelectCount
+		if !p.Account.HelperSettings.DrawSelectCountSet {
+			selectCount = 80
+		}
+		return s.helperReply(p, fmt.Sprintf("Your draw rules: 5-star pity = %d; 50/50 = %t; character/highlight selection = %d pulls.", pity, fiftyFifty, selectCount))
+	}
+	if len(fields) != 3 {
+		return s.helperReply(p, "Usage: /draw_rules [pity 1-80|fifty_fifty on|off|select 1-1000]")
+	}
+
+	switch strings.ToLower(fields[1]) {
+	case "pity":
+		number, err := strconv.Atoi(fields[2])
+		if err != nil || number < 1 || number > 80 {
+			return s.helperReply(p, "Five-star pity must be a whole number from 1 to 80.")
+		}
+		if err = s.Store.Update(p.Account, func(*sql.Tx) error {
+			return p.Account.SetHelperDrawPity(number)
+		}); err != nil {
+			return err
+		}
+		if err = s.syncPlayer(p, "drawComp"); err != nil {
+			return err
+		}
+		return s.helperReply(p, fmt.Sprintf("Saved five-star pity = %d pulls to your account. This affects only you.", number))
+	case "fifty_fifty":
+		enabled, err := parseHelperBoolean(fields[2])
+		if err != nil {
+			return s.helperReply(p, "Usage: /draw_rules fifty_fifty on|off")
+		}
+		if err = s.Store.Update(p.Account, func(*sql.Tx) error {
+			p.Account.SetHelperDrawFiftyFifty(enabled)
+			return nil
+		}); err != nil {
+			return err
+		}
+		if err = s.syncPlayer(p, "drawComp"); err != nil {
+			return err
+		}
+		return s.helperReply(p, fmt.Sprintf("Saved 50/50 = %t to your account. This affects only you.", enabled))
+	case "select", "selection":
+		number, err := strconv.Atoi(fields[2])
+		if err != nil || number < 1 || number > 1000 {
+			return s.helperReply(p, "Character/highlight selection must be a whole number from 1 to 1000 pulls.")
+		}
+		if err = s.Store.Update(p.Account, func(*sql.Tx) error {
+			return p.Account.SetHelperDrawSelectCount(number)
+		}); err != nil {
+			return err
+		}
+		if err = s.syncPlayer(p, "drawComp"); err != nil {
+			return err
+		}
+		return s.helperReply(p, fmt.Sprintf("Saved character/highlight selection cost = %d pulls to your account. This affects only you.", number))
+	default:
+		return s.helperReply(p, "Usage: /draw_rules [pity 1-80|fifty_fifty on|off|select 1-1000]")
+	}
+}
+
 func int32Strings(values []int32) []string {
 	formatted := make([]string, len(values))
 	for i, value := range values {
@@ -283,7 +486,7 @@ func int32Strings(values []int32) []string {
 	return formatted
 }
 
-func (s service) answerArtifactWizard(p *server.Player, text string) error {
+func (s Service) answerArtifactWizard(p *server.Player, text string) error {
 	wizard := p.ArtifactWizard
 	answer := strings.TrimSpace(text)
 	if strings.EqualFold(answer, "/cancel") {
@@ -400,7 +603,7 @@ func (s service) answerArtifactWizard(p *server.Player, text string) error {
 			return err
 		}
 		p.ArtifactWizard = nil
-		if err := s.Sync(p, "heroComp"); err != nil {
+		if err := s.syncPlayer(p, "heroComp"); err != nil {
 			return err
 		}
 		return s.helperReply(p, fmt.Sprintf("Added %d artifact copies to your inventory.", copies))
@@ -409,12 +612,12 @@ func (s service) answerArtifactWizard(p *server.Player, text string) error {
 	return s.helperReply(p, "Artifact command ended. Send /gain_artifact to start again.")
 }
 
-func (s service) promptUpgradeCount(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules) error {
+func (s Service) promptUpgradeCount(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules) error {
 	maxUpgrades := availableWizardUpgradeRolls(rules, wizard)
 	return s.helperReply(p, fmt.Sprintf("How many upgrade rolls? Enter 0-%d.", maxUpgrades))
 }
 
-func (s service) promptArtifactInventory(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules) error {
+func (s Service) promptArtifactInventory(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules) error {
 	rarity := map[int]string{3: "blue", 4: "purple", 5: "yellow"}[rules.Artifacts[wizard.ArtifactID].Star]
 	starting, upgrades := strings.Join(wizard.StartingStats, ", "), strings.Join(wizard.UpgradeStats, ", ")
 	if starting == "" {
@@ -428,11 +631,11 @@ func (s service) promptArtifactInventory(p *server.Player, wizard *server.Artifa
 	return s.helperReply(p, summary+" Add it to your inventory? Reply yes or no.")
 }
 
-func (s service) promptArtifactStat(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules, message string) error {
+func (s Service) promptArtifactStat(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules, message string) error {
 	return s.helperReply(p, fmt.Sprintf("%s Available stats: %s.", message, strings.Join(artifactAttributes(rules, wizard.Template), ", ")))
 }
 
-func (s service) promptUpgradeStat(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules) error {
+func (s Service) promptUpgradeStat(p *server.Player, wizard *server.ArtifactWizard, rules *account.Rules) error {
 	allowed := allowedUpgradeAttributes(rules, wizard)
 	if len(allowed) == 0 {
 		return s.helperReply(p, "No stats are valid for another upgrade roll. Choose a lower number of upgrade rolls.")

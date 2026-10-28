@@ -9,6 +9,7 @@ import (
 
 	"mmm-revived/internal/account"
 	"mmm-revived/internal/handlers/guild"
+	"mmm-revived/internal/handlers/helper"
 	"mmm-revived/internal/model"
 	"mmm-revived/internal/server"
 	"mmm-revived/internal/social"
@@ -222,7 +223,7 @@ func (s service) sendChat(p *server.Player, r SendChat) error {
 		return guild.SendChat(s.Service, p, r.Kind, r.Text)
 	case model.PrivateChat:
 		if r.Target == model.HelperUID {
-			return s.helperChat(p, r.Kind, r.Text)
+			return helper.New(s.Store, s.Sync).Chat(p, r.Kind, r.Text)
 		}
 	default:
 		if err := s.Store.Update(p.Account, func(*sql.Tx) error {

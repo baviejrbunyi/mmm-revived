@@ -133,7 +133,7 @@ def rules(t):
         param = row.get('param') or []
         first = param[0] if isinstance(param, list) and param else 0
         second = param[1] if isinstance(param, list) and len(param) > 1 else 0
-        item_rules[key] = {'type': row['type'], 'rarity': row.get('rarity', 0), 'parameter': first if isinstance(first, int) else 0, 'secondary': second if isinstance(second, int) else 0, 'refund': second if isinstance(second, dict) else {}, 'choices': first if isinstance(first, list) else [], 'amounts': second if isinstance(second, list) else []}
+        item_rules[key] = {'type': row['type'], 'name': row.get('name', ''), 'item_type': row.get('itemType', 0), 'rarity': row.get('rarity', 0), 'parameter': first if isinstance(first, int) else 0, 'secondary': second if isinstance(second, int) else 0, 'refund': second if isinstance(second, dict) else {}, 'choices': first if isinstance(first, list) else [], 'amounts': second if isinstance(second, list) else []}
     memento_maps = {}
     for node in nodes.values():
         if node.get('nodeType') != 5:
@@ -193,6 +193,61 @@ def rules(t):
         'exchange_heroes': sorted(int(key) for key, row in heroes.items() if row.get('star') == 3 and 'hero' in sequence(row.get('show_type')) and 'classifyMark' in row),
         'manual': manual(t),
     }
+
+
+def helper_item_slug(name):
+    name = name.strip()
+    if name.startswith('!'):
+        name = name[1:].strip()
+    result = []
+    for index, char in enumerate(name):
+        if char.isalnum():
+            if char.isupper() and result and result[-1] != '_' and index > 0 and (name[index - 1].islower() or name[index - 1].isdigit()):
+                result.append('_')
+            result.append(char.lower())
+        elif result and result[-1] != '_':
+            result.append('_')
+    return ''.join(result).strip('_')
+
+
+def helper_item_category(rule):
+    if rule.get('type') == 1015 or rule.get('item_type') == 25:
+        return 'Highlights'
+    if rule.get('item_type') in (2, 3, 4):
+        return 'Resources'
+    if rule.get('item_type') in (1, 5, 6, 7, 8, 9, 10, 19, 20, 22):
+        return 'Materials'
+    return 'Other items'
+
+
+def helper_item_documentation(item_rules):
+    by_name = {}
+    for key, rule in item_rules.items():
+        item_id = int(key)
+        slug = helper_item_slug(rule.get('name', '')) or f'item_{item_id}'
+        by_name.setdefault(slug, []).append((item_id, rule))
+    groups = {'Materials': [], 'Highlights': [], 'Resources': [], 'Other items': []}
+    for slug, rows in by_name.items():
+        rows.sort()
+        for item_id, rule in rows:
+            alias = slug if len(rows) == 1 else f'{slug}_{item_id}'
+            name = rule.get('name', '').lstrip('!') or 'Unnamed item'
+            name = name.replace('|', '\\|')
+            groups[helper_item_category(rule)].append((alias, name, item_id))
+    lines = [
+        '# Helper item reference',
+        '',
+        'Use `/gain_itm <alias-or-item-ID> <count>` in the private Helper chat. The legacy `/gain_item` command is also accepted. Aliases are lowercase snake_case. If multiple items share a display name, append the item ID shown here. If the client blocks an item name in chat, use its numeric item ID instead.',
+        '',
+        'The list is generated from the game item table and includes items with a server grant rule. The command uses the normal item-grant logic, so items that represent heroes, artifacts, or highlights create those objects instead of adding a stack.',
+        '',
+    ]
+    for category, entries in groups.items():
+        entries.sort(key=lambda entry: (entry[1].casefold(), entry[2]))
+        lines.extend([f'## {category} ({len(entries)})', '', '| Alias | In-game name | Item ID |', '|---|---|---:|'])
+        lines.extend(f'| `{alias}` | {name} | {item_id} |' for alias, name, item_id in entries)
+        lines.append('')
+    return '\n'.join(lines)
 
 
 def flatten(value):
@@ -758,6 +813,7 @@ def build(arguments):
         'constant_rules.json': lambda current: constants(t),
     }
     report = {}
+    item_rules = None
     try:
         for name, export in exporters.items():
             path = folder / name
@@ -769,8 +825,19 @@ def build(arguments):
                 if merged != current.get(key):
                     report[name + ':' + key] = changes(current.get(key), merged)
                 result[key] = merged
+            if name == 'rules.json':
+                item_rules = result['item_rules']
             if not arguments.check:
                 write(path, result, raw)
+        if item_rules is not None:
+            path = arguments.repo / 'documentation' / 'helper-items.md'
+            documentation = helper_item_documentation(item_rules)
+            previous = path.read_text(encoding='utf-8') if path.exists() else ''
+            if previous != documentation:
+                report['documentation/helper-items.md'] = {'changed': True}
+                if not arguments.check:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(documentation, encoding='utf-8')
     finally:
         tools.close()
     print(json.dumps(report, indent=1))
